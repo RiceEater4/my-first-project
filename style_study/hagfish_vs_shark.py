@@ -19,14 +19,15 @@ def layer(F, mask, colours):
     F[mask] = colours[mask]
 
 # ================================================================ water: bands with curved, unique edges
-# three shades, light at the top -> dark at the bottom, split by two smooth curves;
-# a short ordered-dither ramp across each curve so the shades blend but the curve stays visible
-WATER = [c('#1b2e4c'), c('#0f1b31'), c('#070c18')]
-c1 = 112 + 11 * np.sin(XX / 34 + 0.7) + 5 * np.sin(XX / 19 + 2.1)
-c2 = 222 + 13 * np.sin(XX / 38 + 2.4) + 6 * np.sin(XX / 22 + 0.3)
-RAMP = 5.0
-v = np.clip((YY - c1) / RAMP + 0.5, 0, 1) + np.clip((YY - c2) / RAMP + 0.5, 0, 1)
-F = np.stack(WATER)[np.clip(np.floor(v + BAYER[YY % 4, XX % 4] - 0.5 + 0.5), 0, 2).astype(int)].astype(np.uint8)
+# four close shades of the same navy (light at the top -> dark at the bottom),
+# split by three smooth curves with a short ordered-dither blend across each
+WATER = [c('#15253f'), c('#111f36'), c('#0d192d'), c('#0a1324')]
+curves = [92 + 10 * np.sin(XX / 33 + 0.7) + 4 * np.sin(XX / 18 + 2.1),
+          176 + 12 * np.sin(XX / 37 + 2.4) + 5 * np.sin(XX / 21 + 0.3),
+          256 + 11 * np.sin(XX / 35 + 4.0) + 4 * np.sin(XX / 17 + 1.2)]
+RAMP = 6.0
+v = sum(np.clip((YY - cv) / RAMP + 0.5, 0, 1) for cv in curves)
+F = np.stack(WATER)[np.clip(np.floor(v + BAYER[YY % 4, XX % 4]), 0, 3).astype(int)].astype(np.uint8)
 rng = np.random.default_rng(4)
 for _ in range(60):
     x, y = rng.integers(0, W), rng.integers(0, H)

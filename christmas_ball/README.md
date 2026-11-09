@@ -1,23 +1,23 @@
-# What If You Dropped a Ball? (Christmas pixel short)
+# What If You Drop a Ball 4x Higher? (Christmas pixel short)
 
-1080x1920, 60 fps, 38 s seamless loop, no voice: just the balls and the music.
+1080x1920, 60 fps, 38 s seamless loop, no voice: just bounces and music.
 
-Ornaments fall off a pixel Christmas tree. Every landing is a sound on one 120 BPM grid,
-and each new ball adds a layer to the beat:
+**The fact:** a perfectly bouncy ball dropped from height *h* bounces every *T = 2·√(2h/g)*,
+so dropping it 4x higher makes it bounce 2x slower. At 120 BPM the real heights are:
 
-| Ball | Bounces | Sound |
-|---|---|---|
-| Red | 120 BPM (every beat) | kick |
-| Green | 240 BPM (every 8th) | sleigh bells |
-| Gold | 60 BPM (beats 2 & 4) | snare + glass tink |
-| Blue | 30 BPM (once a bar) | bass note following the chords |
-| Silver | on the presents | Jingle Bells chorus (public domain, 1857) on glockenspiel |
+| Character | Drop height | Bounces every | Sound |
+|---|---|---|---|
+| Cat | 31 cm | 0.5 s (every beat) | kick |
+| Mouse | 8 cm | 0.25 s (8th notes) | jingle-bell ball |
+| Kid | 1.2 m | 1 s (beats 2 & 4) | snare |
+| Santa (roof) | 4.9 m | 2 s (once a bar) | bass, following the chords |
+| Robin's ball | on a xylophone | the melody | Jingle Bells chorus (public domain, 1857) |
 
-At the end every ball hops back onto the tree, so the last frame is the first frame.
+Everything is scaled 60 px per metre, so the heights on screen are true to each other.
 
 ```
 python3 audio.py audio.wav
-python3 video.py what_if_you_dropped_a_ball.mp4 audio.wav
+python3 video.py drop_a_ball_4x_higher.mp4 audio.wav
 python3 video.py --stills out_dir 3.0 19.0      # preview frames
 ```
-`score.py` holds all timing, so picture and sound always stay in sync.
+`score.py` holds all timing and the physics, so picture and sound always stay in sync.

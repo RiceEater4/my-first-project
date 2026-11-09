@@ -42,3 +42,9 @@ MELODY = [(bar(9) + b * BEAT, n, d * BEAT) for b, n, d in _M]
 # Balls hop back onto the tree on these beats (chime arpeggio G B D G + star)
 RETURN = {'bell': 33.0, 'kick': 33.5, 'snare': 34.0, 'bass': 34.5, 'melody': 35.0}
 RETURN_PITCH = {'bell': 79, 'kick': 83, 'snare': 86, 'bass': 91, 'melody': 95}
+
+# Physics: a perfectly bouncy ball dropped from height h bounces every T = 2*sqrt(2h/g).
+# 4x higher -> 2x slower. These are the real heights for 120 BPM.
+G = 9.81
+def height_for(period): return G * period ** 2 / 8      # metres
+PX_PER_M = 60

@@ -97,16 +97,16 @@ for k, t in RETURN.items():
 for j, m in enumerate([91, 95, 98, 103, 98, 95]):
     add('fx', 35.0 + j * 0.0833, glock(m, 0.18, 1.2))
 
-# intro: ornament wobble jingle + falling whistle into the first downbeat
-for j in range(4):
-    add('fx', 0.75 + j * 0.09, sleigh(0.25))
-n = int(0.8 * SR); tt = np.arange(n) / SR
-whistle = np.sin(2 * np.pi * np.cumsum(1400 - 900 * tt / 0.8) / SR) * np.clip(tt / 0.8, 0, 1) ** 2 * 0.12
-add('fx', 1.2, whistle)
-# each new ball falling gets a short whistle too
-for t in [bar(3), bar(5) + 0.5, bar(7), bar(9)]:
-    m = int(0.6 * SR); tt = np.arange(m) / SR
-    add('fx', t - 0.6, np.sin(2 * np.pi * np.cumsum(1500 - 900 * tt / 0.6) / SR) * (tt / 0.6) ** 2 * 0.1)
+# falling whistles for the long drops (kid 0.5 s, Santa 1 s, robin 0.4 s) - each ends exactly on its first landing
+for t_land, dur, f0 in [(bar(5) + 0.5, 0.5, 1300), (bar(7), 1.0, 1500), (bar(9), 0.4, 1700)]:
+    m = int(dur * SR); tt = np.arange(m) / SR
+    add('fx', t_land - dur, np.sin(2 * np.pi * np.cumsum(f0 - 800 * tt / dur) / SR) * (tt / dur) ** 2 * 0.1)
+# soft mitten "pats" as each ball is caught at the end
+def pat(v):
+    n = int(0.08 * SR); x = rng.standard_normal(n) * env(n, 0.001, 0.012)
+    return np.convolve(x, np.ones(12) / 12, 'same') * v
+for t in [32.0, 32.125, 32.25, 33.0]:
+    add('fx', t, pat(0.9))
 
 # ---------------------------------------------------------------- warm pad (quiet bed)
 t_all = np.arange(N) / SR

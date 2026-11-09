@@ -1,11 +1,11 @@
-"""Renders 'What If You Dropped a Ball?' as 1080x1920 / 60 fps pixel art.
+"""Renders 'What If You Drop a Ball 4x Higher?' - 1080x1920 / 60 fps pixel art.
 
-Everything is drawn on a 270x480 canvas and scaled up 4x (nearest neighbour),
-so every 'pixel' is a crisp 4x4 block. All motion is driven by score.py, so each
-landing happens on exactly the frame its sound plays.
+Drawn on a 270x480 canvas, scaled 4x nearest-neighbour. Every motion is driven by
+score.py so each landing happens on the exact frame its sound plays. Every ambient
+animation uses a whole number of cycles per LOOP, so the video loops seamlessly.
 
-usage: python3 video.py out.mp4 audio.wav      (full render)
-       python3 video.py --stills DIR t1 t2 ... (preview frames as PNG)
+usage: python3 video.py out.mp4 audio.wav
+       python3 video.py --stills DIR t1 t2 ...
 """
 import sys, subprocess, math
 import numpy as np
@@ -13,89 +13,241 @@ from score import *
 
 W, H, S = 270, 480, 4
 GROUND = 440
+TAU = 2 * math.pi
+def w(k): return TAU * k / LOOP          # loop-safe angular frequency (k whole cycles per loop)
 
 def hexc(h):
     h = h.lstrip('#'); return np.array([int(h[i:i + 2], 16) / 255 for i in (0, 2, 4)], np.float32)
+def pal(*c): return np.stack([hexc(x) for x in c])
 
 BAYER = (np.array([[0, 8, 2, 10], [12, 4, 14, 6], [3, 11, 1, 9], [15, 7, 13, 5]]) + 0.5) / 16
 YY, XX = np.mgrid[0:H, 0:W]
 BAY = BAYER[YY % 4, XX % 4]
 
-def dither_palette(v, pal):
-    """v: float index map into pal -> ordered-dithered RGB (smooth pixel-art gradients)."""
-    idx = np.clip(np.floor(v + BAY - 0.5 + 0.5), 0, len(pal) - 1).astype(int)
-    return np.stack(pal)[idx]
+def dith(v, p, bay):
+    return p[np.clip(np.floor(v + bay), 0, len(p) - 1).astype(int)]
 
-# ------------------------------------------------------------------ static background
-SKY = [hexc(c) for c in ['#070b24', '#0c1438', '#121f4f', '#1a2d68', '#223f82', '#2c559c', '#3a6fb4', '#4f8cc8', '#6eaad8']]
-FAR = [hexc(c) for c in ['#2b4775', '#355688', '#41679b', '#5079ad', '#628cbe']]
-NEAR = [hexc(c) for c in ['#6d8fc2', '#7f9fcd', '#93b1da', '#a8c3e6', '#bfd4ef']]
-SNOW = [hexc(c) for c in ['#9db6dc', '#b1c7e6', '#c6d7ef', '#dbe6f7', '#eef4fd']]
-TREE = [hexc(c) for c in ['#071f1a', '#0b2d23', '#10402e', '#17573b', '#206f4a', '#2d8858']]
-TRUNK = [hexc(c) for c in ['#2a170e', '#4a2c1a', '#6b4227']]
-MOON = (222, 108, 13)
-CX = 135
-TIERS = [(118, 192, 30), (160, 252, 46), (214, 322, 60), (276, 414, 72)]
+def smooth(s): s = min(1.0, max(0.0, s)); return s * s * (3 - 2 * s)
 
-def tree_half(y, yt, yb, hw):
-    f = (y - yt) / (yb - yt)
-    return hw * f + 3 * (((y - yt) % 9) / 9) * f
+# ------------------------------------------------------------------ primitive drawing
+def put(F, x, y, col, a=1.0):
+    x, y = int(round(x)), int(round(y))
+    if 0 <= x < W and 0 <= y < H:
+        F[y, x] = F[y, x] * (1 - a) + col * a
 
-def build_bg():
-    bg = np.zeros((H, W, 3), np.float32)
-    # sky: dithered vertical gradient + moon glow so the blues melt into each other
-    v = (np.clip(YY / 360, 0, 1) ** 1.25) * (len(SKY) - 1)
+def glow(F, x, y, col, a):
+    x, y = int(round(x)), int(round(y))
+    if 0 <= x < W and 0 <= y < H:
+        F[y, x] = np.minimum(1, F[y, x] + col * a)
+
+def rect(F, x0, y0, x1, y1, col, a=1.0):
+    x0, y0, x1, y1 = max(0, int(round(x0))), max(0, int(round(y0))), min(W, int(round(x1))), min(H, int(round(y1)))
+    if x1 > x0 and y1 > y0:
+        F[y0:y1, x0:x1] = F[y0:y1, x0:x1] * (1 - a) + col * a
+
+def blend(F, x, y, rgba, alpha=1.0):
+    h, w_ = rgba.shape[:2]
+    x0, y0 = int(round(x)), int(round(y))
+    sx0, sy0 = max(0, -x0), max(0, -y0)
+    ex, ey = min(w_, W - x0), min(h, H - y0)
+    if ex <= sx0 or ey <= sy0: return
+    src = rgba[sy0:ey, sx0:ex]
+    a = src[..., 3:4] * alpha
+    dst = F[y0 + sy0:y0 + ey, x0 + sx0:x0 + ex]
+    dst[:] = dst * (1 - a) + src[..., :3] * a
+
+LIGHT = np.array([-0.55, -0.55, 0.63]); LIGHT /= np.linalg.norm(LIGHT)     # moonlight from upper left
+
+def blob(F, cx, cy, rx, ry, p, outline=True, lift=0.0):
+    """dithered, shaded ellipse with a dark outline (bodies, heads, balls)."""
+    x0, x1 = int(math.floor(cx - rx - 1)), int(math.ceil(cx + rx + 1))
+    y0, y1 = int(math.floor(cy - ry - 1)), int(math.ceil(cy + ry + 1))
+    x0c, x1c, y0c, y1c = max(0, x0), min(W, x1 + 1), max(0, y0), min(H, y1 + 1)
+    if x1c <= x0c or y1c <= y0c: return
+    yy, xx = np.mgrid[y0c:y1c, x0c:x1c]
+    nx = (xx + 0.5 - cx) / max(rx, 0.5); ny = (yy + 0.5 - cy) / max(ry, 0.5)
+    d2 = nx * nx + ny * ny
+    inside = d2 <= 1.0
+    if not inside.any(): return
+    nz = np.sqrt(np.clip(1 - d2, 0, 1))
+    shade = np.clip(nx * LIGHT[0] + ny * LIGHT[1] + nz * LIGHT[2], 0, 1)
+    v = 0.25 + shade * (len(p) - 1.0) + lift
+    idx = np.clip(np.floor(v + BAYER[yy % 4, xx % 4] - 0.5), 0, len(p) - 1).astype(int)
+    if outline and min(rx, ry) >= 2:
+        edge = d2 > (1 - 1.6 / min(rx, ry)) ** 2
+        idx[edge] = 0
+    sub = F[y0c:y1c, x0c:x1c]
+    sub[inside] = p[idx[inside]]
+
+def line(F, x0, y0, x1, y1, col, thick=1.0, p=None):
+    n = int(max(abs(x1 - x0), abs(y1 - y0)) * 2) + 1
+    for i in range(n + 1):
+        s = i / n
+        x, y = x0 + (x1 - x0) * s, y0 + (y1 - y0) * s
+        if thick <= 1: put(F, x, y, col)
+        else:
+            r = thick / 2
+            for dy in range(-int(r), int(r) + 1):
+                for dx in range(-int(r), int(r) + 1):
+                    if dx * dx + dy * dy <= r * r + 0.3: put(F, x + dx, y + dy, col)
+
+# ------------------------------------------------------------------ palettes
+SKY = pal('#050822', '#081032', '#0c1842', '#112352', '#163063', '#1c3f76', '#244f88', '#2f6298', '#3d76a6', '#5089b0')
+MTN = pal('#1a2a52', '#22375f', '#2c466f', '#3a5a84', '#4d7199', '#6a8db0', '#9ab6d0', '#cfe0ef')
+SNOW = pal('#5f7ea8', '#7493bb', '#89a7cc', '#a2bedc', '#bcd2ea', '#d6e5f5', '#eef5fd')
+PINE = pal('#04140f', '#071f17', '#0b2c20', '#103b2a', '#174d35', '#1f6142', '#2a7650')
+PINE_FAR = pal('#0d2236', '#11293f', '#163249', '#1c3c54')
+WOOD = pal('#2a120c', '#3e1c12', '#55281a', '#6c3422', '#84432b')
+ROOF = pal('#2a1418', '#3d1d22', '#542a2e')
+WARM = pal('#7a3a10', '#c2661a', '#f0a43a', '#ffd877', '#fff3c4')
+MOON = (40, 138, 12)
+
+# ------------------------------------------------------------------ static layers
+def build_sky():
+    v = (np.clip((YY - 0) / 330, 0, 1) ** 1.15) * (len(SKY) - 1)
     d = np.hypot(XX - MOON[0], YY - MOON[1])
-    v = v + 2.6 * np.exp(-(d / 46) ** 2) + 1.2 * np.exp(-(d / 110) ** 2)
-    bg[:] = dither_palette(v, SKY)
-    moon = d <= MOON[2]
-    bg[moon] = hexc('#f4f1dc')
-    crater = moon & ((np.hypot(XX - 218, YY - 104) < 3) | (np.hypot(XX - 226, YY - 112) < 2) | (np.hypot(XX - 216, YY - 113) < 1.6))
-    bg[crater] = hexc('#d8d3b5')
-    # far hills
-    yh = 300 + 12 * np.sin(XX / 37 + 1) + 7 * np.sin(XX / 15)
+    v = v + 2.2 * np.exp(-(d / 34) ** 2) + 1.0 * np.exp(-(d / 95) ** 2)
+    F = dith(v, SKY, BAY - 0.5).astype(np.float32)
+    m = d <= MOON[2]
+    sh = np.clip(0.75 + 0.35 * ((XX - MOON[0]) * -0.6 + (YY - MOON[1]) * -0.6) / MOON[2], 0, 1)
+    moonp = pal('#b9b39a', '#dcd6bb', '#f2eed8', '#fffdf0')
+    F[m] = dith(sh * 3.2, moonp, BAY - 0.5)[m]
+    for cx, cy, r in ((36, 134, 2.6), (45, 142, 2), (41, 146, 1.4), (34, 143, 1.2)):
+        F[m & (np.hypot(XX - cx, YY - cy) < r)] = hexc('#c9c2a4')
+    return F
+
+def build_mountains():
+    L = np.zeros((H, W, 4), np.float32)
+    # far range with snowy peaks
+    ym = 268 + 26 * np.abs(np.sin(XX / 41 + 0.4)) * -1 + 14 * np.sin(XX / 19 + 1) + 6 * np.sin(XX / 7)
+    m = YY >= ym
+    depth = np.clip((YY - ym) / 45, 0, 1)
+    lit = np.clip(-(np.cos(XX / 41 + 0.4)) * 0.6 + 0.5, 0, 1)
+    v = (len(MTN) - 1) * (1 - depth) * (0.55 + 0.45 * lit) + 0.3
+    L[m, :3] = dith(v, MTN, BAY - 0.5)[m]; L[m, 3] = 1
+    # rolling hills
+    yh = 330 + 8 * np.sin(XX / 33 + 2) + 5 * np.sin(XX / 13)
     m = YY >= yh
-    vv = (len(FAR) - 1) - np.clip((YY - yh) / 26, 0, 1) * 2.5 + 0.8 * np.exp(-((XX - MOON[0]) / 90) ** 2)
-    bg[m] = dither_palette(vv, FAR)[m]
-    # far pine silhouettes
-    rng = np.random.default_rng(3)
-    for px in rng.integers(0, W, 26):
-        if 55 < px < 215: continue
-        base = 300 + 12 * math.sin(px / 37 + 1) + 7 * math.sin(px / 15) + 4
-        hgt = rng.integers(14, 26)
-        for yy in range(int(base - hgt), int(base)):
-            hw = (yy - (base - hgt)) / hgt * 5 + ((yy % 3) == 0)
-            x0, x1 = int(px - hw), int(px + hw) + 1
-            bg[yy, max(0, x0):min(W, x1)] = hexc('#1f3660')
-    # near hills
-    yn = 352 + 10 * np.sin(XX / 29 + 2) + 6 * np.sin(XX / 11)
-    m = YY >= yn
-    vv = (len(NEAR) - 1) - np.clip((YY - yn) / 40, 0, 1) * 3.2
-    bg[m] = dither_palette(vv, NEAR)[m]
-    # ground
-    m = YY >= GROUND - 2 + (np.sin(XX / 5) > 0.6)
-    vv = (len(SNOW) - 1) - np.clip((YY - GROUND) / 40, 0, 1) * 3.6
-    bg[m] = dither_palette(vv, SNOW)[m]
-    # tree
-    for yt, yb, hw in TIERS:
-        for y in range(yt, yb + 1):
-            half = tree_half(y, yt, yb, hw)
-            x0, x1 = int(round(CX - half)), int(round(CX + half)) + 1
-            xs = np.arange(x0, x1)
-            f = (y - yt) / (yb - yt)
-            val = 2.6 + 2.2 * (xs - CX) / max(half, 1) - 1.6 * f ** 2 + 0.6 * (y < yt + 10)
-            row = dither_palette(np.broadcast_to(val, (H, len(xs)))[y:y + 1], TREE)[0] if False else None
-            idx = np.clip(np.floor(val + BAYER[y % 4, xs % 4]), 0, len(TREE) - 1).astype(int)
-            bg[y, x0:x1] = np.stack(TREE)[idx]
-            # snow resting on the branch tips along each tier's lower rim
-            sn = (y >= yb - 3 + 1.6 * np.sin(xs * 0.9 + yt)) & (np.abs(xs - CX) > half * 0.15)
-            sv = 2.2 + 1.5 * (xs - CX) / max(half, 1)
-            sidx = np.clip(np.floor(sv + BAYER[y % 4, xs % 4]), 0, len(SNOW) - 1).astype(int)
-            bg[y, xs[sn]] = np.stack(SNOW)[sidx[sn]]
-    for y in range(414, GROUND):
-        for x in range(CX - 6, CX + 7):
-            bg[y, x] = TRUNK[min(2, max(0, int((x - CX + 6) / 13 * 2.9 + BAYER[y % 4, x % 4] - 0.5)))]
-    return bg
+    v = (len(SNOW) - 1.5) - np.clip((YY - yh) / 60, 0, 1) * 3.2 + 0.8 * np.exp(-((XX - 40) / 80) ** 2)
+    L[m, :3] = dith(v, SNOW, BAY - 0.5)[m]; L[m, 3] = 1
+    return L
+
+def build_ground():
+    L = np.zeros((H, W, 4), np.float32)
+    top = GROUND - 1 + np.round(np.sin(XX / 6) * 0.6) - 8 * np.exp(-((XX - 275) / 22) ** 2)   # drift piled against the house
+    m = YY >= top
+    v = (len(SNOW) - 1.2) - np.clip((YY - GROUND) / 34, 0, 1) * 3.4 - 0.9 * ((YY - top) < 2) * 0
+    v = v - 1.2 * np.exp(-((XX - 230) / 50) ** 2) * np.clip((YY - GROUND) / 10, 0, 1) * 0.5
+    L[m, :3] = dith(v, SNOW, BAY - 0.5)[m]; L[m, 3] = 1
+    # bright rim where snow catches the moon
+    rim = m & (YY - top < 1.5)
+    L[rim, :3] = hexc('#f4f9ff')
+    # foreground bank
+    fb = YY >= 470 + 3 * np.sin(XX / 17 + 1)
+    L[fb, :3] = dith(np.full((H, W), 1.6) + (XX < 140) * 0.6, SNOW, BAY - 0.5)[fb]; L[fb, 3] = 1
+    return L
+
+EAVE_X0, EAVE_Y0 = 150, 160
+def roof_y(x): return EAVE_Y0 - (x - EAVE_X0) * 0.52
+
+def build_house():
+    L = np.zeros((H, W, 4), np.float32)
+    wall = (XX >= 156) & (YY >= 166) & (YY < GROUND + 1)
+    plank = ((YY - 166) % 7 == 0)
+    v = 2.2 + 1.4 * np.clip(1 - (XX - 156) / 60, 0, 1) - 0.7 * plank - 0.4 * ((XX * 13 + (YY // 7) * 29) % 37 < 2)
+    L[wall, :3] = dith(v, WOOD, BAY - 0.5)[wall]; L[wall, 3] = 1
+    # corner trim
+    trim = (XX >= 156) & (XX < 159) & (YY >= 164)
+    L[trim, :3] = hexc('#d9cdb8'); L[trim & (XX == 158), :3] = hexc('#a99b84')
+    # roof body (shingles) under the snow
+    ry = EAVE_Y0 - (XX - EAVE_X0) * 0.52
+    roof = (XX >= EAVE_X0) & (YY >= ry) & (YY < 167)
+    sh = ((YY + (XX // 5)) % 4 == 0)
+    L[roof, :3] = dith(1.4 - sh * 0.9 + 0 * XX, ROOF, BAY - 0.5)[roof]; L[roof, 3] = 1
+    # thick snow on the roof
+    sn = (XX >= EAVE_X0 - 2) & (YY >= ry - 5 - 1.2 * np.sin(XX / 4)) & (YY < ry + 3)
+    v = 5.2 - np.clip((YY - (ry - 5)) / 8, 0, 1) * 2.5 + 0.8 * np.clip((EAVE_X0 + 40 - XX) / 40, 0, 1)
+    L[sn, :3] = dith(v, SNOW, BAY - 0.5)[sn]; L[sn, 3] = 1
+    # snow lip hanging over the eave
+    lip = (XX >= EAVE_X0 - 3) & (XX < 270) & (YY >= 164) & (YY < 168 + (np.sin(XX * 0.9) > 0.3))
+    L[lip, :3] = dith(np.full((H, W), 4.5), SNOW, BAY - 0.5)[lip]; L[lip, 3] = 1
+    # chimney
+    ch = (XX >= 226) & (XX < 240) & (YY >= 100) & (YY < ry + 2)
+    brick = ((YY % 4 == 0) | (((XX + (YY // 4) * 3) % 7) == 0))
+    L[ch, :3] = np.where(brick[..., None], hexc('#3b1a14'), hexc('#7a3324'))[ch]
+    L[ch & (XX < 229), :3] = hexc('#a2493a'); L[ch, 3] = 1
+    cap = (XX >= 224) & (XX < 242) & (YY >= 97) & (YY < 101)
+    L[cap, :3] = dith(np.full((H, W), 5.0), SNOW, BAY - 0.5)[cap]; L[cap, 3] = 1
+    # windows (glass is drawn live so it can flicker)
+    for x0, y0, x1, y1 in WINDOWS:
+        fr = (XX >= x0 - 2) & (XX < x1 + 2) & (YY >= y0 - 2) & (YY < y1 + 3)
+        L[fr, :3] = hexc('#e8dcc4'); L[fr & (YY >= y1 + 1), :3] = dith(np.full((H, W), 5.2), SNOW, BAY - 0.5)[fr & (YY >= y1 + 1)]
+        L[fr & (YY == y1 + 2), :3] = hexc('#c8d8ee')
+    # door
+    d = (XX >= 174) & (XX < 200) & (YY >= 372) & (YY < GROUND)
+    L[d, :3] = dith(2.0 + 1.2 * ((XX - 174) < 4) * -1 + 0.3 * ((XX - 174) % 6 == 0) * -1, pal('#0f2a1c', '#173d29', '#205538', '#2b6b46'), BAY - 0.5)[d]
+    L[(XX >= 172) & (XX < 202) & (YY >= 369) & (YY < 372), :3] = hexc('#e8dcc4')
+    L[(XX >= 172) & (XX < 202) & (YY >= 369) & (YY < GROUND), 3] = 1
+    L[(XX >= 172) & (XX < 174) & (YY >= 369) & (YY < GROUND), :3] = hexc('#e8dcc4')
+    L[(XX >= 200) & (XX < 202) & (YY >= 369) & (YY < GROUND), :3] = hexc('#c9bca2')
+    L[(YY == 408) & (XX == 195), :3] = hexc('#ffd877')
+    return L
+
+WINDOWS = [(176, 192, 200, 220), (226, 192, 250, 220), (222, 296, 254, 332)]
+
+def make_pine(height, width, p, seed, snow=True):
+    """layered drooping-branch pine sprite with needle texture and snow on each tier."""
+    r = np.random.default_rng(seed)
+    h, w_ = height + 4, width + 8
+    spr = np.zeros((h, w_, 4), np.float32)
+    cx = w_ / 2
+    tiers = max(4, height // 14)
+    yy, xx = np.mgrid[0:h, 0:w_]
+    bay = BAYER[yy % 4, xx % 4]
+    trunk = (np.abs(xx - cx) < max(1.5, width / 18)) & (yy > height - 6)
+    spr[trunk, :3] = hexc('#2b1a12'); spr[trunk, 3] = 1
+    noise = r.random((h, w_))
+    for k in range(tiers):
+        f0 = k / tiers
+        top = 2 + f0 * (height - 10) * 0.92
+        bot = top + (height - 6) / tiers * 1.9
+        hw = (width / 2) * (0.25 + 0.75 * ((k + 1) / tiers))
+        # drooping lower edge: scallops of branch tips
+        s = (yy - top) / (bot - top)
+        half = hw * np.clip(s, 0, 1) ** 0.8
+        scal = 2.2 * np.abs(np.sin((xx - cx) / max(2.5, hw / 3.2) * math.pi / 2 + k))
+        droop = bot - scal - 2 * ((np.abs(xx - cx) / max(hw, 1)) ** 2)
+        m = (yy >= top) & (yy <= droop) & (np.abs(xx - cx) <= half + 0.5)
+        side = (xx - cx) / max(hw, 1)
+        v = 2.6 - 2.0 * side - 1.4 * np.clip(s, 0, 1) ** 2 + (noise - 0.5) * 1.6 + 0.8 * (1 - np.clip(s * 3, 0, 1))
+        col = dith(v, p, bay - 0.5)
+        spr[m, :3] = col[m]; spr[m, 3] = 1
+        if snow:
+            # snow lying on the upper surface of each tier and on the branch tips
+            sm = m & (yy <= top + 2 + 2.5 * np.clip(s * 4, 0, 1) * np.abs(side)) & (side < 0.75) & (noise > 0.15)
+            tip = m & (yy >= droop - 1.4) & (side < 0.6) & (noise > 0.45)
+            sv = 4.6 - 1.6 * np.clip(side, 0, 1) + noise
+            spr[sm | tip, :3] = dith(sv, SNOW, bay - 0.5)[sm | tip]
+    return spr
+
+def sway_blit(F, spr, x, y, amp, phase):
+    """blit a sprite with rows sheared by wind: the top moves, the base stays put."""
+    h = spr.shape[0]
+    for r in range(h):
+        k = 1 - r / h
+        dx = int(round(amp * k * k * math.sin(phase + r * 0.05)))
+        blend(F, x + dx, y + r, spr[r:r + 1])
+
+SKYBG = build_sky()
+MOUNT = build_mountains()
+GROUNDL = build_ground()
+HOUSE = build_house()
+PINES = [  # (sprite, x, y-base, sway amp, phase speed k, depth)
+    (make_pine(120, 52, PINE_FAR, 1, snow=True), -14, 352, 1.0, 5),
+    (make_pine(96, 44, PINE_FAR, 2, snow=True), 54, 350, 0.8, 6),
+    (make_pine(150, 70, PINE, 3), -30, GROUND + 2, 1.6, 4),
+    (make_pine(108, 52, PINE, 4), 112, GROUND - 40, 1.2, 5),
+]
 
 # ------------------------------------------------------------------ pixel font
 FONT = {
@@ -120,450 +272,547 @@ FONT = {
  ' ': ["00000"] * 7, '?': ["01110","10001","00001","00010","00100","00000","00100"],
  '!': ["00100","00100","00100","00100","00100","00000","00100"], ',': ["00000","00000","00000","00000","00110","00100","01000"],
  '.': ["00000","00000","00000","00000","00000","01100","01100"], '-': ["00000","00000","00000","11111","00000","00000","00000"],
+ ':': ["00000","01100","01100","00000","01100","01100","00000"], '=': ["00000","00000","11111","00000","11111","00000","00000"],
 }
-HEADPHONES = ["0011111100", "0100000010", "1000000001", "1000000001", "1110000111", "1110000111", "1110000111", "0110000110"]
 NOTE = ["00110", "00101", "00100", "00100", "01100", "11100", "11000"]
 
 def text_mask(text, sc):
     lines = text.split('\n')
-    w = max(len(l) for l in lines) * 6 * sc - sc
-    h = len(lines) * 9 * sc - 2 * sc
-    m = np.zeros((h, w), bool)
-    for li, line in enumerate(lines):
-        off = (w - (len(line) * 6 * sc - sc)) // 2
-        for ci, ch in enumerate(line):
-            g = np.array([[c == '1' for c in r] for r in FONT[ch]])
-            g = np.kron(g, np.ones((sc, sc), bool))
+    tw = max(len(l) for l in lines) * 6 * sc - sc
+    th = len(lines) * 9 * sc - 2 * sc
+    m = np.zeros((th, tw), bool)
+    for li, ln in enumerate(lines):
+        off = (tw - (len(ln) * 6 * sc - sc)) // 2
+        for ci, ch in enumerate(ln):
+            g = np.kron(np.array([[c == '1' for c in r] for r in FONT[ch]]), np.ones((sc, sc), bool))
             y0, x0 = li * 9 * sc, off + ci * 6 * sc
             m[y0:y0 + 7 * sc, x0:x0 + 5 * sc] |= g
     return m
 
-def caption_sprite(text, sc=2, icon=False, pad=4):
+def caption_sprite(text, sc=3, pad=7):
+    """rounded night-blue box, light rim, inner highlight, soft drop shadow, shadowed text."""
     tm = text_mask(text, sc)
-    h, w = tm.shape
-    bw, bh = w + 2 * pad, h + 2 * pad
-    rgba = np.zeros((bh, bw, 4), np.float32)
-    rgba[..., :3] = hexc('#04050b'); rgba[..., 3] = 1
-    rgba[pad:pad + h, pad:pad + w][tm] = [0.96, 0.97, 1.0, 1]
-    if icon:   # headphones badge under the box, like the reference shorts
-        g = np.array([[c == '1' for c in r] for r in HEADPHONES])
-        ih, iw = g.shape[0] + 6, g.shape[1] + 6
-        out = np.zeros((bh + 3 + ih, bw, 4), np.float32)
-        out[:bh] = rgba
-        x0 = (bw - iw) // 2
-        out[bh + 3:bh + 3 + ih, x0:x0 + iw, :3] = hexc('#04050b'); out[bh + 3:bh + 3 + ih, x0:x0 + iw, 3] = 1
-        sub = out[bh + 6:bh + 6 + g.shape[0], x0 + 3:x0 + 3 + g.shape[1]]
-        sub[g] = [0.96, 0.97, 1.0, 1]
-        rgba = out
-    return rgba
+    th, tw = tm.shape
+    bw, bh = tw + 2 * pad, th + 2 * pad
+    out = np.zeros((bh + 3, bw + 3, 4), np.float32)
+    yy, xx = np.mgrid[0:bh, 0:bw]
+    corner = np.minimum(np.minimum(xx, bw - 1 - xx), 9) + np.minimum(np.minimum(yy, bh - 1 - yy), 9)
+    body = ~(((xx < 3) | (xx > bw - 4)) & ((yy < 3) | (yy > bh - 4)) & (corner < 3))
+    shadow = np.zeros((bh + 3, bw + 3), bool); shadow[3:, 3:] = body
+    out[shadow, :3] = hexc('#02030a'); out[shadow, 3] = 0.45
+    box = out[:bh, :bw]
+    v = 1.2 + 1.3 * (1 - yy / bh)
+    fill = dith(v, pal('#0a1030', '#111a45', '#18245a', '#203070'), BAYER[yy % 4, xx % 4] - 0.5)
+    box[body, :3] = fill[body]; box[body, 3] = 0.94
+    rim = body & ~np.pad(body[1:-1, 1:-1] & body[2:, 1:-1] & body[:-2, 1:-1] & body[1:-1, 2:] & body[1:-1, :-2], 1)
+    box[rim, :3] = hexc('#cfe0ff'); box[rim, 3] = 1
+    hl = body & ~rim & (yy == 2) & (xx > 3) & (xx < bw - 4)
+    box[hl, :3] = hexc('#3d58a8')
+    sub = box[pad:pad + th, pad:pad + tw]
+    tsh = np.zeros_like(tm); tsh[1:, 1:] = tm[:-1, :-1]
+    sub[tsh & ~tm, :3] = hexc('#3a4f9c'); sub[tsh & ~tm, 3] = 1
+    sub[tm, :3] = hexc('#ffffff'); sub[tm, 3] = 1
+    return out, (pad, pad, tw)
 
-def label_sprite(text, sc=1, pad=2):
-    return caption_sprite(text, sc, False, pad)
-
-# ------------------------------------------------------------------ drawing helpers
-def blend(F, x, y, rgba, alpha=1.0):
-    h, w = rgba.shape[:2]
-    x0, y0 = int(round(x)), int(round(y))
-    sx0, sy0 = max(0, -x0), max(0, -y0)
-    ex, ey = min(w, W - x0), min(h, H - y0)
-    if ex <= sx0 or ey <= sy0: return
-    src = rgba[sy0:ey, sx0:ex]
-    a = src[..., 3:4] * alpha
-    dst = F[y0 + sy0:y0 + ey, x0 + sx0:x0 + ex]
-    dst[:] = dst * (1 - a) + src[..., :3] * a
-
-def put(F, x, y, col, a=1.0):
-    x, y = int(round(x)), int(round(y))
-    if 0 <= x < W and 0 <= y < H:
-        F[y, x] = F[y, x] * (1 - a) + col * a
-
-def add_light(F, x, y, col, a):
-    x, y = int(round(x)), int(round(y))
-    if 0 <= x < W and 0 <= y < H:
-        F[y, x] = np.minimum(1, F[y, x] + col * a)
-
-def rect(F, x0, y0, x1, y1, col, a=1.0):
-    x0, y0, x1, y1 = max(0, int(x0)), max(0, int(y0)), min(W, int(x1)), min(H, int(y1))
-    if x1 > x0 and y1 > y0:
-        F[y0:y1, x0:x1] = F[y0:y1, x0:x1] * (1 - a) + col * a
-
-# ------------------------------------------------------------------ dissolving captions
 class Caption:
-    """Pops in by pixel, holds, then each pixel breaks off and drifts up as mist."""
-    def __init__(self, sprite, x, y, t_in, t_out, seed):
-        self.s, self.x, self.y, self.t_in, self.t_out = sprite, x, y, t_in, t_out
-        h, w = sprite.shape[:2]
+    """slides open from the centre, letters pop in left->right, then dissolves into drifting mist."""
+    def __init__(self, text, t_in, t_out, y, seed, sc=3):
+        self.s, (px, py, tw) = caption_sprite(text, sc)
+        h, w_ = self.s.shape[:2]
+        self.x, self.y, self.t_in, self.t_out = (W - w_) // 2, y, t_in, t_out
         r = np.random.default_rng(seed)
-        u = r.random((h, w))
-        yy, xx = np.mgrid[0:h, 0:w]
-        self.t_dis = 0.08 + 0.42 * (0.6 * u + 0.4 * (xx / w))       # sweeps left->right with noise
-        self.t_app = 0.22 * (0.7 * r.random((h, w)) + 0.3 * (yy / h))
-        self.dx = (r.random((h, w)) - 0.3) * 16
-        self.dy = -(6 + r.random((h, w)) * 14)
+        yy, xx = np.mgrid[0:h, 0:w_]
         self.yy, self.xx = yy, xx
-        self.vis = sprite[..., 3] > 0
+        self.vis = self.s[..., 3] > 0
+        txt = np.zeros((h, w_), bool)
+        txt[py:py + h, px:px + tw] = True
+        is_text = txt & (self.s[..., 0] > 0.9)
+        self.t_app = 0.16 * np.abs(xx - w_ / 2) / (w_ / 2)
+        self.t_app = np.where(is_text, 0.14 + 0.2 * (xx - px) / max(tw, 1) + 0.03 * r.random((h, w_)), self.t_app)
+        self.t_dis = 0.06 + 0.5 * (0.55 * r.random((h, w_)) + 0.45 * (xx / w_))
+        self.dx = (r.random((h, w_)) - 0.25) * 18
+        self.dy = -(8 + r.random((h, w_)) * 16)
 
     def draw(self, F, t):
         for tt in (t, t + LOOP, t - LOOP):
-            if self.t_in <= tt <= self.t_out + 1.0:
+            if self.t_in <= tt <= self.t_out + 1.2:
                 self._draw(F, tt)
 
     def _draw(self, F, t):
-        a_in = t - self.t_in
-        a_out = t - self.t_out
+        a_in, a_out = t - self.t_in, t - self.t_out
+        yoff = -3 * (1 - smooth(a_in / 0.22))
         solid = self.vis & (a_in >= self.t_app)
+        alpha = self.s[..., 3].copy()
         if a_out > 0:
             age = a_out - self.t_dis
-            solid &= age < -0.12
-            # halftone flicker just before a pixel lets go
-            fading = self.vis & (age >= -0.12) & (age < 0)
-            fading &= BAYER[self.yy % 4, self.xx % 4] < (-age / 0.12)
-            solid |= fading & (a_in >= self.t_app)
-            mist = self.vis & (age >= 0) & (age < 0.55)
+            solid &= age < 0
+            flick = self.vis & (age >= -0.14) & (age < 0) & (BAYER[self.yy % 4, self.xx % 4] < (age + 0.14) / 0.14)
+            solid &= ~flick
+            mist = self.vis & (age >= 0) & (age < 0.6)
             if mist.any():
-                ag = age[mist]
-                k = ag / 0.55
-                px = self.x + self.xx[mist] + self.dx[mist] * k + 3 * np.sin(ag * 9 + self.yy[mist])
-                py = self.y + self.yy[mist] + self.dy[mist] * k
-                col = self.s[..., :3][mist] * 0.4 + np.array([0.75, 0.85, 1.0]) * 0.6
-                al = (1 - k) ** 1.5 * 0.65
-                for i in range(len(px)):
-                    put(F, px[i], py[i], col[i], al[i])
-        h, w = self.s.shape[:2]
-        x0, y0 = int(self.x), int(self.y)
+                ag = age[mist]; k = ag / 0.6
+                pxs = self.x + self.xx[mist] + self.dx[mist] * k + 2.5 * np.sin(ag * 8 + self.yy[mist] * 0.7)
+                pys = self.y + yoff + self.yy[mist] + self.dy[mist] * k
+                col = self.s[..., :3][mist] * 0.35 + np.array([0.78, 0.88, 1.0]) * 0.65
+                al = (1 - k) ** 1.6 * 0.6
+                ok = (pxs >= 0) & (pxs < W - 0.5) & (pys >= 0) & (pys < H - 0.5)
+                xi, yi = np.round(pxs[ok]).astype(int), np.round(pys[ok]).astype(int)
+                F[yi, xi] = F[yi, xi] * (1 - al[ok, None]) + col[ok] * al[ok, None]
         ys, xs = np.nonzero(solid)
-        ok = (x0 + xs >= 0) & (x0 + xs < W) & (y0 + ys >= 0) & (y0 + ys < H)
-        F[y0 + ys[ok], x0 + xs[ok]] = self.s[ys[ok], xs[ok], :3]
-
-def centered(sprite, y):
-    return (W - sprite.shape[1]) // 2, y
+        X, Y = self.x + xs, int(round(self.y + yoff)) + ys
+        ok = (X >= 0) & (X < W) & (Y >= 0) & (Y < H)
+        a = alpha[ys[ok], xs[ok]][:, None]
+        F[Y[ok], X[ok]] = F[Y[ok], X[ok]] * (1 - a) + self.s[ys[ok], xs[ok], :3] * a
 
 CAPTIONS = []
-def cap(text, t_in, t_out, icon=False, y=30, sc=2):
-    s = caption_sprite(text, sc, icon)
-    x, y = centered(s, y)
-    CAPTIONS.append(Caption(s, x, y, t_in, t_out, len(CAPTIONS) + 11))
+def cap(text, t_in, t_out):
+    CAPTIONS.append(Caption(text, t_in, t_out, 12, 40 + len(CAPTIONS)))
 
-cap("WHAT IF YOU\nDROPPED A BALL?", 37.45, 39.6, icon=True)
-cap("IT KEEPS\nTHE BEAT", 2.35, 5.3)
-cap("HALF THE SIZE,\nTWICE THE SPEED", 6.3, 9.4)
-cap("THIS ONE ONLY\nHITS 2 AND 4", 10.6, 13.4)
-cap("THE BIG ONE\nTAKES A WHOLE BAR", 14.3, 17.2)
-cap("NOW DROP ONE\nON THE PRESENTS", 17.6, 20.8)
-cap("EVERY BOUNCE\nIS A NOTE", 22.0, 25.4)
-cap("5 BALLS,\n1 SONG", 28.0, 31.2)
-cap("THIS SONG WAS\n5 DROPPED BALLS", 35.2, 36.75)
+cap("WHAT IF YOU\nDROP A BALL\n4X HIGHER?", 37.4, 39.75)
+cap("31 CM DROP:\nA BOUNCE\nEVERY BEAT", 2.3, 5.3)
+cap("4X LOWER\n= 2X FASTER", 6.3, 9.3)
+cap("4X HIGHER\n= 2X SLOWER", 10.6, 13.4)
+cap("FROM THE ROOF\n4.9 M = 1 BAR", 14.3, 17.0)
+cap("NOW BOUNCE\nONE ON A\nXYLOPHONE", 17.4, 20.7)
+cap("HEIGHT SETS\nTHE RHYTHM", 22.0, 25.3)
+cap("THE KEYS\nSET THE NOTES", 26.3, 29.6)
+cap("4X HIGHER\nIS ALWAYS\n2X SLOWER", 34.7, 36.85)
 
-# ------------------------------------------------------------------ balls
-def pal(*c): return [hexc(x) for x in c]
+# ------------------------------------------------------------------ the droppers and their balls
+# ball x, radius, palette, sound hits, release height (m). Hand holds the ball at that height.
 BALLS = {
-    #        colour palette (dark->light)                             r   x    hang slot   period hits        height label
-    'kick':  dict(p=pal('#3d0a12', '#8a1824', '#d22f3c', '#ff7a7a'), r=9, x=24, slot=(104, 300), hits=KICK_HITS, hgt=34, bpm='120'),
-    'bell':  dict(p=pal('#0b3520', '#18663a', '#2db35f', '#8cf0a8'), r=6, x=51, slot=(166, 244), hits=BELL_HITS, hgt=12, bpm='240'),
-    'snare': dict(p=pal('#4f3307', '#a26b0e', '#eab52c', '#fff0a0'), r=7, x=221, slot=(118, 206), hits=SNARE_HITS, hgt=72, bpm='60'),
-    'bass':  dict(p=pal('#0b1a52', '#1c41a3', '#3b80f2', '#a6d0ff'), r=10, x=248, slot=(160, 362), hits=BASS_HITS, hgt=118, bpm='30'),
-    'melody': dict(p=pal('#363c4c', '#79849a', '#c6cedc', '#ffffff'), r=7, x=None, slot=(135, 158), hits=[m[0] for m in MELODY], hgt=0, bpm=None),
+    'cat':   dict(x=77, r=4, p=pal('#3d0a12', '#8a1824', '#d22f3c', '#ff6d6d', '#ffc2c2'), hits=KICK_HITS, period=0.5),
+    'mouse': dict(x=40, r=2.5, p=pal('#5a3a08', '#a8700f', '#e8b52a', '#ffe68a'), hits=BELL_HITS, period=0.25),
+    'kid':   dict(x=128, r=5, p=pal('#0b3520', '#18663a', '#2db35f', '#7ee39b', '#d8ffe2'), hits=SNARE_HITS, period=1.0),
+    'santa': dict(x=141, r=6, p=pal('#0b1a52', '#1c41a3', '#3b80f2', '#86b9ff', '#e0efff'), hits=BASS_HITS, period=2.0),
 }
-DROP = 0.8
-PRESENTS = [  # x centre, height, body, dark, light, ribbon
-    (83, 34, '#c4302b', '#80181a', '#ef5a4c', '#f5c542'),
-    (109, 30, '#239a52', '#125c31', '#45c879', '#e8394a'),
-    (135, 26, '#2f6fd8', '#1a3f8f', '#62a0ff', '#f4f6ff'),
-    (161, 22, '#8d45b5', '#552275', '#b878df', '#f5c542'),
-    (187, 19, '#e2a32b', '#9b6514', '#ffd166', '#e8394a'),
-]
-PRESENTS = [(x, h, hexc(a), hexc(b), hexc(c), hexc(d)) for x, h, a, b, c, d in PRESENTS]
+for b in BALLS.values():
+    b['hpx'] = height_for(b['period']) * PX_PER_M     # drop height in canvas pixels (ball bottom)
 
-def present_top(i): return GROUND - PRESENTS[i][1]
+def ball_y(name, t):
+    """returns (bottom_y, squash k, state) for a perfectly elastic ball on the beat grid"""
+    b = BALLS[name]; hits = b['hits']; T = b['period']
+    release, catch = hits[0] - T / 2, hits[-1] + T / 2
+    if t < release or t >= catch:
+        return GROUND - b['hpx'], 0.0, 'held'
+    u = (t - hits[0]) / T
+    f = u - math.floor(u)
+    y = GROUND - b['hpx'] * 4 * f * (1 - f)
+    dn = min(f, 1 - f) * T
+    k = max(0.0, 1 - dn / 0.045)
+    return y, k, 'air'
 
-_sprite_cache = {}
-def ball_sprite(name, sx=1.0, sy=1.0):
-    b = BALLS[name]
-    key = (name, round(sx, 2), round(sy, 2))
-    if key in _sprite_cache: return _sprite_cache[key]
-    r = b['r']; rx, ry = r * sx, r * sy
-    w, h = int(math.ceil(rx * 2)) + 2, int(math.ceil(ry * 2)) + 2
-    yy, xx = np.mgrid[0:h, 0:w]
-    nx = (xx + 0.5 - w / 2) / rx; ny = (yy + 0.5 - h / 2) / ry
-    d2 = nx ** 2 + ny ** 2
-    inside = d2 <= 1
-    nz = np.sqrt(np.clip(1 - d2, 0, 1))
-    L = np.array([0.45, -0.55, 0.70]); L /= np.linalg.norm(L)
-    shade = np.clip(nx * L[0] + ny * L[1] + nz * L[2], 0, 1)
-    v = 0.3 + shade * 3.0
-    idx = np.clip(np.floor(v + BAYER[yy % 4, xx % 4] - 0.5), 0, 3).astype(int)
-    idx[d2 > 0.78] = np.minimum(idx[d2 > 0.78], 1)
-    idx[d2 > 0.9] = 0
-    rgba = np.zeros((h, w, 4), np.float32)
-    rgba[..., :3] = np.stack(b['p'])[idx]; rgba[..., 3] = inside
-    hx, hy = int(w / 2 + 0.38 * rx), int(h / 2 - 0.45 * ry)
-    rgba[hy, hx] = [1, 1, 1, 1]
-    if r >= 8: rgba[hy, hx + 1] = rgba[hy + 1, hx] = [1, 1, 1, 1]
-    _sprite_cache[key] = rgba
-    return rgba
+def draw_ball(F, name, x, bottom, k=0.0, p=None, r=None):
+    b = BALLS.get(name, {})
+    p = b['p'] if p is None else p
+    r = b['r'] if r is None else r
+    rx, ry = r * (1 + 0.35 * k), r * (1 - 0.3 * k)
+    blob(F, x, bottom - ry, rx, ry, p)
+    hx, hy = x - rx * 0.38, bottom - ry - ry * 0.45
+    put(F, hx, hy, np.array([1, 1, 1]))
+    if r >= 4.5: put(F, hx + 1, hy, np.array([1, 1, 1]), 0.7)
+    if name == 'mouse':  # jingle bell slit
+        put(F, x, bottom - 1, hexc('#3a2504')); put(F, x - 1, bottom - 1, hexc('#3a2504'))
 
-def draw_ball(F, name, x, y, sx=1.0, sy=1.0, string=False):
-    s = ball_sprite(name, sx, sy)
-    h, w = s.shape[:2]
-    if string:
-        for k in range(1, 7): put(F, x, y - BALLS[name]['r'] - 1 - k, hexc('#d9c48a'), 0.8)
-    blend(F, x - w / 2, y - h / 2, s)
-    cw = 3 if BALLS[name]['r'] < 8 else 5           # little cap on top, it is an ornament
-    rect(F, x - cw / 2, y - h / 2 - 1, x + cw / 2, y - h / 2 + 1, hexc('#cdb36a'))
-    put(F, x, y - h / 2 - 2, hexc('#8a7740'))
-
-def smooth(s): s = min(1, max(0, s)); return s * s * (3 - 2 * s)
-
-def ball_state(name, t):
-    """returns (x, y, sx, sy, mode) mode in hang/air/ground"""
-    b = BALLS[name]; hits = b['hits']; r = b['r']
-    sx0, sy0 = b['slot']
-    t_first = hits[0]; t_ret = RETURN[name]
-    if name == 'melody':
-        land = [(present_top(PRESENT_INDEX[n]) - r, PRESENTS[PRESENT_INDEX[n]][0]) for _, n, _ in MELODY]
-    else:
-        land = [(GROUND - r, b['x'])] * len(hits)
-    if t < t_first - DROP:                              # hanging (with a wobble before it lets go)
-        wob = 0
-        if t > t_first - DROP - 0.45:
-            k = (t - (t_first - DROP - 0.45)) / 0.45
-            wob = math.sin(k * 22) * 1.3 * k
-        return sx0 + wob, sy0, 1, 1, 'hang'
-    if t < t_first:                                     # falling off the tree
-        s = (t - (t_first - DROP)) / DROP
-        y = sy0 + (land[0][0] - sy0) * s * s
-        x = sx0 + (land[0][1] - sx0) * smooth(s)
-        st = min(1.25, 1 + 0.3 * s)
-        return x, y, 1 / math.sqrt(st), st, 'air'
-    depart = t_ret - 0.55
-    if t >= t_ret:                                      # back on the tree, swinging to rest
-        a = t - t_ret
-        return sx0 + 2.2 * math.sin(a * 11) * math.exp(-a * 3), sy0, 1, 1, 'hang'
-    if t >= depart:                                     # hopping back up to its branch
-        s = (t - depart) / 0.55
-        y0, x0 = land[-1]
-        yc = min(y0, sy0) - 45
-        y = (1 - s) ** 2 * y0 + 2 * s * (1 - s) * yc + s * s * sy0
-        x = x0 + (sx0 - x0) * smooth(s)
-        return x, y, 1, 1, 'air'
+def last_hit_age(hits, t):
     i = int(np.searchsorted(hits, t, side='right') - 1)
-    yl, xl = land[i]
-    # squash at contact
+    return t - hits[i] if i >= 0 else 99.0
+
+def bob(t):
+    if 2.0 <= t < 32.3:
+        return 1 if last_hit_age(KICK_HITS, t) < 0.13 else 0
+    return 0
+
+# ---- characters (procedural pixel art)
+GRAY = pal('#2a2c38', '#4c4f60', '#7a7e92', '#a9adbf', '#d4d7e4')
+GINGER = pal('#3b1a08', '#7a3a12', '#c2661f', '#ec9442', '#ffc27a')
+SKIN = pal('#5a2e22', '#a35d44', '#e3a07c', '#f8cfae')
+COAT = pal('#3a0b10', '#6e1420', '#b0222f', '#e2434a', '#ff8a86')
+JEANS = pal('#141d3d', '#22305e', '#33467f', '#4c64a3')
+SUIT = pal('#3a0b10', '#711420', '#b51d2b', '#e2363f', '#ff7b72')
+FUR = pal('#8fa3c4', '#c7d3e6', '#edf2fb', '#ffffff')
+
+def draw_mouse(F, t):
+    b = bob(t); x, g = 31, GROUND - b
+    tail = [(26, 438), (24, 437), (23, 435), (23, 433), (24, 431)]
+    for i, (tx, ty) in enumerate(tail):
+        put(F, tx + (1 if i > 2 and math.sin(w(19) * t) > 0 else 0), ty - b, hexc('#d98c9a'))
+    blob(F, x, g - 5, 4, 5.5, GRAY)
+    blob(F, x + 1, g - 12, 3.6, 3.4, GRAY)
+    for ex in (x - 2, x + 3):
+        blob(F, ex, g - 16, 1.8, 1.8, GRAY, outline=False); put(F, ex, g - 16, hexc('#e8a0b0'))
+    put(F, x + 3, g - 12, hexc('#0a0a12')); put(F, x + 5, g - 11, hexc('#ff8fa6'))
+    put(F, x + 1, g - 10, hexc('#d4d7e4'))
+    line(F, x + 2, g - 7, x + 7, g - 9 + b, hexc('#7a7e92'))        # arm out to the ball
+    put(F, x + 8, g - 9 + b, hexc('#ffb3c1'))
+    put(F, x - 1, g, hexc('#ffb3c1')); put(F, x + 2, g, hexc('#ffb3c1'))
+
+def draw_cat(F, t):
+    b = bob(t); g = GROUND - b; x = 60
+    sw = math.sin(w(38) * t)   # tail swishes on the beat (76 swishes/loop = every beat)
+    for i in range(12):
+        s = i / 11
+        tx = x - 7 - 5 * math.sin(s * 2.2) - sw * 2 * s
+        ty = g - 2 - s * 14 + 3 * s * s
+        blob(F, tx, ty, 1.6, 1.6, GINGER, outline=False)
+    blob(F, x, g - 9, 8, 9.5, GINGER)
+    blob(F, x - 3, g - 4, 5, 4, GINGER)
+    for i in range(3):
+        put(F, x - 5 + i * 2, g - 12 + i, hexc('#7a3a12')); put(F, x - 4 + i * 2, g - 12 + i, hexc('#7a3a12'))
+    blob(F, x + 4, g - 22, 6.5, 5.8, GINGER)
+    for ex, sgn in ((x, -1), (x + 7, 1)):            # ears
+        for k in range(4):
+            for j in range(-(3 - k) // 2, (3 - k) // 2 + 1):
+                put(F, ex + j + sgn * 0, g - 27 - k, hexc('#c2661f') if k < 3 else hexc('#7a3a12'))
+        put(F, ex, g - 27, hexc('#ff9eb0'))
+    put(F, x + 6, g - 23, hexc('#9cff6a')); put(F, x + 6, g - 22, hexc('#0a0a12'))
+    put(F, x + 2, g - 23, hexc('#9cff6a')); put(F, x + 2, g - 22, hexc('#0a0a12'))
+    put(F, x + 9, g - 20, hexc('#ff8fa6'))
+    for k in (-1, 1):
+        line(F, x + 10, g - 20 + k, x + 13, g - 21 + 2 * k, hexc('#ffe8d0'))
+    blob(F, x + 3, g - 15, 3, 2.5, pal('#d8c8b0', '#f0e6d8', '#ffffff'), outline=False)   # chest
+    line(F, x + 5, g - 13, x + 15, g - 26 + b, hexc('#c2661f'), thick=2.6)               # raised paw
+    blob(F, x + 17, g - 28 + b, 2.4, 2.0, GINGER, outline=False)
+    put(F, x - 2, g, hexc('#ffc27a')); put(F, x + 4, g, hexc('#ffc27a'))
+
+def draw_kid(F, t):
+    b = bob(t); g = GROUND - b; x = 104
+    for bx in (x - 5, x + 3):                                   # boots
+        rect(F, bx - 1, g - 7, bx + 6, g, hexc('#2a1610')); rect(F, bx - 1, g - 7, bx + 6, g - 6, hexc('#e7eef9'))
+        rect(F, bx, g - 6, bx + 2, g - 1, hexc('#4a2c1c'))
+    for lx in (x - 5, x + 3):                                   # legs
+        for yy in range(int(g - 31), int(g - 7)):
+            for xx in range(lx, lx + 5):
+                put(F, xx, yy, JEANS[min(3, max(0, int(1 + (xx - lx) * -0.4 + 2 + BAYER[yy % 4, xx % 4] - 0.5)))])
+    blob(F, x, g - 46, 11, 17, COAT)                           # puffer coat
+    for k in range(3):
+        line(F, x - 9, g - 52 + k * 8, x + 9, g - 52 + k * 8, hexc('#6e1420'))
+    rect(F, x - 1, g - 62, x + 1, g - 31, hexc('#e7c35a'), 0.9)  # zipper
+    line(F, x - 8, g - 50, x - 10, g - 34, hexc('#b0222f'), thick=4)   # far arm down
+    blob(F, x - 10, g - 33, 2.6, 2.6, pal('#1c4a2a', '#2d7a44', '#4aa864'))
+    ph = math.sin(w(19) * t) * 1.2                                # scarf flaps in the wind
+    rect(F, x - 7, g - 64, x + 8, g - 60, hexc('#2db35f'))
+    for k in range(9):
+        put(F, x - 7 - k * 0.6 + ph * k / 8, g - 60 + k, hexc('#2db35f')); put(F, x - 6 - k * 0.6 + ph * k / 8, g - 60 + k, hexc('#18663a'))
+    blob(F, x + 1, g - 71, 7, 7, SKIN, lift=0.9)                # head
+    rect(F, x - 6, g - 76, x - 2, g - 66, hexc('#3b2416'))     # hair (back of head)
+    put(F, x - 3, g - 66, hexc('#3b2416')); put(F, x - 2, g - 76, hexc('#3b2416'))
+    put(F, x + 4, g - 72, hexc('#14141c')); put(F, x + 4, g - 73, hexc('#14141c'))
+    put(F, x + 5, g - 69, hexc('#ff8f8f'), 0.8); put(F, x + 6, g - 69, hexc('#ff8f8f'), 0.6)
+    put(F, x + 7, g - 68, hexc('#a35d44'))
+    blob(F, x, g - 78, 8, 4.5, COAT)                            # beanie
+    rect(F, x - 8, g - 77, x + 9, g - 74, hexc('#f2f5fb'))
+    blob(F, x - 3, g - 85, 3, 3, FUR)                           # pom-pom
+    line(F, x + 6, g - 58, x + 22, g - 83 + b, hexc('#b0222f'), thick=4.2)   # raised arm
+    blob(F, x + 24, g - 86 + b, 3.2, 3, pal('#1c4a2a', '#2d7a44', '#4aa864', '#7ccf8f'))
+
+def draw_santa(F, t):
+    b = bob(t); x = 168; base = roof_y(x) + 2 - b
+    for bx in (150, 157):                                       # legs over the eave, boots dangling
+        line(F, x - 6, base - 5, bx + 3, base - 4, hexc('#b51d2b'), thick=5)
+        sway = math.sin(w(19) * t + bx) * 0.8
+        rect(F, bx + sway, base - 4, bx + 5 + sway, base + 10, hexc('#14141c'))
+        rect(F, bx - 1 + sway, base + 8, bx + 6 + sway, base + 11, hexc('#2a2a36'))
+        rect(F, bx + sway, base - 4, bx + 5 + sway, base - 2, hexc('#edf2fb'))
+    blob(F, x, base - 15, 11, 13, SUIT)
+    rect(F, x - 10, base - 12, x + 10, base - 9, hexc('#14141c'))
+    rect(F, x - 2, base - 13, x + 3, base - 8, hexc('#ffd24a')); rect(F, x - 1, base - 12, x + 2, base - 9, hexc('#14141c'))
+    rect(F, x - 1, base - 27, x + 1, base - 13, hexc('#edf2fb'))
+    blob(F, x + 1, base - 33, 6.5, 6.5, SKIN)
+    blob(F, x, base - 27, 7.5, 6.5, FUR)                        # beard
+    blob(F, x - 3, base - 31, 3, 1.6, FUR, outline=False); blob(F, x + 3, base - 31, 3, 1.6, FUR, outline=False)
+    put(F, x - 2, base - 35, hexc('#14141c')); put(F, x + 3, base - 35, hexc('#14141c'))
+    put(F, x, base - 32, hexc('#e8907a'))
+    rect(F, x - 7, base - 40, x + 9, base - 37, hexc('#edf2fb'))       # hat trim
+    for k in range(12):                                         # floppy hat
+        s = k / 11
+        hx = x - 5 + s * 15 + 3 * s * s
+        hy = base - 41 - 7 * math.sin(s * 2.3) + 4 * s * s
+        blob(F, hx, hy, 4.5 - s * 3, 3.6 - s * 2.4, SUIT, outline=False)
+    blob(F, x + 13, base - 41 + math.sin(w(19) * t) * 0.6, 2.4, 2.4, FUR)
+    line(F, x - 7, base - 20, x - 23, base - 20 + b, hexc('#b51d2b'), thick=4.4)    # arm reaching out
+    rect(F, x - 23, base - 23 + b, x - 20, base - 17 + b, hexc('#edf2fb'))
+    blob(F, x - 27, base - 21 + b, 3.2, 3, pal('#101016', '#24242e', '#3a3a48'))
+
+# ------------------------------------------------------------------ xylophone + robin
+KEY_X = [34, 52, 70, 88, 106]
+KEY_TOP = 452
+KEYS = [(hexc(c), hexc(d), h) for c, d, h in
+        [('#ff4d5e', '#a3202e', 17), ('#ff9a3c', '#a8531a', 15), ('#ffd84a', '#a8861a', 13),
+         ('#5fe07a', '#21803a', 12), ('#4fb0ff', '#1d5ea8', 11)]]
+
+def key_age(i, t):
+    ages = [t - mt for mt, n, _ in MELODY if PRESENT_INDEX[n] == i and 0 <= t - mt < 0.5]
+    return min(ages) if ages else 9.0
+
+def draw_xylophone(F, t):
+    rect(F, 22, 459, 120, 462, hexc('#5a3220')); rect(F, 22, 466, 120, 469, hexc('#5a3220'))
+    rect(F, 22, 459, 120, 460, hexc('#8a5636')); rect(F, 22, 466, 120, 467, hexc('#8a5636'))
+    for lx in (24, 116):
+        rect(F, lx, 459, lx + 3, 474, hexc('#3e2114'))
+    for i, (col, dark, h) in enumerate(KEYS):
+        a = key_age(i, t)
+        dip = 1 if a < 0.06 else 0
+        x0 = KEY_X[i] - 7
+        for yy in range(KEY_TOP + dip, KEY_TOP + h + dip):
+            for xx in range(x0, x0 + 14):
+                edge = xx == x0 or yy == KEY_TOP + h + dip - 1
+                c = dark if edge else (col if (xx - x0) > 2 or BAYER[yy % 4, xx % 4] > 0.5 else dark)
+                put(F, xx, yy, c)
+        rect(F, x0 + 1, KEY_TOP + dip, x0 + 13, KEY_TOP + 1 + dip, np.minimum(1, col + 0.35))
+        put(F, x0 + 7, KEY_TOP + 3 + dip, hexc('#e8e8f0')); put(F, x0 + 7, KEY_TOP + h - 4 + dip, hexc('#e8e8f0'))
+        if a < 0.35:
+            rect(F, x0, KEY_TOP + dip, x0 + 14, KEY_TOP + h + dip, np.array([1, 1, 0.95]), 0.65 * math.exp(-a / 0.08))
+
+MEL_R = 4
+MEL_P = pal('#3b4252', '#79849a', '#c6cedc', '#eef2f8', '#ffffff')
+def melody_ball(t):
+    hits = [m[0] for m in MELODY]
+    land = [KEY_X[PRESENT_INDEX[n]] for _, n, _ in MELODY]
+    if t < 17.6: return None
+    if t < hits[0]:                                    # dropped by the robin
+        s = (t - 17.6) / 0.4
+        return 70, 425 + (KEY_TOP - 425) * s * s, 0.0
+    if t >= 35.25: return None                         # carried away by the robin
+    i = int(np.searchsorted(hits, t, side='right') - 1)
     dn = min(abs(t - hits[i]), abs(hits[i + 1] - t) if i + 1 < len(hits) else 9)
-    k = max(0, 1 - dn / 0.055)
-    sq = (1 + 0.32 * k, 1 - 0.28 * k)
-    if i + 1 >= len(hits) or (name == 'snare' and hits[i] >= hits[-1]):
-        return xl, yl + 0.28 * k * r, sq[0], sq[1], 'ground'
-    T = hits[i + 1] - hits[i]
-    s = (t - hits[i]) / T
-    yn, xn = land[i + 1]
-    if name == 'melody':
-        hgt = min(70, 12 + 34 * T)
-        y = yl + (yn - yl) * s - 4 * hgt * s * (1 - s)
-        x = xl + (xn - xl) * smooth(s)
+    k = max(0.0, 1 - dn / 0.045)
+    if i + 1 >= len(hits):
+        return land[-1], KEY_TOP, k
+    T = hits[i + 1] - hits[i]; s = (t - hits[i]) / T
+    hgt = min(46, 10 + 30 * T)
+    return land[i] + (land[i + 1] - land[i]) * smooth(s), KEY_TOP - 4 * hgt * s * (1 - s), k
+
+def robin_pos(t):
+    if t < 16.6 or t >= 37.0: return None
+    if t < 17.6:
+        s = smooth((t - 16.6) / 1.0); return -10 + 80 * s, 370 + 50 * s - 22 * math.sin(s * math.pi), True
+    if t < 18.4:
+        s = smooth((t - 17.6) / 0.8); return 70 + 58 * s, 420 + 30 * s - 14 * math.sin(s * math.pi), True
+    if t < 34.6:
+        return 128, 450, False
+    if t < 35.25:
+        s = smooth((t - 34.6) / 0.65); return 128 - 94 * s, 450 - 4 - 16 * math.sin(s * math.pi), True
+    s = smooth((t - 35.25) / 1.75); return 34 - 50 * s, 446 - 90 * s, True
+
+def draw_robin(F, t):
+    p = robin_pos(t)
+    if p is None: return
+    x, y, flying = p
+    hop = 0 if flying else bob(t)
+    y -= hop
+    face = -1 if (34.6 <= t) else 1
+    blob(F, x, y - 3, 4.2, 3.4, pal('#2a1a10', '#4e3220', '#7a5234', '#a3754c'))
+    blob(F, x + 1.5 * face, y - 2, 2.4, 2.2, pal('#8a2a10', '#d8541e', '#ff8a3c'), outline=False)
+    blob(F, x + 3 * face, y - 6, 2.4, 2.3, pal('#2a1a10', '#4e3220', '#7a5234'))
+    put(F, x + 4 * face, y - 7, hexc('#0a0a12'))
+    put(F, x + 5.5 * face, y - 6, hexc('#f2c14e')); put(F, x + 6.5 * face, y - 6, hexc('#c98e20'))
+    for k in range(3): put(F, x - (5 + k) * face, y - 3 - k * 0.5, hexc('#4e3220'))
+    if flying:
+        up = math.sin(t * 60) > 0
+        for k in range(4):
+            put(F, x - 1 + k * 0.5 * face, y - 6 - (k if up else -k + 1), hexc('#6a4428'))
     else:
-        y = yl - b['hgt'] * 4 * s * (1 - s); x = xl
-    return x, y + 0.28 * k * r, sq[0], sq[1], 'ground' if k > 0 else 'air'
+        put(F, x - 1, y + 1, hexc('#c98e20')); put(F, x + 1, y + 1, hexc('#c98e20'))
+    if t >= 35.25:   # carrying the ball home
+        draw_ball(F, 'melody', x, y + 4, 0, MEL_P, MEL_R)
 
-def last_hit(hits, t):
-    i = int(np.searchsorted(hits, t, side='right') - 1)
-    return (i, hits[i]) if i >= 0 else (-1, None)
+# ------------------------------------------------------------------ living background
+rng = np.random.default_rng(11)
+STARS = [(rng.uniform(0, W), rng.uniform(100, 250), int(rng.integers(2, 9)), rng.uniform(0, 6.28)) for _ in range(80)]
+FLAKES = [(rng.uniform(0, W), rng.uniform(0, H), int(rng.integers(3, 7)), int(rng.integers(1, 4)), rng.uniform(0, 6.28), rng.random()) for _ in range(170)]
+GLINTS = [(rng.uniform(0, W), rng.uniform(GROUND + 1, 476), int(rng.integers(3, 12)), rng.uniform(0, 6.28)) for _ in range(60)]
+VILLAGE = [(rng.uniform(0, 150), rng.uniform(300, 330), int(rng.integers(2, 7)), rng.uniform(0, 6.28)) for _ in range(14)]
+DRIFT = [(rng.uniform(0, W), rng.uniform(GROUND - 6, GROUND + 26), int(rng.integers(5, 10)), rng.uniform(0, 6.28)) for _ in range(46)]
+CLOUDS = [(rng.uniform(0, W + 120), rng.uniform(150, 240), rng.uniform(26, 44), int(rng.integers(1, 3))) for _ in range(5)]
+AUR_Y = np.arange(80, 300)[:, None]; AUR_X = np.arange(W)[None, :]
+AURP = pal('#0f3a4a', '#13625a', '#1c8f6c', '#3fc08a', '#8af0b8')
 
-# ------------------------------------------------------------------ tree lights & star
-rng = np.random.default_rng(5)
-LIGHTS = []
-LCOLS = [hexc(c) for c in ['#ff4d5e', '#ffd35a', '#59e1ff', '#7dff8a', '#ff7ae0']]
-for k in range(30):
-    while True:
-        yt, yb, hw = TIERS[rng.integers(0, 4)]
-        y = rng.uniform(yt + 8, yb - 4)
-        half = tree_half(y, yt, yb, hw) - 4
-        if half > 4: break
-    LIGHTS.append((CX + rng.uniform(-half, half), y, LCOLS[k % 5], k % 2))
-STAR = ["0000100000", "0000100000", "0001110000", "1111111111", "0111111110", "0011111100", "0011011100", "0110001110", "0100000010"]
-STAR = np.array([[c == '1' for c in r] for r in STAR])
+def draw_sky_life(F, t):
+    # aurora: drifting curtains of light that swell with every bass bounce
+    pulse = 0.35 * math.exp(-last_hit_age(BASS_HITS, t) / 0.5) if 14 <= t < 34 else 0
+    pulse += 0.5 * math.exp(-(t - 35.0) / 0.8) if t >= 35.0 else 0
+    c = 175 + 22 * np.sin(AUR_X / 46 + w(3) * t) + 10 * np.sin(AUR_X / 17 - w(5) * t)
+    band = np.exp(-((AUR_Y - c) / 30) ** 2)
+    rays = 0.72 + 0.28 * np.sin(AUR_X * 0.45 + w(7) * t + np.sin(AUR_X / 9) * 2)
+    fade = np.clip(1 - np.abs(AUR_X - 70) / 200, 0, 1)
+    I = band * rays * fade * (0.75 + pulse)
+    lvl = np.clip(np.floor(I * 5 + BAYER[AUR_Y % 4, AUR_X % 4] - 0.5), 0, 4).astype(int)
+    col = AURP[lvl] * (lvl > 0)[..., None]
+    F[80:300] = np.minimum(1, F[80:300] + col * 0.45)
+    for x, y, k, ph in STARS:
+        if math.hypot(x - MOON[0], y - MOON[1]) < 22: continue
+        b = 0.5 + 0.5 * math.sin(w(k) * t + ph)
+        put(F, x, y, np.array([0.9, 0.94, 1.0]), 0.2 + 0.7 * b)
+        if b > 0.92: glow(F, x + 1, y, np.array([0.5, 0.6, 0.8]), 0.3); glow(F, x - 1, y, np.array([0.5, 0.6, 0.8]), 0.3)
+    for cx0, cy, rw, k in CLOUDS:   # thin clouds sliding past the moon
+        cx = (cx0 + (W + 120) * k * t / LOOP) % (W + 120) - 60
+        for dx in range(int(-rw), int(rw)):
+            yy = int(cy + 2 * math.sin(dx * 0.3))
+            th = (1 - (dx / rw) ** 2) * 5
+            for dy in range(int(-th / 2), int(th / 2) + 1):
+                if BAYER[(yy + dy) % 4, int(cx + dx) % 4] < 0.4:
+                    put(F, cx + dx, yy + dy, hexc('#5b6f9a'), 0.55)
 
-def draw_lights(F, t):
-    groove = 2.0 <= t < 32.0
-    for (x, y, col, grp) in LIGHTS:
-        if groove:
-            hits = KICK_HITS if grp == 0 or t < BELL_HITS[0] else BELL_HITS
-            i, h = last_hit(hits, t)
-            b = 0.3 + 0.7 * math.exp(-(t - h) / 0.13) if h is not None else 0.3
-        else:
-            b = 0.75 + 0.25 * math.sin(2 * math.pi * 4 * t / LOOP * 4 + x)
-        put(F, x, y, col * (0.35 + 0.65 * b) + 0.25 * b)
-        for dx, dy in ((1, 0), (-1, 0), (0, 1), (0, -1)):
-            add_light(F, x + dx, y + dy, col, 0.5 * b)
-        for dx, dy in ((2, 0), (-2, 0), (0, 2), (0, -2), (1, 1), (-1, 1), (1, -1), (-1, -1)):
-            add_light(F, x + dx, y + dy, col, 0.10 * b)
+def draw_pines(F, t):
+    for spr, x, base, amp, k in PINES:
+        sway_blit(F, spr, x, base - spr.shape[0], amp, w(k) * t + x)
 
-def draw_star(F, t):
-    a = t - RETURN['melody']
-    burst = math.exp(-a / 0.7) if 0 <= a < 3 else 0
-    ys, xs = np.nonzero(STAR)
-    x0, y0 = CX - 5, 106
-    for y, x in zip(ys, xs):
-        put(F, x0 + x, y0 + y, hexc('#ffd84a') * (0.85 + 0.15 * math.sin(t * 3)) + 0.3 * burst)
-    for k in range(1, 6):
-        g = (0.18 + 0.5 * burst) / k
-        for dx, dy in ((k, 0), (-k, 0), (0, k), (0, -k)):
-            add_light(F, CX + dx - 0.5, 110 + dy, hexc('#ffe9a0'), g)
-    if burst > 0.02:   # rays
-        for ang in range(8):
-            th = ang * math.pi / 4 + a * 1.5
-            for k in range(6, int(6 + 22 * (1 - burst) + 4)):
-                add_light(F, CX + math.cos(th) * k, 110 + math.sin(th) * k, hexc('#fff4c4'), 0.5 * burst * (1 - k / 32))
+def draw_village(F, t):
+    for x, y, k, ph in VILLAGE:
+        b = 0.6 + 0.4 * math.sin(w(k) * t + ph)
+        put(F, x, y, hexc('#ffd877'), b); glow(F, x, y - 1, hexc('#ffb347'), 0.2 * b)
 
-# ------------------------------------------------------------------ presents
-def draw_presents(F, t):
-    for i, (x, hgt, body, dark, light, rib) in enumerate(PRESENTS):
-        ages = [t - mt for mt, n, _ in MELODY if PRESENT_INDEX[n] == i and 0 <= t - mt < 0.4]
-        a = min(ages) if ages else 9
-        lift = round(3 * math.exp(-a / 0.07)) if a < 0.3 else 0
-        sq = 1 if a < 0.05 else 0
-        flash = 0.55 * math.exp(-a / 0.09) if a < 0.4 else 0
-        top = GROUND - hgt + sq
-        x0, x1 = x - 11, x + 11
-        rect(F, x0, top + 3, x1, GROUND, body)
-        rect(F, x0, top + 3, x0 + 4, GROUND, dark)
-        for yy in range(int(top + 3), GROUND):                # dithered shade between dark side and body
-            for xx in range(x0 + 4, x0 + 7):
-                if BAYER[yy % 4, xx % 4] < (x0 + 7 - xx) / 4: put(F, xx, yy, dark)
-        rect(F, x - 1, top + 3, x + 2, GROUND, rib)
-        rect(F, x0, top + 3 + (hgt - 3) // 2, x1, top + 5 + (hgt - 3) // 2, rib)
-        lt = top - lift
-        rect(F, x0 - 1, lt, x1 + 1, lt + 4, light)
-        rect(F, x0 - 1, lt + 3, x1 + 1, lt + 4, dark)
-        rect(F, x - 1, lt, x + 2, lt + 4, rib)
-        for dx, dy in ((-3, -1), (-2, -2), (-4, -2), (2, -1), (3, -2), (5, -2), (-1, -1), (1, -1)):  # bow
-            put(F, x + dx, lt + dy, rib)
-        if flash > 0:
-            rect(F, x0 - 1, lt, x1 + 1, GROUND, np.array([1, 1, 0.92]), flash * 0.6)
+def draw_house_life(F, t):
+    # glass: warm dithered glow that flickers like firelight, brighter on snare hits
+    sn = 0.25 * math.exp(-last_hit_age(SNARE_HITS, t) / 0.18) if 10 <= t < 32.5 else 0
+    for wi, (x0, y0, x1, y1) in enumerate(WINDOWS):
+        fl = 0.15 * math.sin(w(23 + wi * 4) * t) + 0.08 * math.sin(w(57 + wi) * t)
+        chime = 0.5 * math.exp(-(t - RETURN[['bell', 'kick', 'snare'][wi]]) / 0.3) if t >= RETURN[['bell', 'kick', 'snare'][wi]] else 0
+        yy, xx = np.mgrid[y0:y1, x0:x1]
+        v = 2.4 + 1.3 * (1 - (yy - y0) / (y1 - y0)) + fl * 3 + sn * 4 + chime * 3
+        F[y0:y1, x0:x1] = dith(v, WARM, BAYER[yy % 4, xx % 4] - 0.5)
+        mx, my = (x0 + x1) // 2, (y0 + y1) // 2
+        rect(F, mx - 1, y0, mx + 1, y1, hexc('#e8dcc4')); rect(F, x0, my - 1, x1, my, hexc('#e8dcc4'))
+        if wi == 2:   # little tree inside
+            for k in range(10):
+                rect(F, mx + 7 - k * 0.6, y1 - 14 + k, mx + 8 + k * 0.6, y1 - 13 + k, hexc('#1f5a34'))
+            put(F, mx + 7, y1 - 15, hexc('#ffe27a'))
+        # light spilling onto the snow below
+        for k in range(1, 7):
+            for xx2 in range(x0 - k, x1 + k):
+                if BAYER[(y1 + 3 + k) % 4, xx2 % 4] < 0.35 * (1 - k / 7) * (1 + fl + sn):
+                    glow(F, xx2, y1 + 3 + k, hexc('#ffb347'), 0.25)
+    # string lights along the eave chase the sleigh-bell 8ths
+    step = int(last_hit_age(BELL_HITS, t) < 0.25 and 6 <= t < 32.3)
+    idx = int(np.searchsorted(BELL_HITS, t, side='right')) if 6 <= t < 32.3 else int(t * 4)
+    cols = [hexc(c) for c in ('#ff4d5e', '#ffd35a', '#59e1ff', '#7dff8a')]
+    finale = math.exp(-(t - 35.0) / 0.6) if t >= 35.0 else 0
+    for j, x in enumerate(range(152, 270, 7)):
+        y = roof_y(x) + 9 + 1.2 * math.sin(j * 1.3)
+        on = (j + idx) % 4 == 0
+        b = 1.0 if on else 0.35
+        b = min(1, b + finale)
+        c = cols[j % 4]
+        put(F, x, y - 1, hexc('#20242c'))
+        put(F, x, y, c * (0.4 + 0.6 * b) + 0.2 * b)
+        for dx, dy in ((1, 0), (-1, 0), (0, 1), (0, -1)): glow(F, x + dx, y + dy, c, 0.45 * b)
+        for dx, dy in ((2, 0), (-2, 0), (0, 2)): glow(F, x + dx, y + dy, c, 0.15 * b)
+    # icicles glint one after another
+    for j, x in enumerate(range(153, 270, 5)):
+        ln = 2 + (j * 7) % 4
+        yb = 168
+        for k in range(ln): put(F, x, yb + k, hexc('#cfe6ff'), 0.85 - k * 0.15)
+        if 0.5 + 0.5 * math.sin(w(9) * t - j * 0.7) > 0.95: glow(F, x, yb + ln - 1, np.array([1, 1, 1]), 0.8)
+    # wreath on the door, bow bounces on the bass
+    bb = 1 if last_hit_age(BASS_HITS, t) < 0.12 and 14 <= t < 32.3 else 0
+    for k in range(28):
+        th = k / 28 * TAU
+        put(F, 187 + 7 * math.cos(th), 388 + 7 * math.sin(th), hexc('#1f6a3a') if k % 3 else hexc('#2f8a4a'))
+        put(F, 187 + 6 * math.cos(th), 388 + 6 * math.sin(th), hexc('#174d2c'))
+        if k % 5 == 0: put(F, 187 + 6.5 * math.cos(th), 388 + 6.5 * math.sin(th), hexc('#ff4d5e'))
+    for dx, dy in ((-2, 0), (-1, 1), (1, 1), (2, 0), (0, 1), (0, 2), (-1, 3), (1, 3)):
+        put(F, 187 + dx, 394 + dy - bb, hexc('#d22f3c'))
+    # chimney smoke: soft puffs drifting with the wind
+    for k in range(14):
+        ph = (t / LOOP * 9 + k / 14) % 1.0
+        sx = 233 + ph * 26 + 4 * math.sin(ph * 7 + k)
+        sy = 96 - ph * 70
+        r = 2 + ph * 6
+        a = 0.35 * (1 - ph) * min(1, ph * 8)
+        for dy in range(int(-r), int(r) + 1):
+            for dx in range(int(-r), int(r) + 1):
+                if dx * dx + dy * dy <= r * r and BAYER[int(sy + dy) % 4, int(sx + dx) % 4] < 0.55:
+                    put(F, sx + dx, sy + dy, hexc('#8a9ab8'), a)
 
-# ------------------------------------------------------------------ effects
-def fx_particles(F, t):
-    specs = [('kick', 0.35, 5, '#f4f8ff', 26), ('bell', 0.25, 2, '#e8fff0', 14), ('snare', 0.3, 4, '#fff2b0', 22),
-             ('bass', 0.45, 8, '#f4f8ff', 34)]
-    for name, life, n, col, spd in specs:
+def draw_ground_life(F, t):
+    for x, y, k, ph in GLINTS:                       # snow crystals catching the moonlight
+        b = 0.5 + 0.5 * math.sin(w(k) * t + ph)
+        if b > 0.8:
+            glow(F, x, y, np.array([1, 1, 1]), (b - 0.8) * 4)
+            if b > 0.96:
+                for dx, dy in ((1, 0), (-1, 0), (0, 1), (0, -1)): glow(F, x + dx, y + dy, np.array([0.7, 0.85, 1]), 0.4)
+    for x0, y0, k, ph in DRIFT:                      # wind-blown snow skimming the ground
+        x = (x0 + W * k * t / LOOP * 2) % W
+        y = y0 + 2 * math.sin(w(k * 3) * t + ph)
+        for j in range(3):
+            put(F, x - j * 2, y + j * 0.3, np.array([0.95, 0.97, 1.0]), 0.5 - j * 0.15)
+
+def draw_snowfall(F, t):
+    for x0, y0, vy, wm, ph, big in FLAKES:
+        y = (y0 + vy * (H + 8) * t / LOOP * 2) % (H + 8) - 4
+        x = (x0 + 6 * math.sin(w(wm * 5) * t + ph) + W * t / LOOP * wm) % W
+        c = np.array([0.93, 0.96, 1.0])
+        put(F, x, y, c, 0.9 if big > 0.8 else 0.55)
+        if big > 0.8:
+            put(F, x + 1, y, c, 0.8); put(F, x, y + 1, c, 0.8); put(F, x + 1, y + 1, c, 0.5)
+
+def draw_impacts(F, t):
+    for name, life, n, spd in (('cat', 0.35, 6, 26), ('mouse', 0.22, 3, 12), ('kid', 0.4, 8, 34), ('santa', 0.6, 12, 46)):
         b = BALLS[name]
         for hi, h in enumerate(b['hits']):
             a = t - h
             if not 0 <= a < life: continue
             r = np.random.default_rng(hi * 31 + len(name))
             for k in range(n):
-                vx = (r.random() - 0.5) * spd * 2; vy = -r.random() * spd - 8
-                px = b['x'] + vx * a; py = GROUND - 1 + vy * a + 60 * a * a
-                if py <= GROUND + 2:
-                    put(F, px, min(py, GROUND - 1), hexc(col), 1 - a / life)
-            if name == 'snare' and a < 0.16:
-                for dx, dy in ((1, 0), (-1, 0), (0, 1), (0, -1)):
-                    for k in range(2, int(3 + a / 0.16 * 7)):
-                        add_light(F, b['x'] + dx * k, GROUND - b['r'] + dy * k, hexc('#ffe27a'), 0.8 * (1 - a / 0.16))
-            if name == 'bass' and a < 0.45:
-                rr = 6 + 40 * a / 0.45
-                for k in range(64):
-                    th = k / 64 * 2 * math.pi
-                    put(F, b['x'] + rr * math.cos(th), GROUND + 1 + rr * 0.18 * math.sin(th), hexc('#ffffff'), 0.55 * (1 - a / 0.45))
-    # present hits: sparkles + a little music note that floats up and dissolves
+                vx = (r.random() - 0.5) * spd * 2; vy = -r.random() * spd - 6
+                px = b['x'] + vx * a; py = GROUND - 1 + vy * a + 70 * a * a
+                if py <= GROUND + 1: put(F, px, min(py, GROUND - 1), np.array([0.96, 0.98, 1.0]), 1 - a / life)
+            if name in ('kid', 'santa'):                 # ripple across the snow
+                rr = 3 + (30 if name == 'santa' else 16) * a / life
+                for k in range(56):
+                    th = k / 56 * TAU
+                    put(F, b['x'] + rr * math.cos(th), GROUND + 1.5 + rr * 0.16 * math.sin(th), np.array([1, 1, 1]), 0.6 * (1 - a / life))
+            if name == 'kid' and a < 0.15:               # snare snap: star burst
+                for dx, dy in ((1, 0), (-1, 0), (0, -1), (1, -1), (-1, -1)):
+                    for k in range(3, int(4 + a / 0.15 * 8)):
+                        glow(F, b['x'] + dx * k, GROUND - 5 + dy * k, hexc('#c8ffd8'), 0.7 * (1 - a / 0.15))
     note = np.array([[c == '1' for c in r] for r in NOTE])
+    ys, xs = np.nonzero(note)
     for mi, (mt, n, d) in enumerate(MELODY):
         a = t - mt
-        if not 0 <= a < 0.7: continue
-        i = PRESENT_INDEX[n]; x = PRESENTS[i][0]; top = present_top(i)
+        if not 0 <= a < 0.8: continue
+        i = PRESENT_INDEX[n]; x = KEY_X[i]
+        col = KEYS[i][0]
         r = np.random.default_rng(900 + mi)
-        for k in range(6):
-            vx = (r.random() - 0.5) * 60; vy = -20 - r.random() * 30
-            if a < 0.4:
-                add_light(F, x + vx * a, top - 2 + vy * a + 70 * a * a, hexc('#fff3b0'), 0.9 * (1 - a / 0.4))
-        ys, xs = np.nonzero(note)
+        for k in range(7):
+            vx = (r.random() - 0.5) * 60; vy = -22 - r.random() * 30
+            if a < 0.45: glow(F, x + vx * a, KEY_TOP - 2 + vy * a + 70 * a * a, col, 0.9 * (1 - a / 0.45))
         u = np.random.default_rng(mi).random(len(ys))
-        keep = u > (a / 0.7) ** 1.3
-        for y, xx, kk in zip(ys, xs, keep):
-            if kk: put(F, x - 2 + xx + 4 * math.sin(a * 6), top - 18 - 22 * a + y, PRESENTS[i][5], 0.95)
+        for y, xx, uu in zip(ys, xs, u):
+            if uu > (a / 0.8) ** 1.4:
+                put(F, x - 2 + xx + 4 * math.sin(a * 6), KEY_TOP - 14 - 26 * a + y, col)
 
-def draw_shadow(F, name, x, y):
-    b = BALLS[name]
-    hgt = GROUND - b['r'] - y
-    if hgt < -2 or hgt > 160: return
-    hw = b['r'] * (1.15 - 0.6 * min(1, hgt / 120))
-    col = hexc('#7d97c3')
+def draw_shadow(F, x, bottom, r):
+    hgt = GROUND - bottom
+    hw = r * (1.2 - 0.6 * min(1, hgt / 150))
     for xx in range(int(x - hw), int(x + hw) + 1):
-        for yy in (GROUND, GROUND + 1):
-            if BAYER[yy % 4, xx % 4] < 0.7 - 0.3 * min(1, hgt / 120): put(F, xx, yy, col, 0.75)
-
-# ------------------------------------------------------------------ bpm labels (big pop -> small tag)
-LABELS = {}
-for name in ['kick', 'bell', 'snare', 'bass']:
-    b = BALLS[name]
-    LABELS[name] = dict(big=caption_sprite(b['bpm'], 2, pad=3), bpm=label_sprite('BPM', 1, 1),
-                        small=caption_sprite(b['bpm'] + '\nBPM', 1, pad=2))
-    sm = LABELS[name]['small']
-    LABELS[name]['cap'] = Caption(sm, b['x'] - sm.shape[1] // 2, 449, 0, RETURN[name] + 0.1, 200 + len(name))
-
-def draw_labels(F, t):
-    for name, L in LABELS.items():
-        b = BALLS[name]; t1 = b['hits'][0]
-        a = t - t1
-        if a < 0: continue
-        big = L['big']
-        bx_c = min(max(b['x'], big.shape[1] / 2 + 4), W - big.shape[1] / 2 - 4)
-        by = 316
-        sm = L['small']; sx, sy = b['x'] - sm.shape[1] / 2, 449
-        if a < 0.9:
-            pop = 1 + (0.25 * math.exp(-a / 0.08) if a < 0.3 else 0)
-            blend(F, bx_c - big.shape[1] / 2, by - (pop - 1) * 6, big)
-            blend(F, bx_c - L['bpm'].shape[1] / 2, by + big.shape[0] + 1, L['bpm'])
-        elif a < 1.25:
-            s = smooth((a - 0.9) / 0.35)
-            blend(F, bx_c - big.shape[1] / 2 + (sx + sm.shape[1] / 2 - bx_c) * s, by + (sy - by) * s, big if s < 0.6 else sm)
-        else:
-            L['cap'].draw(F, t)
-
-# ------------------------------------------------------------------ snow
-rng = np.random.default_rng(11)
-FLAKES = [(rng.uniform(0, W), rng.uniform(0, H), int(rng.integers(1, 4)), int(rng.integers(1, 3)), rng.uniform(0, 6.28), rng.random() < 0.18)
-          for _ in range(150)]
-STARS = [(rng.uniform(0, W), rng.uniform(0, 230), int(rng.integers(1, 6)), rng.uniform(0, 6.28)) for _ in range(70)]
-
-def draw_snow(F, t):
-    for x0, y0, vy, wm, ph, big in FLAKES:
-        y = (y0 + vy * (H + 8) * t / LOOP * 4) % (H + 8) - 4
-        x = (x0 + 5 * math.sin(2 * math.pi * wm * t / LOOP * 3 + ph)) % W
-        c = np.array([0.93, 0.96, 1.0])
-        put(F, x, y, c, 0.9 if big else 0.6)
-        if big:
-            put(F, x + 1, y, c, 0.9); put(F, x, y + 1, c, 0.9); put(F, x + 1, y + 1, c, 0.7)
-
-def draw_stars(F, BG, t):
-    for x, y, k, ph in STARS:
-        if math.hypot(x - MOON[0], y - MOON[1]) < 30: continue
-        b = 0.5 + 0.5 * math.sin(2 * math.pi * k * t / LOOP * 2 + ph)
-        put(F, x, y, np.array([0.9, 0.93, 1.0]), 0.25 + 0.6 * b)
+        if BAYER[GROUND % 4, xx % 4] < 0.75 - 0.35 * min(1, hgt / 150): put(F, xx, GROUND, hexc('#6f8bb8'), 0.8)
 
 # ------------------------------------------------------------------ frame
-BG = build_bg()
 def frame(t):
-    F = BG.copy()
-    draw_stars(F, BG, t)
-    draw_lights(F, t)
-    draw_star(F, t)
-    order = ['kick', 'bell', 'snare', 'bass', 'melody']
-    states = {n: ball_state(n, t) for n in order}
-    for n in order:
-        x, y, sx, sy, mode = states[n]
-        if mode == 'hang': draw_ball(F, n, x, y, string=True)
-    draw_presents(F, t)
-    for n in order[:4]:
-        x, y, sx, sy, mode = states[n]
-        if mode != 'hang' and t >= BALLS[n]['hits'][0] - 0.3: draw_shadow(F, n, x, y)
-    fx_particles(F, t)
-    for n in order:
-        x, y, sx, sy, mode = states[n]
-        if mode != 'hang':
-            draw_ball(F, n, x, y + (BALLS[n]['r'] * (1 - sy)), sx, sy)
-    draw_snow(F, t)
-    draw_labels(F, t)
+    F = SKYBG.copy()
+    draw_sky_life(F, t)
+    blend(F, 0, 0, MOUNT)
+    draw_village(F, t)
+    draw_pines(F, t)
+    blend(F, 0, 0, HOUSE)
+    draw_house_life(F, t)
+    blend(F, 0, 0, GROUNDL)
+    draw_ground_life(F, t)
+    states = {n: ball_y(n, t) for n in BALLS}
+    for n, (by, k, st) in states.items():
+        if st == 'air': draw_shadow(F, BALLS[n]['x'], by, BALLS[n]['r'])
+    draw_mouse(F, t); draw_cat(F, t); draw_kid(F, t); draw_santa(F, t)
+    draw_impacts(F, t)
+    for n, (by, k, st) in states.items():
+        draw_ball(F, n, BALLS[n]['x'], by - (bob(t) if st == 'held' else 0), k)
+    # hands back on top of held balls so the grip reads clearly
+    draw_xylophone(F, t)
+    mb = melody_ball(t)
+    if mb: draw_ball(F, 'melody', mb[0], mb[1], mb[2], MEL_P, MEL_R)
+    draw_robin(F, t)
+    draw_snowfall(F, t)
     for c in CAPTIONS: c.draw(F, t)
     return (np.clip(F, 0, 1) * 255 + 0.5).astype(np.uint8)
 
@@ -572,15 +821,14 @@ def upscale(img): return np.repeat(np.repeat(img, S, 0), S, 1)
 if __name__ == '__main__':
     if sys.argv[1] == '--stills':
         from PIL import Image
-        out = sys.argv[2]
         for ts in sys.argv[3:]:
-            Image.fromarray(upscale(frame(float(ts)))).save(f'{out}/still_{float(ts):06.2f}.png')
+            Image.fromarray(upscale(frame(float(ts)))).save(f'{sys.argv[2]}/still_{float(ts):06.2f}.png')
         sys.exit()
     out, wav = sys.argv[1], sys.argv[2]
-    nfr = int(LOOP * FPS)
     p = subprocess.Popen(['ffmpeg', '-v', 'error', '-y', '-f', 'rawvideo', '-pix_fmt', 'rgb24', '-s', f'{W*S}x{H*S}', '-r', str(FPS),
                           '-i', '-', '-i', wav, '-c:v', 'libx264', '-preset', 'medium', '-crf', '16', '-pix_fmt', 'yuv420p',
                           '-c:a', 'aac', '-b:a', '256k', '-shortest', '-movflags', '+faststart', out], stdin=subprocess.PIPE)
+    nfr = int(LOOP * FPS)
     for f in range(nfr):
         p.stdin.write(upscale(frame(f / FPS)).tobytes())
         if f % 300 == 0: print('frame', f, '/', nfr, flush=True)

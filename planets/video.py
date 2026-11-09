@@ -107,8 +107,8 @@ def text_mask(text, sc):
 # ================================================================== world layout
 SUN = (135.0, 336.0)
 TILT = 0.38                                                      # orbit ellipses seen from slightly above
-ORB = {'mercury': 24, 'venus': 40, 'earth': 58, 'mars': 80, 'jupiter': 116}
-PR = {'mercury': 5.0, 'venus': 7.0, 'earth': 8.5, 'mars': 6.5, 'jupiter': 15.0}
+ORB = {'mercury': 30, 'venus': 48, 'earth': 68, 'mars': 90, 'jupiter': 112}
+PR = {'mercury': 6.0, 'venus': 8.0, 'earth': 9.5, 'mars': 7.0, 'jupiter': 16.0}
 SPIN = {'mercury': 2, 'venus': 1, 'earth': 6, 'mars': 5, 'jupiter': 9, 'sun': 2}   # whole turns per loop
 
 def theta(name, t):
@@ -132,14 +132,14 @@ def last_age(hits, t):
     return t - hits[i] if i >= 0 else 99.0
 
 # ================================================================== background (static values, no drift)
-SPACE = pal('#0a0b2c', '#11123c', '#1a1648', '#261a53', '#341d5c', '#452063', '#572468', '#6a2a6c')
+SPACE = pal('#080a22', '#0c0f2c', '#111436', '#171840', '#1f1b49', '#2a1f52', '#36225a')
 def build_space():
     v = 0.4 + 6.4 * (YY / H) ** 1.35
     F = dith(v, SPACE, BAYER[YY % 4, XX % 4] - 0.5).astype(np.float32)
     return np.clip(F, 0, 1)
 SPACEBG = build_space()
 rng = np.random.default_rng(21)
-BGSTARS = [(rng.uniform(0, W), rng.uniform(0, H), int(rng.integers(1, 9)), rng.uniform(0, 6.28), rng.random()) for _ in range(120)]
+BGSTARS = [(rng.uniform(0, W), rng.uniform(0, H), int(rng.integers(1, 9)), rng.uniform(0, 6.28), rng.random()) for _ in range(70)]
 
 def draw_bgstars(F, t):
     for x, y, k, ph, br in BGSTARS:
@@ -176,47 +176,123 @@ def sphere(F, cx, cy, r, tex, L, spin, night=None, alpha=1.0, ret=False):
     a = (cov[ok] * alpha)[:, None]                                # partial pixels on the curve = soft edge
     F[yy[ok], xx[ok]] = F[yy[ok], xx[ok]] * (1 - a) + q[ok] * a
 
-def nzs(lat, lon, scale=40, src=None, off=0):
-    src = NZB if src is None else src
-    return src[((lat + 2) * scale + off).astype(int) % 256, ((lon / TAU) * 256 * scale / 40).astype(int) % 256]
 
-def mix3(a, b, m): return a * (1 - m[..., None]) + b * m[..., None]
+# ---- clean pixel-art planets: a few flat shades per material, crisp light bands,
+#      1px dark outline with a light rim on the sunlit side, simple solid features.
+MW, MH = 96, 48
+_ly, _lx = np.mgrid[0:MH, 0:MW]
+LAT = (0.5 - (_ly + 0.5) / MH) * math.pi; LON = (_lx + 0.5) / MW * TAU
 
-def tex_earth(lat, lon):
-    land = nzs(lat, lon, 40) > 0.56
-    c = np.where(land[..., None], hexc('#3fd46a'), hexc('#2378ff'))
-    c = mix3(c, hexc('#ffe08a'), (land & (nzs(lat, lon, 40, NZ) > 0.7)).astype(float) * 0.5)
-    snow = np.abs(lat) > 1.05 - 0.12 * nzs(lat, lon, 30, NZ)
-    c = np.where(snow[..., None], hexc('#f2f7ff'), c)
-    cloud = nzs(lat, lon + 0.6, 34, NZ, 90) > 0.68
-    return np.where(cloud[..., None], hexc('#e8eef8'), c)
-def night_earth(lat, lon, shade):
-    land = (nzs(lat, lon, 40) > 0.56) & (np.abs(lat) < 1.0)
-    city = land & (nzs(lat, lon, 80, NZ, 33) > 0.66) & (shade < 0.06)
-    return np.where(city[..., None], hexc('#ffd36a') * 0.95, 0)   # Christmas lights on the night side
-def tex_mercury(lat, lon):
-    c = 0.55 + 0.25 * nzs(lat, lon, 50, NZ) - 0.2 * (nzs(lat, lon, 30) > 0.62)
-    return np.clip(c[..., None] * hexc('#f0e6dc') * 1.15, 0, 1)
-def tex_venus(lat, lon):
-    b = np.sin(lat * 7 + 3 * nzs(lat, lon, 30)) * 0.5 + 0.5
-    return mix3(hexc('#ffb84a'), hexc('#ffe9b0'), b)
-def tex_mars(lat, lon):
-    c = mix3(hexc('#ff6a32'), hexc('#c23a20'), (nzs(lat, lon, 36) > 0.58).astype(float) * 0.7)
-    return np.where((lat > 1.05)[..., None], hexc('#f4f4f4'), c)
-def tex_jupiter(lat, lon):
-    b = np.sin(lat * 11 + 1.2 * nzs(lat, lon, 26)) * 0.5 + 0.5
-    c = mix3(mix3(hexc('#f0a060'), hexc('#ffe6c4'), b), hexc('#b8603a'), (b < 0.18).astype(float))
-    spot = ((lat + 0.38) / 0.13) ** 2 + ((np.angle(np.exp(1j * (lon - 1.0)))) / 0.32) ** 2 < 1
-    return np.where(spot[..., None], hexc('#ff4a32'), c)
-def tex_sun(lat, lon):
-    g = nzs(lat, lon, 60, NZ)
-    return mix3(hexc('#ff8a1a'), hexc('#ffe27a'), g)
-TEX = {'mercury': tex_mercury, 'venus': tex_venus, 'earth': tex_earth, 'mars': tex_mars, 'jupiter': tex_jupiter}
+def smooth_mask(m, it=2):
+    for _ in range(it):
+        p = np.pad(m.astype(int), 1, mode='wrap')
+        n = sum(p[1 + dy:1 + dy + MH, 1 + dx:1 + dx + MW] for dy in (-1, 0, 1) for dx in (-1, 0, 1))
+        m = n >= 5
+    return m
+
+def blobs(seed, thr, scale=2):
+    z = NZB[(_ly * scale + seed) % 256, (_lx * scale + seed * 3) % 256]
+    return smooth_mask(z > thr, 3)
+
+def shades(*c): return pal(*c)
+MAT = {   # material: 4 shades, dark -> light
+    'ocean': shades('#0b2a6b', '#1650b8', '#2378ff', '#5aa8ff'),
+    'land':  shades('#14532a', '#23863f', '#3fd46a', '#8ef0a0'),
+    'ice':   shades('#6f8fbe', '#b4cdee', '#e6f0ff', '#ffffff'),
+    'cloud': shades('#7f98c0', '#c4d6f0', '#eef4ff', '#ffffff'),
+    'rock':  shades('#3a3634', '#6e6660', '#a89e94', '#ddd4c8'),
+    'crat':  shades('#24201e', '#48423e', '#756c66', '#a49a90'),
+    'vena':  shades('#7a4a14', '#c07a22', '#ffb84a', '#ffe0a0'),
+    'venb':  shades('#8a5a1c', '#d8a040', '#ffd88a', '#fff4d4'),
+    'mars':  shades('#5a1a0c', '#a8381c', '#ff6a32', '#ffa478'),
+    'marsd': shades('#3e1208', '#7a2814', '#c0461e', '#e8703c'),
+    'jupl':  shades('#7a4a2a', '#c8885a', '#ffd6a8', '#fff0dc'),
+    'jupd':  shades('#4a2412', '#8a4a2a', '#d07a48', '#f0a070'),
+    'spot':  shades('#5a120c', '#a8261a', '#ff4a32', '#ff8a6a'),
+}
+MATS = list(MAT); MI = {k: i for i, k in enumerate(MATS)}
+MATP = np.stack([MAT[k] for k in MATS])            # (n_mat, 4, 3)
+
+def map_earth():
+    m = np.full((MH, MW), MI['ocean'])
+    m[blobs(17, 0.55)] = MI['land']
+    m[np.abs(LAT) > 1.12] = MI['ice']
+    cl = smooth_mask((NZB[(_ly * 3 + 90) % 256, (_lx + 40) % 256] > 0.66) & (np.abs(LAT) < 1.0), 2)
+    m[cl] = MI['cloud']
+    return m
+def map_mercury():
+    m = np.full((MH, MW), MI['rock'])
+    r = np.random.default_rng(3)
+    for _ in range(9):
+        cy, cx, rr = r.uniform(8, 40), r.uniform(0, MW), r.uniform(2.5, 5.5)
+        d = np.hypot((_ly - cy), np.minimum(np.abs(_lx - cx), MW - np.abs(_lx - cx)) * 0.6)
+        m[(d < rr) & (d > rr - 1.6)] = MI['crat']
+    return m
+def map_venus():
+    b = np.sin(LAT * 6 + 0.5 * np.sin(LON * 2)) > 0.1
+    return np.where(b, MI['venb'], MI['vena'])
+def map_mars():
+    m = np.full((MH, MW), MI['mars'])
+    m[blobs(41, 0.6)] = MI['marsd']
+    m[LAT > 1.2] = MI['ice']
+    return m
+def map_jupiter():
+    edges = [-1.3, -0.95, -0.6, -0.3, -0.05, 0.25, 0.55, 0.9, 1.25]
+    m = np.full((MH, MW), MI['jupl'])
+    for k in range(0, len(edges) - 1, 2):
+        wob = 0.03 * np.sin(LON * 3 + k)
+        m[(LAT > edges[k] + wob) & (LAT < edges[k + 1] + wob)] = MI['jupd']
+    sp = ((LAT + 0.42) / 0.14) ** 2 + ((np.angle(np.exp(1j * (LON - 2.0)))) / 0.42) ** 2 < 1
+    m[sp] = MI['spot']
+    return m
+MAPS = {'earth': map_earth(), 'mercury': map_mercury(), 'venus': map_venus(), 'mars': map_mars(), 'jupiter': map_jupiter()}
+
+def clean_planet(F, name, cx, cy, r, L, spin, ret=False):
+    cx, cy = round(cx * 2) / 2, round(cy * 2) / 2
+    R = int(math.ceil(r)) + 1
+    yy, xx = np.mgrid[int(cy) - R:int(cy) + R + 1, int(cx) - R:int(cx) + R + 1]
+    dx, dy = xx + 0.5 - cx, yy + 0.5 - cy
+    inside = dx * dx + dy * dy <= r * r
+    nx, ny = dx / r, dy / r
+    nz = np.sqrt(np.clip(1 - nx * nx - ny * ny, 0, 1))
+    lat = np.arcsin(np.clip(-ny, -1, 1)); lon = (np.arctan2(nx, nz + 1e-6) + spin) % TAU
+    mat = MAPS[name][np.clip(((0.5 - lat / math.pi) * MH).astype(int), 0, MH - 1), (lon / TAU * MW).astype(int) % MW]
+    d = nx * L[0] + ny * L[1] + nz * L[2]
+    lvl = np.clip(np.floor((d * 0.9 + 0.55) * 3.2), 0, 3).astype(int)    # crisp light bands
+    col = MATP[mat, lvl]
+    # outline: inside pixels touching the outside
+    p = np.pad(inside, 1)
+    edge = inside & ~(p[:-2, 1:-1] & p[2:, 1:-1] & p[1:-1, :-2] & p[1:-1, 2:])
+    lit_edge = edge & ((nx * L[0] + ny * L[1]) > 0.35)
+    col[edge] = MATP[mat[edge], 0] * 0.55
+    col[lit_edge] = np.minimum(1, MATP[mat[lit_edge], 3] * 1.05)
+    if name == 'earth':                              # Christmas-light cities on the night side
+        h = (np.sin(lat * 91.7 + np.floor(lon * 15.3) * 12.9) * 43758.5) % 1.0
+        city = (mat == MI['land']) & (d < -0.3) & (h > 0.86) & ~edge
+        col[city] = hexc('#ffd36a')
+    if ret: return yy[inside], xx[inside], col[inside], np.ones(inside.sum())
+    ok = inside & (yy >= 0) & (yy < H) & (xx >= 0) & (xx < W)
+    F[yy[ok], xx[ok]] = col[ok]
+
+def clean_sun(F, cx, cy, r, pulse):
+    yy, xx = np.mgrid[int(cy - r - 12):int(cy + r + 13), int(cx - r - 12):int(cx + r + 13)]
+    d = np.hypot(xx + 0.5 - cx, yy + 0.5 - cy)
+    ring1 = (d > r) & (d <= r + 3 + 2 * pulse)
+    ring2 = (d > r + 3 + 2 * pulse) & (d <= r + 7 + 3 * pulse) & (((xx + yy) % 2) == 0)
+    ring3 = (d > r + 7 + 3 * pulse) & (d <= r + 11 + 3 * pulse) & ((xx % 2 == 0) & (yy % 2 == 0))
+    for m, c in ((ring3, '#c8501a'), (ring2, '#ff8a2a'), (ring1, '#ffb43a')):
+        ok = m & (yy >= 0) & (yy < H) & (xx >= 0) & (xx < W)
+        F[yy[ok], xx[ok]] = hexc(c)
+    lv = np.where(d <= r * 0.45, 3, np.where(d <= r * 0.75, 2, np.where(d <= r - 1, 1, 0)))
+    sp = hexc('#fff6c8'), hexc('#ffe27a'), hexc('#ffc43a'), hexc('#ff9a2a')
+    for k, c in enumerate([sp[3], sp[2], sp[1], sp[0]]):
+        m = (d <= r) & (lv == k)
+        F[yy[m], xx[m]] = c
 
 def light_dir(name, t):
     th = theta(name, t)
     v = np.array([-math.cos(th), -0.4 * math.sin(th), -math.sin(th)])
-    v = v / np.linalg.norm(v) + np.array([0.0, -0.25, 0.9])
+    v = v / np.linalg.norm(v) + np.array([0.0, -0.2, 0.5])
     return v / np.linalg.norm(v)
 
 # ================================================================== orbits: golden garlands hung with bells
@@ -242,7 +318,7 @@ def draw_ring(F, name, t, back, vis):
     if vis <= 0: return
     a = (0.30 if back else 0.55) * vis
     for x, y, th in RINGPTS[(name, back)]:
-        splat(F, x, y, GOLD, a)
+        put(F, x, y, GOLD * (0.55 if back else 0.8), vis)
     p = PLANETS[name]; r = ORB[name]
     age = last_age(p['hits'], t) if p['first'] <= t < p['last'] + 1 else 9
     i_last = int(np.searchsorted(p['hits'], t, side='right') - 1)
@@ -271,24 +347,18 @@ def draw_sun(F, t):
     hk = [h for h, _ in HOOK] + [h for h, _ in ECHO]
     kick = max(kick, 1.3 * math.exp(-last_age(sorted(hk), t) / 0.12))
     r = 14
-    yy, xx = np.mgrid[int(SUN[1] - 46):int(SUN[1] + 47), int(SUN[0] - 46):int(SUN[0] + 47)]
-    d = np.hypot(xx + 0.5 - SUN[0], yy + 0.5 - SUN[1])
-    g = np.clip(1 - (d - r) / (14 + 5 * kick), 0, 1) ** 2 * (0.7 + 0.4 * kick)
-    q = np.clip(np.floor(g * 5 + BAYER[yy % 4, xx % 4] - 0.5) / 5, 0, 1)
-    F[yy, xx] = F[yy, xx] * (1 - q[..., None] * 0.85) + q[..., None] * hexc('#ffa83a') * 0.85
-    sphere(F, SUN[0], SUN[1], r, tex_sun, None, TAU * SPIN['sun'] * t / LOOP)
+    clean_sun(F, SUN[0], SUN[1], r, min(1.0, kick))
 
 # ================================================================== planets (form from sparkles / burst into sparkles)
 def draw_planet(F, name, t, seed):
     st = present(name, t)
     if st is None: return
     x, y, z = pos(name, t)
-    r = PR[name] * (1 + 0.10 * z)
+    r = PR[name] * (1 + 0.06 * z)
     L = light_dir(name, t); spin = TAU * SPIN[name] * t / LOOP
-    night = night_earth if name == 'earth' else None
     if st[0] == 'on':
-        sphere(F, x, y, r, TEX[name], L, spin, night); return
-    ys, xs, col, cov = sphere(F, x, y, r, TEX[name], L, spin, night, ret=True)
+        clean_planet(F, name, x, y, r, L, spin); return
+    ys, xs, col, cov = clean_planet(F, name, x, y, r, L, spin, ret=True)
     rr = np.random.default_rng(seed); n = len(ys)
     ang = rr.uniform(0, TAU, n); dist = rr.uniform(6, 22, n); lag = rr.uniform(0, 0.35, n)
     if st[0] == 'form':
@@ -342,7 +412,7 @@ def draw_comet(F, t):
         if q is None: continue
         f = 1 - k / 30
         col = hexc('#7fd8ff') * f + hexc('#b07cff') * (1 - f)
-        splat(F, q[0] + math.sin(k * 1.7 + t * 30) * 0.4 * (1 - f) * 3, q[1], col, 0.55 * f)
+        if k % 2 == 0: put(F, q[0], q[1], col, 0.9 * f)
     for dx, dy, a in ((0, 0, 1), (1, 0, .6), (-1, 0, .6), (0, 1, .6), (0, -1, .6), (1, 1, .3), (-1, -1, .3), (1, -1, .3), (-1, 1, .3)):
         glow(F, p[0] + dx, p[1] + dy, np.array([0.9, 0.97, 1.0]), a)
 
@@ -485,6 +555,7 @@ ORDER = ['mercury', 'venus', 'earth', 'mars', 'jupiter']
 def frame(t):
     F = SPACEBG.copy()
     draw_bgstars(F, t)
+    alive(F, t)
     draw_tree(F, t)
     for n in ORDER: draw_ring(F, n, t, True, ring_vis(n, t))
     back = [n for n in ORDER if pos(n, t)[2] < 0]; front = [n for n in ORDER if n not in back]
@@ -493,7 +564,6 @@ def frame(t):
     for n in ORDER: draw_ring(F, n, t, False, ring_vis(n, t))
     for n in sorted(front, key=lambda n: pos(n, t)[2]): draw_planet(F, n, t, ORDER.index(n) + 3)
     draw_comet(F, t)
-    alive(F, t)
     out = shoot(F, t)
     scr = out[::S, ::S].copy(); before = scr.copy()
     for c in CAPTIONS: c.draw(scr, t)

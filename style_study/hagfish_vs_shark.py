@@ -20,8 +20,8 @@ def layer(F, mask, colours):
 
 # ================================================================ water: bands with curved, unique edges
 WATER = [c('#050a16'), c('#08101f'), c('#0c172b'), c('#112038'), c('#162a46')]
-wave1 = 118 + 14 * np.sin(XX / 21 + 0.7) + 6 * np.sin(XX / 8.5 + 2.1) + 3 * np.sin(XX / 4.1)
-wave2 = 205 + 16 * np.sin(XX / 26 + 2.4) + 7 * np.sin(XX / 10 + 0.3) + 3 * np.sin(XX / 5.3 + 1)
+wave1 = 118 + 12 * np.sin(XX / 34 + 0.7) + 5 * np.sin(XX / 19 + 2.1)
+wave2 = 205 + 14 * np.sin(XX / 38 + 2.4) + 6 * np.sin(XX / 22 + 0.3)
 v = np.where(YY < wave1, 2.2 - 0.9 * np.clip((wave1 - YY) / 130, 0, 1),
      np.where(YY < wave2, 3.3 - 0.6 * np.abs((YY - (wave1 + wave2) / 2) / ((wave2 - wave1) / 2)) ** 3,
               1.6 - 1.3 * np.clip((YY - wave2) / 90, 0, 1)))
@@ -145,11 +145,11 @@ F[148, 105] = c('#ffffff')
 # ================================================================ bubbles: a loose trail rising from the bite
 placed = []
 tries = 0
-while len(placed) < 18 and tries < 5000:
+while len(placed) < 13 and tries < 5000:
     tries += 1
     s = rng.random()
-    by = 136 - s * 34 + rng.normal(0, 2)
-    bx = 120 - s * 78 + rng.normal(0, 8)
+    by = 140 - s * 37
+    bx = 103 + 3 * math.sin(s * 9) + rng.normal(0, 2 + 9 * s)      # rises straight up, spreading a little
     r = float(rng.choice([2.3, 2.6, 3.0, 3.6]))
     if any(math.hypot(bx - px, by - py) < r + pr + 4 for px, py, pr in placed): continue
     if body[int(by), int(bx)] or dorsal[int(by), int(bx)] or by < 103 or by > 138 or (bx > 140 and by > 118): continue

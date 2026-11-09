@@ -19,14 +19,13 @@ def layer(F, mask, colours):
     F[mask] = colours[mask]
 
 # ================================================================ water: bands with curved, unique edges
-WATER = [c('#050a16'), c('#08101f'), c('#0c172b'), c('#112038'), c('#162a46')]
-wave1 = 118 + 12 * np.sin(XX / 34 + 0.7) + 5 * np.sin(XX / 19 + 2.1)
-wave2 = 205 + 14 * np.sin(XX / 38 + 2.4) + 6 * np.sin(XX / 22 + 0.3)
-v = np.where(YY < wave1, 2.2 - 0.9 * np.clip((wave1 - YY) / 130, 0, 1),
-     np.where(YY < wave2, 3.3 - 0.6 * np.abs((YY - (wave1 + wave2) / 2) / ((wave2 - wave1) / 2)) ** 3,
-              1.6 - 1.3 * np.clip((YY - wave2) / 90, 0, 1)))
-edge = np.minimum(np.abs(YY - wave1), np.abs(YY - wave2)) < 3          # dither only along the curved edges
-F = np.stack(WATER)[np.clip(np.floor(v + np.where(edge, BAYER[YY % 4, XX % 4] - 0.5, 0)), 0, 4).astype(int)].astype(np.uint8)
+WATER = [c('#04080f'), c('#070d1a'), c('#0a1324'), c('#0e1a2f'), c('#13223b'), c('#192c48')]
+# light at the top -> dark at the bottom; the band edges follow smooth curves and
+# every edge blends into the next shade through a wide ordered-dither ramp
+curve = 11 * np.sin(XX / 34 + 0.7) + 5 * np.sin(XX / 19 + 2.1)
+yw = np.clip((YY + curve) / H, 0, 1)
+v = (len(WATER) - 1) * (1 - yw) ** 1.15 + 0.5
+F = np.stack(WATER)[np.clip(np.floor(v + BAYER[YY % 4, XX % 4] - 0.5), 0, len(WATER) - 1).astype(int)].astype(np.uint8)
 rng = np.random.default_rng(4)
 for _ in range(60):
     x, y = rng.integers(0, W), rng.integers(0, H)

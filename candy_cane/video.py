@@ -82,20 +82,16 @@ def curved_bands(shades, y0, y1, n_curves, seed):
         v = v + np.clip((YY - cv) / (span * 0.09) + 0.5, 0, 1)
     return shades[np.clip(np.floor(v + BAYER[YY % 4, XX % 4]), 0, len(shades) - 1).astype(int)]
 
-# ================================================================ page background (style study recipe)
-PAGE = curved_bands(pal('#182a48', '#13223b', '#0e1a2e', '#091221'), 0, H, 3, 1).astype(np.float32)
-
-# ================================================================ the four world panels
-PANELS = {'earth': (6, 96, 88, 204), 'moon': (92, 96, 174, 204), 'mars': (6, 210, 88, 312), 'jupiter': (92, 210, 174, 312)}
-GROUND = {'earth': 194, 'moon': 194, 'mars': 300, 'jupiter': 300}
-PX_PER_M = 90
+# ================================================================ full-screen worlds (one at a time)
+GY = 268                                  # ground line
+PX_PER_M = 180
 LOOK = {
     'earth':   dict(sky=pal('#2b3f6e', '#22345e', '#1a2a4e', '#132040'), gnd=pal('#eef5ff', '#cfe0f4', '#a9c3e4', '#86a5d0'), name='EARTH'),
     'moon':    dict(sky=pal('#1d1c2a', '#171622', '#11111a', '#0b0b12'), gnd=pal('#c9c6c0', '#a6a29c', '#85827d', '#64625e'), name='MOON'),
     'mars':    dict(sky=pal('#e0a070', '#cc8a5c', '#b4744c', '#9a5e3e'), gnd=pal('#e0784a', '#c45e36', '#a24a2a', '#7e3820'), name='MARS'),
     'jupiter': dict(sky=pal('#f0c890', '#e2ae74', '#d0945c', '#b87a48'), gnd=pal('#8a5a3a', '#76492e', '#613a24', '#4c2c1a'), name='JUPITER'),
 }
-FONT_SC = 1
+CX = 90
 def text_sprite(text, sc=1, pad=2):
     tm = text_mask(text, sc); th, tw = tm.shape
     out = np.zeros((th + 2 * pad, tw + 2 * pad, 4), np.float32); out[..., 3] = 1
@@ -107,66 +103,70 @@ def blit(F, spr, x, y, alpha=1.0):
     h, w_ = spr.shape[:2]; a = spr[..., 3:4] * alpha
     F[y:y + h, x:x + w_] = F[y:y + h, x:x + w_] * (1 - a) + spr[..., :3] * a
 
-def build_panel(name):
-    x0, y0, x1, y1 = PANELS[name]; g = GROUND[name]; L = LOOK[name]
-    P = np.zeros((H, W, 3), np.float32)
-    sky = curved_bands(L['sky'], y0, g, 3, hash(name) % 97)
-    P[:] = sky
-    gy = YY - g
-    gv = np.clip(gy / (y1 - g) * 3.2, 0, 3) + 0.35 * np.sin(XX / 7 + hash(name) % 5) * (gy < 3)
-    gmask = YY >= g + np.round(0.8 * np.sin(XX / 6 + len(name)))
+def curved_bands(shades, y0, y1, n_curves, seed):
+    r = np.random.default_rng(seed); span = y1 - y0; v = np.zeros((H, W))
+    for k in range(n_curves):
+        cy = y0 + span * (k + 1) / (n_curves + 1)
+        cv = cy + span * 0.05 * np.sin(XX / r.uniform(30, 40) + r.uniform(0, 6)) + span * 0.02 * np.sin(XX / r.uniform(15, 21) + r.uniform(0, 6))
+        v = v + np.clip((YY - cv) / (span * 0.07) + 0.5, 0, 1)
+    return shades[np.clip(np.floor(v + BAYER[YY % 4, XX % 4]), 0, len(shades) - 1).astype(int)]
+
+def build_world(name):
+    L = LOOK[name]; P = curved_bands(L['sky'], 0, GY, 3, len(name) * 13).astype(np.float32)
+    gy = YY - GY
+    gv = np.clip(gy / (H - GY) * 3.2, 0, 3)
+    gmask = YY >= GY + np.round(1.2 * np.sin(XX / 9 + len(name)))
     P[gmask] = L['gnd'][np.clip(np.floor(gv + BAYER[YY % 4, XX % 4] - 0.5), 0, 3).astype(int)][gmask]
+    P[gmask & ~np.roll(gmask, 1, 0)] = np.minimum(1, L['gnd'][0] * 1.05)          # lit rim on the ground edge
     r = np.random.default_rng(len(name) * 7)
-    if name == 'moon':                     # craters, Earth in the black sky
-        for _ in range(6):
-            cx, cw = r.uniform(x0 + 6, x1 - 6), r.uniform(3, 6)
+    if name == 'moon':
+        for _ in range(7):
+            cx, cw = r.uniform(8, 172), r.uniform(5, 11)
             for xx in range(int(cx - cw), int(cx + cw) + 1):
-                P[g + 2, xx] = L['gnd'][3]; P[g + 3, xx] = L['gnd'][1]
-        ex, ey = x1 - 16, y0 + 18
+                if 0 <= xx < W: P[GY + 4, xx] = L['gnd'][3]; P[GY + 5, xx] = L['gnd'][1]
+        ex, ey = 140, 104
         d = np.hypot(XX + 0.5 - ex, YY + 0.5 - ey)
-        P[d <= 6] = hexc('#2f7dff'); P[(d <= 6) & (np.sin(XX * 0.9) + np.cos(YY * 0.8) > 0.6)] = hexc('#3fcf6a')
-        P[(d <= 6) & (XX < ex - 2)] = P[(d <= 6) & (XX < ex - 2)] * 0.55
-        P[(d > 6) & (d <= 7)] = INK
-    if name == 'mars':                     # small pale sun, rocks
-        d = np.hypot(XX + 0.5 - (x0 + 18), YY + 0.5 - (y0 + 20)); P[d <= 3] = hexc('#fff0d8')
-        for _ in range(4):
-            rx = int(r.uniform(x0 + 6, x1 - 8)); P[g - 2:g, rx:rx + 3] = L['gnd'][3]; P[g - 2, rx:rx + 3] = INK
-    if name == 'jupiter':                  # cloud bands + the great red spot in the sky
-        for k, yy in enumerate(range(y0 + 10, g - 6, 12)):
-            band = (YY >= yy + 2 * np.sin(XX / 11 + k)) & (YY < yy + 4 + 2 * np.sin(XX / 11 + k)) & (YY < g)
+        e = d <= 12
+        P[e] = hexc('#2f7dff'); P[e & (np.sin(XX * 0.45) + np.cos(YY * 0.4) > 0.6)] = hexc('#3fcf6a')
+        P[e & (XX < ex - 4)] = P[e & (XX < ex - 4)] * 0.55
+        P[(d > 12) & (d <= 13)] = INK
+    if name == 'mars':
+        d = np.hypot(XX + 0.5 - 40, YY + 0.5 - 110); P[d <= 6] = hexc('#fff0d8'); P[(d > 6) & (d <= 7)] = hexc('#f0c8a0')
+        for _ in range(5):
+            rx = int(r.uniform(6, 168)); P[GY - 4:GY, rx:rx + 6] = L['gnd'][3]; P[GY - 4, rx:rx + 6] = INK
+            P[GY - 4:GY, rx] = INK; P[GY - 4:GY, rx + 5] = INK
+    if name == 'jupiter':
+        for k, yy in enumerate(range(96, GY - 10, 22)):
+            band = (YY >= yy + 3 * np.sin(XX / 17 + k)) & (YY < yy + 7 + 3 * np.sin(XX / 17 + k)) & (YY < GY)
             P[band] = (L['sky'][3] if k % 2 else hexc('#f6dcb4'))
-        d = ((XX + 0.5 - (x1 - 20)) / 7) ** 2 + ((YY + 0.5 - (y0 + 24)) / 4) ** 2
-        P[d <= 1] = hexc('#c8452e'); P[(d > 1) & (d <= 1.4)] = hexc('#9a3020')
-        P[(YY >= g) & (YY < g + 1)] = hexc('#ffe6b0')                       # the pretend floor's glossy edge
-    if name == 'earth':                    # a little snowy pine
-        for k in range(14):
-            hw = 1 + k * 0.45
-            for xx in range(int(x0 + 16 - hw), int(x0 + 16 + hw) + 1):
-                P[g - 16 + k, xx] = hexc('#1f6a3a') if (xx + k) % 5 else hexc('#eef5ff')
-        P[g - 2:g, x0 + 15:x0 + 17] = hexc('#4a2c1c'); P[g - 17, x0 + 16] = hexc('#ffd84a')
-    m = np.zeros((H, W), bool); m[y0:y1, x0:x1] = True
-    for cy, cx in ((y0, x0), (y0, x1 - 1), (y1 - 1, x0), (y1 - 1, x1 - 1)): m[cy, cx] = False
-    return P, m
-PANEL_IMG = {n: build_panel(n) for n in PANELS}
-PANEL_SEED = {n: np.random.default_rng(i + 3).random((H, W)) for i, n in enumerate(PANELS)}
-NAMES = {n: text_sprite(LOOK[n]['name']) for n in PANELS}
+        d = ((XX + 0.5 - 130) / 15) ** 2 + ((YY + 0.5 - 118) / 8) ** 2
+        P[d <= 1] = hexc('#c8452e'); P[(d > 1) & (d <= 1.25)] = hexc('#9a3020')
+        P[(YY >= GY) & (YY < GY + 1)] = hexc('#ffe6b0')
+    if name == 'earth':
+        for (tx, th_) in ((26, 34), (160, 26)):
+            for k in range(th_):
+                hw = 1 + k * 0.42
+                for xx in range(int(tx - hw), int(tx + hw) + 1):
+                    if 0 <= xx < W: P[GY - th_ + k, xx] = hexc('#1f6a3a') if (xx + k) % 6 else hexc('#eef5ff')
+            P[GY - 3:GY, tx - 1:tx + 2] = hexc('#4a2c1c'); P[GY - th_ - 1, tx] = hexc('#ffd84a')
+    tag = text_sprite(L['name']); blit(P, tag, 6, H - 16)
+    return P
+WORLD_IMG = {n: build_world(n) for n in WORLDS}
 
-def panel_reveal(name, t):
-    w_ = WORLDS[name]
-    if name == 'earth': return 1.0
-    t_in = w_['first'] - w_['period'] / 2 - FORM - 0.5
-    t_out = POP[name] + 0.8                       # dissolve away after its cane pops, so the loop matches
-    return min(1.0, max(0.0, (t - t_in) / 0.5), max(0.0, 1 - (t - t_out) / 0.5))
-
-def draw_panel(F, name, t):
-    a = panel_reveal(name, t)
-    if a <= 0: return
-    P, m = PANEL_IMG[name]
-    show = m & (PANEL_SEED[name] < a)                 # pixel-dissolve in
-    F[dilate(show) & ~show & ~dilate(dilate(m) & ~m) | (dilate(m) & ~m & (a >= 1))] = INK
-    F[show] = P[show]
-    x0, y0, x1, y1 = PANELS[name]
-    if a >= 1: blit(F, NAMES[name], x0 + 3, y0 + 3)
+# which world the camera looks at, and when it pans (pan takes 0.45 s)
+SCENES = [(0.0, 'earth'), (4.25, 'moon'), (9.25, 'mars'), (13.0, 'jupiter'),
+          (17.9, 'earth'), (21.9, 'moon'), (25.9, 'mars'), (29.9, 'jupiter'), (33.9, 'earth')]
+ORDER = ['earth', 'moon', 'mars', 'jupiter']
+PAN = 0.45
+def view(t):
+    """returns (current, next, s) where s in [0,1) is the pan progress"""
+    cur = SCENES[0][1]
+    for i, (ts, n) in enumerate(SCENES):
+        if t >= ts: cur = n; k = i
+    nxt_t = SCENES[k + 1][0] if k + 1 < len(SCENES) else None
+    if nxt_t is not None and t >= nxt_t - PAN:
+        return cur, SCENES[k + 1][1], smooth((t - (nxt_t - PAN)) / PAN)
+    return cur, None, 0.0
 
 # ================================================================ candy cane (distance-field sprite, rotatable)
 def cane_path():
@@ -184,29 +184,30 @@ RED, RED_D, RED_L = hexc('#e8283c'), hexc('#a0142a'), hexc('#ff6a78')
 WHT, WHT_D = hexc('#fff6f2'), hexc('#d6cbd6')
 LDIR = np.array([-0.7, -0.7])
 
+CSC = 2.0
 def draw_cane(F, bx, by, ang, sq=1.0, mode=('on',), seed=0):
     """bx,by = bottom tip on screen; ang = tilt (rad) around the tip; sq = vertical squash"""
     ca, sa = math.cos(ang), math.sin(ang)
-    P = CP.copy(); P[:, 1] *= sq
+    P = CP.copy() * CSC; P[:, 1] *= sq
     PX = bx + P[:, 0] * ca - P[:, 1] * sa; PY = by + P[:, 0] * sa + P[:, 1] * ca
     T = np.stack([CT[:, 0] * ca - CT[:, 1] * sa, CT[:, 0] * sa + CT[:, 1] * ca], 1)
     x0, x1 = int(PX.min()) - 4, int(PX.max()) + 5; y0, y1 = int(PY.min()) - 4, int(PY.max()) + 5
     yy, xx = np.mgrid[y0:y1, x0:x1]
     dx = xx[..., None] + 0.5 - PX; dy = yy[..., None] + 0.5 - PY
     d2 = dx * dx + dy * dy; i = np.argmin(d2, axis=-1); d = np.sqrt(np.take_along_axis(d2, i[..., None], -1)[..., 0])
-    R = 1.9
+    R = 1.9 * CSC
     inside = d <= R
     side = (T[i, 0] * np.take_along_axis(dy, i[..., None], -1)[..., 0] - T[i, 1] * np.take_along_axis(dx, i[..., None], -1)[..., 0])
     nrm_x, nrm_y = -T[i, 1], T[i, 0]
     lit = (nrm_x * LDIR[0] + nrm_y * LDIR[1]) * np.sign(side + 1e-6)
-    stripe = (np.floor((CS[i] + side * 1.3) / 2.6) % 2) == 0
-    col = np.where(stripe[..., None], np.where((lit > 0.3)[..., None] & (np.abs(side) > 0.7)[..., None], RED_L, np.where((lit < -0.3)[..., None] & (np.abs(side) > 0.7)[..., None], RED_D, RED)),
-                   np.where((lit < -0.3)[..., None] & (np.abs(side) > 0.7)[..., None], WHT_D, WHT))
+    stripe = (np.floor((CS[i] * CSC + side * 1.3) / (2.6 * CSC)) % 2) == 0
+    col = np.where(stripe[..., None], np.where((lit > 0.3)[..., None] & (np.abs(side) > 0.7 * CSC)[..., None], RED_L, np.where((lit < -0.3)[..., None] & (np.abs(side) > 0.7 * CSC)[..., None], RED_D, RED)),
+                   np.where((lit < -0.3)[..., None] & (np.abs(side) > 0.7 * CSC)[..., None], WHT_D, WHT))
     ring = dilate(inside) & ~inside
     if mode[0] != 'on':
         ys, xs = np.nonzero(inside); cc = col[ys, xs]; ys = ys + y0; xs = xs + x0
         rr = np.random.default_rng(seed); n = len(ys)
-        ang_ = rr.uniform(0, TAU, n); dist = rr.uniform(5, 18, n); lag = rr.uniform(0, 0.35, n)
+        ang_ = rr.uniform(0, TAU, n); dist = rr.uniform(8, 30, n); lag = rr.uniform(0, 0.35, n)
         if mode[0] == 'form':
             s_ = np.clip((mode[1] - lag) / (1 - lag), 0, 1); e = (1 - s_) ** 2
             px, py = xs + np.cos(ang_) * dist * e, ys + np.sin(ang_) * dist * e
@@ -225,7 +226,7 @@ def draw_cane(F, bx, by, ang, sq=1.0, mode=('on',), seed=0):
 
 def cane_state(name, t):
     w_ = WORLDS[name]; hits, T = w_['hits'], w_['period']
-    g = GROUND[name]; hpx = w_['h'] * PX_PER_M
+    g = GY; hpx = w_['h'] * PX_PER_M
     release = hits[0] - T / 2
     pop = POP[name]
     if name == 'earth':
@@ -246,28 +247,26 @@ def cane_state(name, t):
     return y, tilt, 1 - 0.18 * k, ('on',)
 
 def draw_impact(F, name, t):
-    w_ = WORLDS[name]; age = last_age(w_['hits'], t); g = GROUND[name]
-    x0, y0, x1, y1 = PANELS[name]; cx = (x0 + x1) / 2
-    if age > 0.45 or panel_reveal(name, t) < 1 or t > w_['hits'][-1] + 0.45: return
-    gl = LOOK[name]['gnd']
-    # light reacts: ground under the cane brightens one shade, dithered, fading out
-    a = math.exp(-age / 0.12)
-    for yy in range(g, g + 6):
-        for xx in range(int(cx - 14), int(cx + 15)):
-            fall = a * (1 - abs(xx - cx) / 15) * (1 - (yy - g) / 6)
+    w_ = WORLDS[name]; age = last_age(w_['hits'], t); g = GY
+    if age > 0.5 or t > w_['hits'][-1] + 0.5 or t < w_['first']: return
+    gl = LOOK[name]['gnd']; a = math.exp(-age / 0.12)
+    for yy in range(g, g + 10):                     # the ground lights up under the impact
+        for xx in range(CX - 30, CX + 31):
+            fall = a * (1 - abs(xx - CX) / 31) * (1 - (yy - g) / 10)
             if fall > BAYER[yy % 4, xx % 4]: F[yy, xx] = np.minimum(1, F[yy, xx] * 0.6 + gl[0] * 0.5 + 0.12)
     r = np.random.default_rng(int(t / max(w_['period'], 0.25)) + len(name))
-    n, spd = {'earth': (6, 22), 'moon': (8, 12), 'mars': (6, 18), 'jupiter': (4, 10)}[name]
-    grav = {'earth': 90, 'moon': 18, 'mars': 40, 'jupiter': 220}[name]          # dust falls back with each world's gravity
+    n, spd = {'earth': (10, 40), 'moon': (14, 22), 'mars': (10, 32), 'jupiter': (8, 18)}[name]
+    grav = {'earth': 160, 'moon': 30, 'mars': 70, 'jupiter': 400}[name]   # dust falls back with each world's gravity
     for k in range(n):
-        vx = (r.random() - 0.5) * spd * 2; vy = -r.random() * spd - 4
-        px = cx + vx * age; py = g - 1 + vy * age + grav * age * age
-        if py <= g: put(F, px, py, gl[0], 1 - age / 0.45)
+        vx = (r.random() - 0.5) * spd * 2; vy = -r.random() * spd - 6
+        px = CX + vx * age; py = g - 1 + vy * age + grav * age * age
+        if py <= g:
+            put(F, px, py, gl[0], 1 - age / 0.5); put(F, px + 1, py, gl[1], 0.7 * (1 - age / 0.5))
 
 # ================================================================ Christmas lights across the top (one bulb per melody note)
 MEL_T = [m[0] for m in MELODY]; NB = len(MEL_T)
 BULB_X = [10 + i * (160 / (NB - 1)) for i in range(NB)]
-def wire_y(x): return 84 + 6 * (1 - ((x - 90) / 84) ** 2)
+def wire_y(x): return 10 + 6 * (1 - ((x - 90) / 84) ** 2)
 BCOL = [hexc(c) for c in ('#ff3b4e', '#3fe07a', '#ffd23a', '#4aa8ff')]
 def draw_lights(F, t):
     for x in range(8, 173):
@@ -308,7 +307,7 @@ def caption_sprite(text, icon=False, sc=1, pad=3):
     return out
 
 class Caption:
-    def __init__(self, text, t_in, t_out, seed, icon=False, y=32):
+    def __init__(self, text, t_in, t_out, seed, icon=False, y=34):
         self.s = caption_sprite(text, icon); h, w_ = self.s.shape[:2]
         self.x, self.y, self.t_in, self.t_out = (W - w_) // 2, y, t_in, t_out
         r = np.random.default_rng(seed); self.yy, self.xx = np.mgrid[0:h, 0:w_]
@@ -343,64 +342,61 @@ class Caption:
 CAPTIONS = []
 def cap(text, a, b, icon=False): CAPTIONS.append(Caption(text, a, b, 40 + len(CAPTIONS), icon))
 cap("WHAT IF YOU DROPPED A\nCANDY CANE ON\nEVERY WORLD?", 37.4, 39.75, icon=True)
-cap("ON EARTH, IT BOUNCES\nTO THE BEAT", 2.3, 5.3)
-cap("ON THE MOON, GRAVITY\nIS WEAK... IT FLOATS", 6.3, 9.3)
-cap("MARS PULLS HARDER\nTHAN THE MOON", 10.4, 13.3)
-cap("IF JUPITER HAD A FLOOR,\nIT WOULD SLAM DOWN!", 14.3, 17.3)
+cap("ON EARTH, IT BOUNCES\nTO THE BEAT", 2.2, 3.9)
+cap("ON THE MOON, GRAVITY\nIS WEAK... IT FLOATS", 5.0, 8.7)
+cap("MARS PULLS HARDER\nTHAN THE MOON", 10.0, 12.5)
+cap("IF JUPITER HAD A FLOOR,\nIT WOULD SLAM DOWN!", 14.0, 17.2)
 cap("AND THE LIGHTS\nSING ALONG", 18.4, 21.5)
-cap("STRONGER GRAVITY,\nFASTER BOUNCE", 25.0, 28.5)
+cap("STRONGER GRAVITY,\nFASTER BOUNCE", 26.4, 29.4)
 cap("SO THE STRONGER THE\nGRAVITY, THE FASTER\nIT BOUNCES", 34.4, 36.85)
 
-# ================================================================ living pixels (background only)
+# ================================================================ living pixels
 rng = np.random.default_rng(21)
-STARS = [(rng.uniform(0, W), rng.uniform(0, H), int(rng.integers(2, 9)), rng.uniform(0, 6.28)) for _ in range(45)]
-SNOW = [(rng.uniform(8, 86), rng.uniform(0, 1), int(rng.integers(2, 5)), rng.uniform(0, 6.28)) for _ in range(22)]
-MSTARS = [(rng.uniform(94, 172), rng.uniform(98, 190), int(rng.integers(2, 9)), rng.uniform(0, 6.28)) for _ in range(14)]
-DUST = [(rng.uniform(8, 86), rng.uniform(214, 296), int(rng.integers(1, 4)), rng.uniform(0, 6.28)) for _ in range(12)]
+SNOW = [(rng.uniform(0, W), rng.uniform(0, 1), int(rng.integers(3, 7)), rng.uniform(0, 6.28)) for _ in range(40)]
+MSTARS = [(rng.uniform(0, W), rng.uniform(4, 240), int(rng.integers(2, 9)), rng.uniform(0, 6.28)) for _ in range(40)]
+DUST = [(rng.uniform(0, W), rng.uniform(60, 260), int(rng.integers(1, 4)), rng.uniform(0, 6.28)) for _ in range(18)]
+ESTARS = [(rng.uniform(0, W), rng.uniform(4, 200), int(rng.integers(2, 9)), rng.uniform(0, 6.28)) for _ in range(22)]
 def w(k): return TAU * k / LOOP
-def ambient(F, t):
-    for x, y, k, ph in STARS:
-        b = 0.5 + 0.5 * math.sin(w(k) * t + ph)
-        if not any(px0 <= x < px1 and py0 <= y < py1 for px0, py0, px1, py1 in PANELS.values()):
-            put(F, x, y, hexc('#9fb6e0'), 0.15 + 0.6 * b)
-    if panel_reveal('moon', t) >= 1:
-        for x, y, k, ph in MSTARS:
-            put(F, x, y, np.array([0.9, 0.9, 1.0]), 0.2 + 0.7 * (0.5 + 0.5 * math.sin(w(k) * t + ph)))
-    for x0, ph0, n, ph in SNOW:                                         # snow falls into the Earth panel and settles
-        cyc = LOOP / n; tau = ((t / cyc + ph0) % 1.0) * cyc; fall = 96 / 20.0
-        if tau < fall: put(F, x0 + 2 * math.sin(tau * 2 + ph), 98 + 20 * tau, np.array([0.95, 0.97, 1.0]), 0.9)
-        elif tau < fall + 1.2: put(F, x0 + 2 * math.sin(fall * 2 + ph), GROUND['earth'], np.array([1, 1, 1]), 0.9 * (1 - (tau - fall) / 1.2))
-    if panel_reveal('mars', t) >= 1:
-        for x, y, k, ph in DUST:
-            put(F, x + 2 * math.sin(w(k * 3) * t + ph), y + 2 * math.cos(w(k * 2) * t + ph), hexc('#ffd0a0'), 0.6)
-    tick = int(t * 20) % int(LOOP * 20)                                 # pixel swaps on the page background only
-    r = np.random.default_rng(tick + 1000); n = 260
-    ys = r.integers(1, H - 1, n); xs = r.integers(1, W - 1, n); d = r.integers(0, 4, n)
+def ambient(F, name, t):
+    if name == 'earth':
+        for x, y, k, ph in ESTARS: put(F, x, y, hexc('#c8d8ff'), 0.15 + 0.5 * (0.5 + 0.5 * math.sin(w(k) * t + ph)))
+        for x0, ph0, n, ph in SNOW:                   # snow falls in from the top and settles on the ground
+            cyc = LOOP / n; tau = ((t / cyc + ph0) % 1.0) * cyc; fall = (GY + 6) / 30.0
+            if tau < fall:
+                x, y = x0 + 3 * math.sin(tau * 1.6 + ph), -6 + 30 * tau
+                put(F, x, y, np.array([0.95, 0.97, 1.0])); put(F, x + 1, y, np.array([0.9, 0.94, 1.0]), 0.6)
+            elif tau < fall + 1.4: put(F, x0 + 3 * math.sin(fall * 1.6 + ph), GY, np.array([1, 1, 1]), 0.9 * (1 - (tau - fall) / 1.4))
+    if name == 'moon':
+        for x, y, k, ph in MSTARS: put(F, x, y, np.array([0.92, 0.92, 1.0]), 0.2 + 0.7 * (0.5 + 0.5 * math.sin(w(k) * t + ph)))
+    if name == 'mars':
+        for x, y, k, ph in DUST: put(F, x + 3 * math.sin(w(k * 3) * t + ph), y + 3 * math.cos(w(k * 2) * t + ph), hexc('#ffd8b0'), 0.7)
+    tick = int(t * 20) % int(LOOP * 20)              # a few background pixels swap with a neighbour, in place
+    r = np.random.default_rng(tick + 1000); n = 220
+    ys = r.integers(40, GY - 2, n); xs = r.integers(1, W - 1, n); d = r.integers(0, 4, n)
     ys2 = ys + np.array([0, 0, 1, -1])[d]; xs2 = xs + np.array([1, -1, 0, 0])[d]
-    okm = ~(PAGE_MASK[ys, xs] | PAGE_MASK[ys2, xs2])
-    ys, xs, ys2, xs2 = ys[okm], xs[okm], ys2[okm], xs2[okm]
     a_, b_ = F[ys, xs].copy(), F[ys2, xs2].copy(); F[ys, xs] = b_; F[ys2, xs2] = a_
-PAGE_MASK = np.zeros((H, W), bool)
-for px0, py0, px1, py1 in PANELS.values(): PAGE_MASK[py0 - 2:py1 + 2, px0 - 2:px1 + 2] = True
-PAGE_MASK[24:100] = True
 
-# ================================================================ frame
-def frame(t):
-    F = PAGE.copy()
-    for n in PANELS: draw_panel(F, n, t)
-    ambient(F, t)
-    for i, n in enumerate(PANELS):
-        if panel_reveal(n, t) < 1 and n != 'earth': continue
-        draw_impact(F, n, t)
-        st = cane_state(n, t)
-        if st is None: continue
+def world_frame(name, t):
+    F = WORLD_IMG[name].copy()
+    ambient(F, name, t)
+    draw_impact(F, name, t)
+    st = cane_state(name, t)
+    if st is not None:
         y, tilt, sq, mode = st
-        x0, y0, x1, y1 = PANELS[n]
-        if mode[0] == 'on':                                             # soft shadow under the cane
-            hgt = GROUND[n] - y; sw = max(1, int(4 - hgt / 25))
-            for xx in range(int((x0 + x1) / 2 - sw), int((x0 + x1) / 2 + sw) + 1):
-                put(F, xx, GROUND[n] + 1, INK, 0.35)
-        draw_cane(F, (x0 + x1) / 2 - 1, y, tilt, sq, mode, 7 + i)
+        if mode[0] == 'on':                                       # shadow shrinks as the cane rises
+            hgt = GY - y; sw = max(1, int(8 - hgt / 22))
+            for xx in range(CX - sw, CX + sw + 1):
+                put(F, xx, GY + 1, INK, 0.35); put(F, xx, GY + 2, INK, 0.2)
+        draw_cane(F, CX - 4, y, tilt, sq, mode, 7 + ORDER.index(name))
+    return F
+
+def frame(t):
+    cur, nxt, s_ = view(t)
+    F = world_frame(cur, t)
+    if nxt is not None and s_ > 0:                                # camera pans sideways to the next world
+        G2 = world_frame(nxt, t); off = int(round(s_ * W))
+        F = np.concatenate([F[:, off:], G2[:, :off]], axis=1) if off > 0 else F
+        if 0 < off < W: F[:, W - off - 1:W - off + 1] = INK          # thin seam between worlds
     draw_lights(F, t)
     for c_ in CAPTIONS: c_.draw(F, t)
     return np.repeat(np.repeat((np.clip(F, 0, 1) * 255 + 0.5).astype(np.uint8), S, 0), S, 1)

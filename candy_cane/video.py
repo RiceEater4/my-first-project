@@ -149,24 +149,24 @@ def build_world(name):
                 for xx in range(int(tx - hw), int(tx + hw) + 1):
                     if 0 <= xx < W: P[GY - th_ + k, xx] = hexc('#1f6a3a') if (xx + k) % 6 else hexc('#eef5ff')
             P[GY - 3:GY, tx - 1:tx + 2] = hexc('#4a2c1c'); P[GY - th_ - 1, tx] = hexc('#ffd84a')
-    tag = text_sprite(L['name']); blit(P, tag, 6, H - 16)
     return P
 WORLD_IMG = {n: build_world(n) for n in WORLDS}
 
-# which world the camera looks at, and when it pans (pan takes 0.45 s)
-SCENES = [(0.0, 'earth'), (4.25, 'moon'), (9.25, 'mars'), (13.0, 'jupiter'),
-          (17.9, 'earth'), (21.9, 'moon'), (25.9, 'mars'), (29.9, 'jupiter'), (33.9, 'earth')]
+# which world the camera looks at. 'fall': a new cane falls from the sky and the camera follows it
+# down onto the next world (ends exactly at that cane's release). 'fade': a soft pixel fade.
 ORDER = ['earth', 'moon', 'mars', 'jupiter']
-PAN = 0.45
+def release(n): return WORLDS[n]['first'] - WORLDS[n]['period'] / 2
+SCENES = [(0.0, 'earth', None), (4.2, 'moon', 'fall'), (9.2, 'mars', 'fall'), (13.1, 'jupiter', 'fall'),
+          (17.75, 'earth', 'fade'), (21.75, 'moon', 'fade'), (25.75, 'mars', 'fade'), (29.75, 'jupiter', 'fade'), (33.75, 'earth', 'fade')]
+FADE = 0.5
 def view(t):
-    """returns (current, next, s) where s in [0,1) is the pan progress"""
-    cur = SCENES[0][1]
-    for i, (ts, n) in enumerate(SCENES):
-        if t >= ts: cur = n; k = i
-    nxt_t = SCENES[k + 1][0] if k + 1 < len(SCENES) else None
-    if nxt_t is not None and t >= nxt_t - PAN:
-        return cur, SCENES[k + 1][1], smooth((t - (nxt_t - PAN)) / PAN)
-    return cur, None, 0.0
+    k = max(i for i, sc in enumerate(SCENES) if t >= sc[0])
+    ts, name, kind = SCENES[k]
+    if kind is None: return name, None, 0.0, None
+    dur = (release(name) - ts) if kind == 'fall' else FADE
+    s_ = (t - ts) / dur
+    if s_ >= 1: return name, None, 0.0, None
+    return SCENES[k - 1][1], name, s_, kind
 
 # ================================================================ candy cane (distance-field sprite, rotatable)
 def cane_path():
@@ -233,8 +233,7 @@ def cane_state(name, t):
         if t >= REFORM: return g - hpx, 0, 1, ('form', min(1, (t - REFORM) / 0.5))
         if t < release: return g - hpx + 1.0 * math.sin(t * 5), 0, 1, ('on',)
     else:
-        if t < release - FORM: return None
-        if t < release: return g - hpx, 0, 1, ('form', (t - (release - FORM)) / FORM)
+        if t < release: return None                       # still falling in with the camera (see frame)
     if t >= pop + 0.8: return None
     if t >= hits[-1]:
         hov = g - hpx * min(1, (t - hits[-1]) / (T / 2)) ** 0.5
@@ -376,11 +375,11 @@ def ambient(F, name, t):
     ys2 = ys + np.array([0, 0, 1, -1])[d]; xs2 = xs + np.array([1, -1, 0, 0])[d]
     a_, b_ = F[ys, xs].copy(), F[ys2, xs2].copy(); F[ys, xs] = b_; F[ys2, xs2] = a_
 
-def world_frame(name, t):
+def world_frame(name, t, cane=True):
     F = WORLD_IMG[name].copy()
     ambient(F, name, t)
     draw_impact(F, name, t)
-    st = cane_state(name, t)
+    st = cane_state(name, t) if cane else None
     if st is not None:
         y, tilt, sq, mode = st
         if mode[0] == 'on':                                       # shadow shrinks as the cane rises
@@ -390,13 +389,22 @@ def world_frame(name, t):
         draw_cane(F, CX - 4, y, tilt, sq, mode, 7 + ORDER.index(name))
     return F
 
+FULL_BAYER = BAYER[YY % 4, XX % 4]
 def frame(t):
-    cur, nxt, s_ = view(t)
-    F = world_frame(cur, t)
-    if nxt is not None and s_ > 0:                                # camera pans sideways to the next world
-        G2 = world_frame(nxt, t); off = int(round(s_ * W))
-        F = np.concatenate([F[:, off:], G2[:, :off]], axis=1) if off > 0 else F
-        if 0 < off < W: F[:, W - off - 1:W - off + 1] = INK          # thin seam between worlds
+    cur, nxt, s_, kind = view(t)
+    F = world_frame(cur, t, cane=(kind != 'fall'))
+    if kind == 'fade':                                            # soft ordered-dither pixel fade
+        G2 = world_frame(nxt, t); m = FULL_BAYER < smooth(s_)
+        F[m] = G2[m]
+    elif kind == 'fall':                                          # the cane drops out of this world; the camera follows it down
+        e = smooth(s_); off = int(round(e * H))
+        G2 = world_frame(nxt, t)
+        if off > 0: F = np.concatenate([F[off:], G2[:off]], axis=0)
+        drop = GY - WORLDS[nxt]['h'] * PX_PER_M
+        ts = max(sc[0] for sc in SCENES if sc[0] <= t)
+        y0 = cane_state(cur, ts)[0]                                 # where the cane was when it left
+        y = y0 + (drop - y0) * s_ ** 1.6                            # speeds up as it falls
+        draw_cane(F, CX - 4, y, 0.12 * math.sin(s_ * 9) * (1 - s_), 1, ('on',), 7 + ORDER.index(nxt))
     draw_lights(F, t)
     for c_ in CAPTIONS: c_.draw(F, t)
     return np.repeat(np.repeat((np.clip(F, 0, 1) * 255 + 0.5).astype(np.uint8), S, 0), S, 1)

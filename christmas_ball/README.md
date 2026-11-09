@@ -15,6 +15,10 @@ so dropping it 4x higher makes it bounce 2x slower. At 120 BPM the real heights 
 
 Everything is scaled 60 px per metre, so the heights on screen are true to each other.
 
+The camera focuses on one character at a time (cat, mouse, kid, Santa, then the robin's
+xylophone) and pulls back for the reveal and the finale. Every surface is re-dithered each
+frame with drifting noise, cloud shadows and wind ripples, so the scene never freezes.
+
 ```
 python3 audio.py audio.wav
 python3 video.py drop_a_ball_4x_higher.mp4 audio.wav

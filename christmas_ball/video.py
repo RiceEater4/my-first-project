@@ -27,6 +27,33 @@ BAY = BAYER[YY % 4, XX % 4]
 def dith(v, p, bay):
     return p[np.clip(np.floor(v + bay), 0, len(p) - 1).astype(int)]
 
+# ---- "living pixels": every surface is re-dithered each frame with a drifting noise field,
+# sweeping cloud shadows and a crawling dither pattern, so no pixel is ever frozen.
+_r = np.random.default_rng(99)
+_ny, _nx = np.mgrid[0:256, 0:256]
+NZ = np.zeros((256, 256), np.float32)
+for _k in range(6):
+    fx, fy = _r.integers(1, 9, 2)
+    NZ += np.sin(TAU * (fx * _nx + fy * _ny) / 256 + _r.uniform(0, TAU)) / (1 + _k * 0.5)
+NZ = (NZ - NZ.min()) / (NZ.max() - NZ.min())
+
+def live_fields(t):
+    ox = int(t / LOOP * 256 * 7) % 256
+    oy = int(t / LOOP * 256 * 4) % 256
+    noise = NZ[(YY + oy) % 256, (XX + ox) % 256] - 0.5
+    noise2 = NZ[(YY * 2 + 37 - oy * 3) % 256, (XX * 2 + 91 + ox * 2) % 256] - 0.5
+    shadow = 0.32 * (np.sin((XX * 0.8 + YY * 0.5) / 26 - w(4) * t) + np.sin((XX - YY * 0.6) / 41 + w(3) * t))
+    ripple = np.sin(XX / 7.5 + YY / 2.6 - w(24) * t + 1.5 * np.sin(YY / 9 + w(2) * t))
+    b = int(t / LOOP * 4 * 240)
+    bay = BAYER[(YY + b // 4) % 4, (XX + b) % 4] - 0.5
+    return dict(noise=noise, noise2=noise2, shadow=shadow, ripple=ripple, bay=bay)
+
+def paint_live(F, L, fld):
+    """L: dict(mask, v, p, n=noise amp, s=shadow amp, r=ripple amp)"""
+    m = L['mask']
+    v = L['v'] + 1.7 * L.get('n', 0.6) * fld['noise'] + 1.9 * L.get('n2', 0.5) * fld['noise2'] + L.get('s', 1.0) * fld['shadow'] + L.get('r', 0) * fld['ripple']
+    F[m] = dith(v, L['p'], fld['bay'])[m]
+
 def smooth(s): s = min(1.0, max(0.0, s)); return s * s * (3 - 2 * s)
 
 # ------------------------------------------------------------------ primitive drawing
@@ -104,130 +131,125 @@ MOON = (40, 138, 12)
 
 # ------------------------------------------------------------------ static layers
 def build_sky():
-    v = (np.clip((YY - 0) / 330, 0, 1) ** 1.15) * (len(SKY) - 1)
+    v = (np.clip(YY / 330, 0, 1) ** 1.15) * (len(SKY) - 1)
     d = np.hypot(XX - MOON[0], YY - MOON[1])
     v = v + 2.2 * np.exp(-(d / 34) ** 2) + 1.0 * np.exp(-(d / 95) ** 2)
-    F = dith(v, SKY, BAY - 0.5).astype(np.float32)
+    return dict(mask=np.ones((H, W), bool), v=v, p=SKY, n=0.7, n2=0.4, s=0.5)
+
+def draw_moon(F, fld):
+    d = np.hypot(XX - MOON[0], YY - MOON[1])
     m = d <= MOON[2]
     sh = np.clip(0.75 + 0.35 * ((XX - MOON[0]) * -0.6 + (YY - MOON[1]) * -0.6) / MOON[2], 0, 1)
-    moonp = pal('#b9b39a', '#dcd6bb', '#f2eed8', '#fffdf0')
-    F[m] = dith(sh * 3.2, moonp, BAY - 0.5)[m]
-    for cx, cy, r in ((36, 134, 2.6), (45, 142, 2), (41, 146, 1.4), (34, 143, 1.2)):
-        F[m & (np.hypot(XX - cx, YY - cy) < r)] = hexc('#c9c2a4')
-    return F
+    F[m] = dith(sh * 3.2 + 0.5 * fld['noise2'], pal('#b9b39a', '#dcd6bb', '#f2eed8', '#fffdf0'), fld['bay'])[m]
 
 def build_mountains():
-    L = np.zeros((H, W, 4), np.float32)
-    # far range with snowy peaks
-    ym = 268 + 26 * np.abs(np.sin(XX / 41 + 0.4)) * -1 + 14 * np.sin(XX / 19 + 1) + 6 * np.sin(XX / 7)
-    m = YY >= ym
+    ym = 268 - 26 * np.abs(np.sin(XX / 41 + 0.4)) + 14 * np.sin(XX / 19 + 1) + 6 * np.sin(XX / 7)
     depth = np.clip((YY - ym) / 45, 0, 1)
     lit = np.clip(-(np.cos(XX / 41 + 0.4)) * 0.6 + 0.5, 0, 1)
-    v = (len(MTN) - 1) * (1 - depth) * (0.55 + 0.45 * lit) + 0.3
-    L[m, :3] = dith(v, MTN, BAY - 0.5)[m]; L[m, 3] = 1
-    # rolling hills
+    mtn = dict(mask=YY >= ym, v=(len(MTN) - 1) * (1 - depth) * (0.55 + 0.45 * lit) + 0.3, p=MTN, n=0.9, n2=0.6, s=1.1)
     yh = 330 + 8 * np.sin(XX / 33 + 2) + 5 * np.sin(XX / 13)
-    m = YY >= yh
     v = (len(SNOW) - 1.5) - np.clip((YY - yh) / 60, 0, 1) * 3.2 + 0.8 * np.exp(-((XX - 40) / 80) ** 2)
-    L[m, :3] = dith(v, SNOW, BAY - 0.5)[m]; L[m, 3] = 1
-    return L
+    hill = dict(mask=YY >= yh, v=v - 1.3, p=SNOW, n=0.8, n2=0.6, s=1.2, r=0.35)
+    return [mtn, hill]
 
 def build_ground():
-    L = np.zeros((H, W, 4), np.float32)
-    top = GROUND - 1 + np.round(np.sin(XX / 6) * 0.6) - 8 * np.exp(-((XX - 275) / 22) ** 2)   # drift piled against the house
+    top = GROUND - 1 + np.round(np.sin(XX / 6) * 0.6) - 8 * np.exp(-((XX - 275) / 22) ** 2)
     m = YY >= top
-    v = (len(SNOW) - 1.2) - np.clip((YY - GROUND) / 34, 0, 1) * 3.4 - 0.9 * ((YY - top) < 2) * 0
-    v = v - 1.2 * np.exp(-((XX - 230) / 50) ** 2) * np.clip((YY - GROUND) / 10, 0, 1) * 0.5
-    L[m, :3] = dith(v, SNOW, BAY - 0.5)[m]; L[m, 3] = 1
-    # bright rim where snow catches the moon
-    rim = m & (YY - top < 1.5)
-    L[rim, :3] = hexc('#f4f9ff')
-    # foreground bank
-    fb = YY >= 470 + 3 * np.sin(XX / 17 + 1)
-    L[fb, :3] = dith(np.full((H, W), 1.6) + (XX < 140) * 0.6, SNOW, BAY - 0.5)[fb]; L[fb, 3] = 1
-    return L
+    v = (len(SNOW) - 1.2) - np.clip((YY - GROUND) / 34, 0, 1) * 3.4 + 1.2 * (YY - top < 1.5)
+    return [dict(mask=m, v=v - 1.1, p=SNOW, n=0.9, n2=0.7, s=1.2, r=0.6)]
 
 EAVE_X0, EAVE_Y0 = 150, 160
 def roof_y(x): return EAVE_Y0 - (x - EAVE_X0) * 0.52
 
 def build_house():
     L = np.zeros((H, W, 4), np.float32)
+    lives = []
     wall = (XX >= 156) & (YY >= 166) & (YY < GROUND + 1)
     plank = ((YY - 166) % 7 == 0)
-    v = 2.2 + 1.4 * np.clip(1 - (XX - 156) / 60, 0, 1) - 0.7 * plank - 0.4 * ((XX * 13 + (YY // 7) * 29) % 37 < 2)
-    L[wall, :3] = dith(v, WOOD, BAY - 0.5)[wall]; L[wall, 3] = 1
-    # corner trim
+    detail = np.zeros((H, W), bool)
+    for x0, y0, x1, y1 in WINDOWS:
+        detail |= (XX >= x0 - 2) & (XX < x1 + 2) & (YY >= y0 - 2) & (YY < y1 + 3)
+    detail |= (XX >= 172) & (XX < 202) & (YY >= 369)
+    detail |= (XX >= 156) & (XX < 159) & (YY >= 164)
+    wglow = np.zeros((H, W))
+    for x0, y0, x1, y1 in WINDOWS:
+        wglow += np.exp(-(np.hypot(XX - (x0 + x1) / 2, YY - (y0 + y1) / 2) / 30) ** 2)
+    v = 2.0 + 1.4 * np.clip(1 - (XX - 156) / 60, 0, 1) - 0.8 * plank - 0.4 * ((XX * 13 + (YY // 7) * 29) % 37 < 2) + 0.9 * wglow
+    lives.append(dict(mask=wall & ~detail, v=v, p=WOOD, n=0.7, n2=0.5, s=0.9, glow=wglow))
     trim = (XX >= 156) & (XX < 159) & (YY >= 164)
-    L[trim, :3] = hexc('#d9cdb8'); L[trim & (XX == 158), :3] = hexc('#a99b84')
-    # roof body (shingles) under the snow
+    L[trim, :3] = hexc('#d9cdb8'); L[trim & (XX == 158), :3] = hexc('#a99b84'); L[trim, 3] = 1
     ry = EAVE_Y0 - (XX - EAVE_X0) * 0.52
     roof = (XX >= EAVE_X0) & (YY >= ry) & (YY < 167)
     sh = ((YY + (XX // 5)) % 4 == 0)
-    L[roof, :3] = dith(1.4 - sh * 0.9 + 0 * XX, ROOF, BAY - 0.5)[roof]; L[roof, 3] = 1
-    # thick snow on the roof
+    lives.append(dict(mask=roof, v=1.5 - sh * 0.9 + 0 * XX, p=ROOF, n=0.6, n2=0.4, s=0.6))
     sn = (XX >= EAVE_X0 - 2) & (YY >= ry - 5 - 1.2 * np.sin(XX / 4)) & (YY < ry + 3)
     v = 5.2 - np.clip((YY - (ry - 5)) / 8, 0, 1) * 2.5 + 0.8 * np.clip((EAVE_X0 + 40 - XX) / 40, 0, 1)
-    L[sn, :3] = dith(v, SNOW, BAY - 0.5)[sn]; L[sn, 3] = 1
-    # snow lip hanging over the eave
     lip = (XX >= EAVE_X0 - 3) & (XX < 270) & (YY >= 164) & (YY < 168 + (np.sin(XX * 0.9) > 0.3))
-    L[lip, :3] = dith(np.full((H, W), 4.5), SNOW, BAY - 0.5)[lip]; L[lip, 3] = 1
-    # chimney
+    v = np.where(lip, 4.5, v)
+    lives.append(dict(mask=sn | lip, v=v, p=SNOW, n=0.8, n2=0.6, s=1.0, r=0.3))
     ch = (XX >= 226) & (XX < 240) & (YY >= 100) & (YY < ry + 2)
     brick = ((YY % 4 == 0) | (((XX + (YY // 4) * 3) % 7) == 0))
-    L[ch, :3] = np.where(brick[..., None], hexc('#3b1a14'), hexc('#7a3324'))[ch]
-    L[ch & (XX < 229), :3] = hexc('#a2493a'); L[ch, 3] = 1
+    lives.append(dict(mask=ch, v=np.where(brick, 0.3, 2.0) + (XX < 229) * 1.0, p=pal('#3b1a14', '#6a2c20', '#7a3324', '#a2493a'), n=0.5, n2=0.4, s=0.6))
     cap = (XX >= 224) & (XX < 242) & (YY >= 97) & (YY < 101)
-    L[cap, :3] = dith(np.full((H, W), 5.0), SNOW, BAY - 0.5)[cap]; L[cap, 3] = 1
-    # windows (glass is drawn live so it can flicker)
+    lives.append(dict(mask=cap, v=np.full((H, W), 5.0), p=SNOW, n=0.8, s=0.8))
     for x0, y0, x1, y1 in WINDOWS:
         fr = (XX >= x0 - 2) & (XX < x1 + 2) & (YY >= y0 - 2) & (YY < y1 + 3)
-        L[fr, :3] = hexc('#e8dcc4'); L[fr & (YY >= y1 + 1), :3] = dith(np.full((H, W), 5.2), SNOW, BAY - 0.5)[fr & (YY >= y1 + 1)]
-        L[fr & (YY == y1 + 2), :3] = hexc('#c8d8ee')
-    # door
+        L[fr, :3] = hexc('#e8dcc4'); L[fr, 3] = 1
+        sill = fr & (YY >= y1 + 1)
+        L[sill, :3] = hexc('#eef5fd'); L[fr & (YY == y1 + 2), :3] = hexc('#c8d8ee')
     d = (XX >= 174) & (XX < 200) & (YY >= 372) & (YY < GROUND)
-    L[d, :3] = dith(2.0 + 1.2 * ((XX - 174) < 4) * -1 + 0.3 * ((XX - 174) % 6 == 0) * -1, pal('#0f2a1c', '#173d29', '#205538', '#2b6b46'), BAY - 0.5)[d]
-    L[(XX >= 172) & (XX < 202) & (YY >= 369) & (YY < 372), :3] = hexc('#e8dcc4')
-    L[(XX >= 172) & (XX < 202) & (YY >= 369) & (YY < GROUND), 3] = 1
-    L[(XX >= 172) & (XX < 174) & (YY >= 369) & (YY < GROUND), :3] = hexc('#e8dcc4')
+    lives.append(dict(mask=d, v=2.0 - 1.2 * ((XX - 174) < 4) - 0.3 * ((XX - 174) % 6 == 0), p=pal('#0f2a1c', '#173d29', '#205538', '#2b6b46'), n=0.6, s=0.5))
+    fr = (XX >= 172) & (XX < 202) & (YY >= 369) & (YY < GROUND) & ~d
+    L[fr, :3] = hexc('#e8dcc4'); L[fr, 3] = 1
     L[(XX >= 200) & (XX < 202) & (YY >= 369) & (YY < GROUND), :3] = hexc('#c9bca2')
     L[(YY == 408) & (XX == 195), :3] = hexc('#ffd877')
-    return L
+    return L, lives
 
 WINDOWS = [(176, 192, 200, 220), (226, 192, 250, 220), (222, 296, 254, 332)]
 
 def make_pine(height, width, p, seed, snow=True):
-    """layered drooping-branch pine sprite with needle texture and snow on each tier."""
+    """layered drooping-branch pine: returns value map, palette-id map (0 none, 1 pine, 2 snow, 3 trunk)."""
     r = np.random.default_rng(seed)
     h, w_ = height + 4, width + 8
-    spr = np.zeros((h, w_, 4), np.float32)
-    cx = w_ / 2
-    tiers = max(4, height // 14)
     yy, xx = np.mgrid[0:h, 0:w_]
-    bay = BAYER[yy % 4, xx % 4]
+    cx = w_ / 2
+    V = np.zeros((h, w_), np.float32); ID = np.zeros((h, w_), np.int8)
     trunk = (np.abs(xx - cx) < max(1.5, width / 18)) & (yy > height - 6)
-    spr[trunk, :3] = hexc('#2b1a12'); spr[trunk, 3] = 1
+    ID[trunk] = 3; V[trunk] = 1.0
+    tiers = max(4, height // 14)
     noise = r.random((h, w_))
     for k in range(tiers):
         f0 = k / tiers
         top = 2 + f0 * (height - 10) * 0.92
         bot = top + (height - 6) / tiers * 1.9
         hw = (width / 2) * (0.25 + 0.75 * ((k + 1) / tiers))
-        # drooping lower edge: scallops of branch tips
-        s = (yy - top) / (bot - top)
-        half = hw * np.clip(s, 0, 1) ** 0.8
+        s_ = (yy - top) / (bot - top)
+        half = hw * np.clip(s_, 0, 1) ** 0.8
         scal = 2.2 * np.abs(np.sin((xx - cx) / max(2.5, hw / 3.2) * math.pi / 2 + k))
         droop = bot - scal - 2 * ((np.abs(xx - cx) / max(hw, 1)) ** 2)
         m = (yy >= top) & (yy <= droop) & (np.abs(xx - cx) <= half + 0.5)
         side = (xx - cx) / max(hw, 1)
-        v = 2.6 - 2.0 * side - 1.4 * np.clip(s, 0, 1) ** 2 + (noise - 0.5) * 1.6 + 0.8 * (1 - np.clip(s * 3, 0, 1))
-        col = dith(v, p, bay - 0.5)
-        spr[m, :3] = col[m]; spr[m, 3] = 1
+        V[m] = (2.6 - 2.0 * side - 1.4 * np.clip(s_, 0, 1) ** 2 + (noise - 0.5) * 1.6 + 0.8 * (1 - np.clip(s_ * 3, 0, 1)))[m]
+        ID[m] = 1
         if snow:
-            # snow lying on the upper surface of each tier and on the branch tips
-            sm = m & (yy <= top + 2 + 2.5 * np.clip(s * 4, 0, 1) * np.abs(side)) & (side < 0.75) & (noise > 0.15)
+            sm = m & (yy <= top + 2 + 2.5 * np.clip(s_ * 4, 0, 1) * np.abs(side)) & (side < 0.75) & (noise > 0.15)
             tip = m & (yy >= droop - 1.4) & (side < 0.6) & (noise > 0.45)
-            sv = 4.6 - 1.6 * np.clip(side, 0, 1) + noise
-            spr[sm | tip, :3] = dith(sv, SNOW, bay - 0.5)[sm | tip]
+            V[sm | tip] = (4.6 - 1.6 * np.clip(side, 0, 1) + noise)[sm | tip]
+            ID[sm | tip] = 2
+    return dict(V=V, ID=ID, p=p)
+
+def pine_sprite(pn, t, seed):
+    V, ID = pn['V'], pn['ID']
+    h, w_ = V.shape
+    yy, xx = np.mgrid[0:h, 0:w_]
+    o = int(t / LOOP * 256 * 9) % 256
+    nz = NZ[(yy * 3 + seed + o) % 256, (xx * 3 + seed * 7) % 256] - 0.5
+    b = int(t / LOOP * 4 * 240)
+    bay = BAYER[(yy + b // 4) % 4, (xx + b) % 4] - 0.5
+    spr = np.zeros((h, w_, 4), np.float32)
+    for i, pp in ((1, pn['p']), (2, SNOW), (3, pal('#1a0e08', '#2b1a12', '#3e2618'))):
+        m = ID == i
+        spr[m, :3] = dith(V + nz * 1.4, pp, bay)[m]; spr[m, 3] = 1
     return spr
 
 def sway_blit(F, spr, x, y, amp, phase):
@@ -238,13 +260,13 @@ def sway_blit(F, spr, x, y, amp, phase):
         dx = int(round(amp * k * k * math.sin(phase + r * 0.05)))
         blend(F, x + dx, y + r, spr[r:r + 1])
 
-SKYBG = build_sky()
-MOUNT = build_mountains()
+SKYL = build_sky()
+MOUNTL = build_mountains()
 GROUNDL = build_ground()
-HOUSE = build_house()
-PINES = [  # (sprite, x, y-base, sway amp, phase speed k, depth)
-    (make_pine(120, 52, PINE_FAR, 1, snow=True), -14, 352, 1.0, 5),
-    (make_pine(96, 44, PINE_FAR, 2, snow=True), 54, 350, 0.8, 6),
+HOUSE, HOUSEL = build_house()
+PINES = [  # (pine, x, y-base, sway amp, sway cycles per loop)
+    (make_pine(120, 52, PINE_FAR, 1), -14, 352, 1.0, 5),
+    (make_pine(96, 44, PINE_FAR, 2), 54, 350, 0.8, 6),
     (make_pine(150, 70, PINE, 3), -30, GROUND + 2, 1.6, 4),
     (make_pine(108, 52, PINE, 4), 112, GROUND - 40, 1.2, 5),
 ]
@@ -289,29 +311,16 @@ def text_mask(text, sc):
             m[y0:y0 + 7 * sc, x0:x0 + 5 * sc] |= g
     return m
 
-def caption_sprite(text, sc=3, pad=7):
-    """rounded night-blue box, light rim, inner highlight, soft drop shadow, shadowed text."""
+def caption_sprite(text, sc=3, pad=6):
+    """plain black box, white text, one pixel trimmed off each corner."""
     tm = text_mask(text, sc)
     th, tw = tm.shape
     bw, bh = tw + 2 * pad, th + 2 * pad
-    out = np.zeros((bh + 3, bw + 3, 4), np.float32)
-    yy, xx = np.mgrid[0:bh, 0:bw]
-    corner = np.minimum(np.minimum(xx, bw - 1 - xx), 9) + np.minimum(np.minimum(yy, bh - 1 - yy), 9)
-    body = ~(((xx < 3) | (xx > bw - 4)) & ((yy < 3) | (yy > bh - 4)) & (corner < 3))
-    shadow = np.zeros((bh + 3, bw + 3), bool); shadow[3:, 3:] = body
-    out[shadow, :3] = hexc('#02030a'); out[shadow, 3] = 0.45
-    box = out[:bh, :bw]
-    v = 1.2 + 1.3 * (1 - yy / bh)
-    fill = dith(v, pal('#0a1030', '#111a45', '#18245a', '#203070'), BAYER[yy % 4, xx % 4] - 0.5)
-    box[body, :3] = fill[body]; box[body, 3] = 0.94
-    rim = body & ~np.pad(body[1:-1, 1:-1] & body[2:, 1:-1] & body[:-2, 1:-1] & body[1:-1, 2:] & body[1:-1, :-2], 1)
-    box[rim, :3] = hexc('#cfe0ff'); box[rim, 3] = 1
-    hl = body & ~rim & (yy == 2) & (xx > 3) & (xx < bw - 4)
-    box[hl, :3] = hexc('#3d58a8')
-    sub = box[pad:pad + th, pad:pad + tw]
-    tsh = np.zeros_like(tm); tsh[1:, 1:] = tm[:-1, :-1]
-    sub[tsh & ~tm, :3] = hexc('#3a4f9c'); sub[tsh & ~tm, 3] = 1
-    sub[tm, :3] = hexc('#ffffff'); sub[tm, 3] = 1
+    out = np.zeros((bh, bw, 4), np.float32)
+    out[..., 3] = 1
+    for cy, cx in ((0, 0), (0, bw - 1), (bh - 1, 0), (bh - 1, bw - 1)):
+        out[cy, cx, 3] = 0
+    out[pad:pad + th, pad:pad + tw][tm] = [1, 1, 1, 1]
     return out, (pad, pad, tw)
 
 class Caption:
@@ -326,9 +335,7 @@ class Caption:
         self.vis = self.s[..., 3] > 0
         txt = np.zeros((h, w_), bool)
         txt[py:py + h, px:px + tw] = True
-        is_text = txt & (self.s[..., 0] > 0.9)
-        self.t_app = 0.16 * np.abs(xx - w_ / 2) / (w_ / 2)
-        self.t_app = np.where(is_text, 0.14 + 0.2 * (xx - px) / max(tw, 1) + 0.03 * r.random((h, w_)), self.t_app)
+        self.t_app = 0.07 * r.random((h, w_))
         self.t_dis = 0.06 + 0.5 * (0.55 * r.random((h, w_)) + 0.45 * (xx / w_))
         self.dx = (r.random((h, w_)) - 0.25) * 18
         self.dy = -(8 + r.random((h, w_)) * 16)
@@ -340,7 +347,7 @@ class Caption:
 
     def _draw(self, F, t):
         a_in, a_out = t - self.t_in, t - self.t_out
-        yoff = -3 * (1 - smooth(a_in / 0.22))
+        yoff = 0
         solid = self.vis & (a_in >= self.t_app)
         alpha = self.s[..., 3].copy()
         if a_out > 0:
@@ -465,8 +472,9 @@ def draw_cat(F, t):
             for j in range(-(3 - k) // 2, (3 - k) // 2 + 1):
                 put(F, ex + j + sgn * 0, g - 27 - k, hexc('#c2661f') if k < 3 else hexc('#7a3a12'))
         put(F, ex, g - 27, hexc('#ff9eb0'))
-    put(F, x + 6, g - 23, hexc('#9cff6a')); put(F, x + 6, g - 22, hexc('#0a0a12'))
-    put(F, x + 2, g - 23, hexc('#9cff6a')); put(F, x + 2, g - 22, hexc('#0a0a12'))
+    lk = -1 if (5.3 < t < 7.2 or 16.5 < t < 18.6) else 0       # glance at the mouse / the robin
+    put(F, x + 6, g - 23, hexc('#9cff6a')); put(F, x + 6 + lk, g - 22 + (lk != 0) * -1, hexc('#0a0a12'))
+    put(F, x + 2, g - 23, hexc('#9cff6a')); put(F, x + 2 + lk, g - 22 + (lk != 0) * -1, hexc('#0a0a12'))
     put(F, x + 9, g - 20, hexc('#ff8fa6'))
     for k in (-1, 1):
         line(F, x + 10, g - 20 + k, x + 13, g - 21 + 2 * k, hexc('#ffe8d0'))
@@ -497,7 +505,9 @@ def draw_kid(F, t):
     blob(F, x + 1, g - 71, 7, 7, SKIN, lift=0.9)                # head
     rect(F, x - 6, g - 76, x - 2, g - 66, hexc('#3b2416'))     # hair (back of head)
     put(F, x - 3, g - 66, hexc('#3b2416')); put(F, x - 2, g - 76, hexc('#3b2416'))
-    put(F, x + 4, g - 72, hexc('#14141c')); put(F, x + 4, g - 73, hexc('#14141c'))
+    up = 2 if 12.2 < t < 14.4 else 0                         # looks up at Santa
+    dn = 16.5 < t < 18.6                                       # then down at the robin
+    put(F, x + 4 - dn, g - 72 - up + dn, hexc('#14141c')); put(F, x + 4 - dn, g - 73 - up + dn, hexc('#14141c'))
     put(F, x + 5, g - 69, hexc('#ff8f8f'), 0.8); put(F, x + 6, g - 69, hexc('#ff8f8f'), 0.6)
     put(F, x + 7, g - 68, hexc('#a35d44'))
     blob(F, x, g - 78, 8, 4.5, COAT)                            # beanie
@@ -636,7 +646,7 @@ def draw_sky_life(F, t):
     band = np.exp(-((AUR_Y - c) / 30) ** 2)
     rays = 0.72 + 0.28 * np.sin(AUR_X * 0.45 + w(7) * t + np.sin(AUR_X / 9) * 2)
     fade = np.clip(1 - np.abs(AUR_X - 70) / 200, 0, 1)
-    I = band * rays * fade * (0.75 + pulse)
+    I = band * rays * fade * (0.5 + pulse)
     lvl = np.clip(np.floor(I * 5 + BAYER[AUR_Y % 4, AUR_X % 4] - 0.5), 0, 4).astype(int)
     col = AURP[lvl] * (lvl > 0)[..., None]
     F[80:300] = np.minimum(1, F[80:300] + col * 0.45)
@@ -683,21 +693,14 @@ def draw_house_life(F, t):
             for xx2 in range(x0 - k, x1 + k):
                 if BAYER[(y1 + 3 + k) % 4, xx2 % 4] < 0.35 * (1 - k / 7) * (1 + fl + sn):
                     glow(F, xx2, y1 + 3 + k, hexc('#ffb347'), 0.25)
-    # string lights along the eave chase the sleigh-bell 8ths
-    step = int(last_hit_age(BELL_HITS, t) < 0.25 and 6 <= t < 32.3)
-    idx = int(np.searchsorted(BELL_HITS, t, side='right')) if 6 <= t < 32.3 else int(t * 4)
-    cols = [hexc(c) for c in ('#ff4d5e', '#ffd35a', '#59e1ff', '#7dff8a')]
+    # a few warm lights along the eave, gently twinkling (brighter at the finale)
     finale = math.exp(-(t - 35.0) / 0.6) if t >= 35.0 else 0
-    for j, x in enumerate(range(152, 270, 7)):
+    for j, x in enumerate(range(154, 270, 9)):
         y = roof_y(x) + 9 + 1.2 * math.sin(j * 1.3)
-        on = (j + idx) % 4 == 0
-        b = 1.0 if on else 0.35
-        b = min(1, b + finale)
-        c = cols[j % 4]
-        put(F, x, y - 1, hexc('#20242c'))
-        put(F, x, y, c * (0.4 + 0.6 * b) + 0.2 * b)
-        for dx, dy in ((1, 0), (-1, 0), (0, 1), (0, -1)): glow(F, x + dx, y + dy, c, 0.45 * b)
-        for dx, dy in ((2, 0), (-2, 0), (0, 2)): glow(F, x + dx, y + dy, c, 0.15 * b)
+        b = min(1, 0.6 + 0.25 * math.sin(w(11) * t + j * 2.1) + finale)
+        c = hexc('#ffd877')
+        put(F, x, y, c * (0.5 + 0.5 * b))
+        for dx, dy in ((1, 0), (-1, 0), (0, 1), (0, -1)): glow(F, x + dx, y + dy, c, 0.35 * b)
     # icicles glint one after another
     for j, x in enumerate(range(153, 270, 5)):
         ln = 2 + (j * 7) % 4
@@ -732,20 +735,27 @@ def draw_ground_life(F, t):
             glow(F, x, y, np.array([1, 1, 1]), (b - 0.8) * 4)
             if b > 0.96:
                 for dx, dy in ((1, 0), (-1, 0), (0, 1), (0, -1)): glow(F, x + dx, y + dy, np.array([0.7, 0.85, 1]), 0.4)
-    for x0, y0, k, ph in DRIFT:                      # wind-blown snow skimming the ground
-        x = (x0 + W * k * t / LOOP * 2) % W
-        y = y0 + 2 * math.sin(w(k * 3) * t + ph)
-        for j in range(3):
-            put(F, x - j * 2, y + j * 0.3, np.array([0.95, 0.97, 1.0]), 0.5 - j * 0.15)
 
+SNOWFALL = [(rng.uniform(-20, W + 20), rng.uniform(GROUND + 1, 472), int(rng.integers(2, 5)), rng.random(), rng.uniform(0, 6.28), rng.random() < 0.2)
+            for _ in range(190)]
 def draw_snowfall(F, t):
-    for x0, y0, vy, wm, ph, big in FLAKES:
-        y = (y0 + vy * (H + 8) * t / LOOP * 2) % (H + 8) - 4
-        x = (x0 + 6 * math.sin(w(wm * 5) * t + ph) + W * t / LOOP * wm) % W
-        c = np.array([0.93, 0.96, 1.0])
-        put(F, x, y, c, 0.9 if big > 0.8 else 0.55)
-        if big > 0.8:
-            put(F, x + 1, y, c, 0.8); put(F, x, y + 1, c, 0.8); put(F, x + 1, y + 1, c, 0.5)
+    for x0, yland, n, ph0, ph, big in SNOWFALL:
+        cyc = LOOP / n                       # each flake: fall from above the sky, land, sit, melt
+        tau = ((t / cyc + ph0) % 1.0) * cyc
+        fall = (yland + 12) / 34.0
+        c = np.array([0.94, 0.97, 1.0])
+        if tau < fall:
+            y = -12 + 34.0 * tau
+            x = x0 + 5 * math.sin(tau * 1.7 + ph) + 6 * tau
+            put(F, x, y, c, 0.95 if big else 0.6)
+            if big: put(F, x + 1, y, c, 0.8); put(F, x, y + 1, c, 0.8); put(F, x + 1, y + 1, c, 0.5)
+        else:
+            a = tau - fall
+            x = x0 + 5 * math.sin(fall * 1.7 + ph) + 6 * fall
+            k = max(0.0, 1 - a / 1.6)
+            if k > 0:
+                put(F, x, yland, np.array([1, 1, 1]), 0.9 * k)
+                if big: put(F, x + 1, yland, c, 0.7 * k)
 
 def draw_impacts(F, t):
     for name, life, n, spd in (('cat', 0.35, 6, 26), ('mouse', 0.22, 3, 12), ('kid', 0.4, 8, 34), ('santa', 0.6, 12, 46)):
@@ -790,15 +800,49 @@ def draw_shadow(F, x, bottom, r):
         if BAYER[GROUND % 4, xx % 4] < 0.75 - 0.35 * min(1, hgt / 150): put(F, xx, GROUND, hexc('#6f8bb8'), 0.8)
 
 # ------------------------------------------------------------------ frame
+# camera keyframes (time, centre x, centre y, zoom). Zoom 1 = whole scene, 2 = close-up.
+CAM = [(0.0, 62, 400, 3), (5.3, 62, 400, 3), (5.95, 44, 410, 3), (9.4, 44, 410, 3),
+       (10.05, 106, 372, 2), (12.2, 106, 372, 2), (12.85, 160, 150, 2), (13.05, 160, 150, 2),
+       (14.0, 135, 240, 1), (16.5, 135, 240, 1), (17.6, 72, 440, 3), (25.6, 72, 440, 3),
+       (26.6, 90, 400, 1.5), (29.6, 90, 400, 1.5), (30.6, 135, 240, 1), (36.9, 135, 240, 1),
+       (37.85, 62, 400, 3), (38.0, 62, 400, 3)]
+
+def camera(t):
+    for (t0, x0, y0, z0), (t1, x1, y1, z1) in zip(CAM, CAM[1:]):
+        if t0 <= t <= t1:
+            s = smooth((t - t0) / max(1e-6, t1 - t0))
+            z = math.exp(math.log(z0) + (math.log(z1) - math.log(z0)) * s)
+            return x0 + (x1 - x0) * s, y0 + (y1 - y0) * s, z
+    return CAM[0][1:]
+
+OX = (np.arange(W * S) + 0.5) / S
+OY = (np.arange(H * S) + 0.5) / S
+def shoot(F, t):
+    cx, cy, z = camera(t)
+    vw, vh = W / z, H / z
+    cx = min(max(cx, vw / 2), W - vw / 2); cy = min(max(cy, vh / 2), H - vh / 2)
+    xi = np.clip(np.floor(cx - vw / 2 + OX / z).astype(int), 0, W - 1)
+    yi = np.clip(np.floor(cy - vh / 2 + OY / z).astype(int), 0, H - 1)
+    return F[yi][:, xi]
+
 def frame(t):
-    F = SKYBG.copy()
+    fld = live_fields(t)
+    F = np.zeros((H, W, 3), np.float32)
+    paint_live(F, SKYL, fld)
     draw_sky_life(F, t)
-    blend(F, 0, 0, MOUNT)
-    draw_village(F, t)
-    draw_pines(F, t)
+    draw_moon(F, fld)
+    for L in MOUNTL: paint_live(F, L, fld)
+    for i, (pn, x, base, amp, k) in enumerate(PINES):
+        sway_blit(F, pine_sprite(pn, t, i * 53), x, base - pn['V'].shape[0], amp, w(k) * t + x)
     blend(F, 0, 0, HOUSE)
+    fl = 0.35 * math.sin(w(23) * t) + 0.2 * math.sin(w(57) * t)
+    for L in HOUSEL:
+        if 'glow' in L:
+            L2 = dict(L); L2['v'] = L['v'] + fl * L['glow']; paint_live(F, L2, fld)
+        else:
+            paint_live(F, L, fld)
     draw_house_life(F, t)
-    blend(F, 0, 0, GROUNDL)
+    for L in GROUNDL: paint_live(F, L, fld)
     draw_ground_life(F, t)
     states = {n: ball_y(n, t) for n in BALLS}
     for n, (by, k, st) in states.items():
@@ -807,14 +851,20 @@ def frame(t):
     draw_impacts(F, t)
     for n, (by, k, st) in states.items():
         draw_ball(F, n, BALLS[n]['x'], by - (bob(t) if st == 'held' else 0), k)
-    # hands back on top of held balls so the grip reads clearly
     draw_xylophone(F, t)
     mb = melody_ball(t)
     if mb: draw_ball(F, 'melody', mb[0], mb[1], mb[2], MEL_P, MEL_R)
     draw_robin(F, t)
     draw_snowfall(F, t)
-    for c in CAPTIONS: c.draw(F, t)
-    return (np.clip(F, 0, 1) * 255 + 0.5).astype(np.uint8)
+    out = shoot(F, t)
+    # captions live in screen space (they do not zoom with the camera)
+    scr = out[::S, ::S].copy(); before = scr.copy()
+    for c in CAPTIONS: c.draw(scr, t)
+    ch = np.any(np.abs(scr - before) > 1e-6, axis=2)
+    if ch.any():
+        big = np.repeat(np.repeat(ch, S, 0), S, 1)
+        out[big] = np.repeat(np.repeat(scr, S, 0), S, 1)[big]
+    return (np.clip(out, 0, 1) * 255 + 0.5).astype(np.uint8)
 
 def upscale(img): return np.repeat(np.repeat(img, S, 0), S, 1)
 
@@ -822,7 +872,7 @@ if __name__ == '__main__':
     if sys.argv[1] == '--stills':
         from PIL import Image
         for ts in sys.argv[3:]:
-            Image.fromarray(upscale(frame(float(ts)))).save(f'{sys.argv[2]}/still_{float(ts):06.2f}.png')
+            Image.fromarray(frame(float(ts))).save(f'{sys.argv[2]}/still_{float(ts):06.2f}.png')
         sys.exit()
     out, wav = sys.argv[1], sys.argv[2]
     p = subprocess.Popen(['ffmpeg', '-v', 'error', '-y', '-f', 'rawvideo', '-pix_fmt', 'rgb24', '-s', f'{W*S}x{H*S}', '-r', str(FPS),
@@ -830,7 +880,7 @@ if __name__ == '__main__':
                           '-c:a', 'aac', '-b:a', '256k', '-shortest', '-movflags', '+faststart', out], stdin=subprocess.PIPE)
     nfr = int(LOOP * FPS)
     for f in range(nfr):
-        p.stdin.write(upscale(frame(f / FPS)).tobytes())
+        p.stdin.write(frame(f / FPS).tobytes())
         if f % 300 == 0: print('frame', f, '/', nfr, flush=True)
     p.stdin.close(); p.wait()
     print('done', out)

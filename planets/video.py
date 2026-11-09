@@ -316,7 +316,7 @@ def tree_points():
         if ri % 2: xs = xs[::-1]
         pts += [(x, y) for x in xs]
     return pts + [(135, 72)]                       # top star (last note)
-TREE = tree_points()
+TREE = [(x, y + 42) for x, y in tree_points()]
 assert len(TREE) == len(MELODY)
 MEL_T = [m[0] for m in MELODY]
 COMET_IN = (300.0, 20.0)
@@ -374,17 +374,27 @@ def draw_tree(F, t):
                 for dx, dy in ((k, 0), (-k, 0), (0, k), (0, -k)): glow(F, x + dx, y + dy, col, 0.6 * burst)
 
 # ================================================================== captions (plain, smaller, lower)
-def caption_sprite(text, sc=2, pad=4):
+HEADPHONES = ["0011111100", "0100000010", "1000000001", "1000000001", "1110000111", "1110000111", "1110000111", "0110000110"]
+def caption_sprite(text, sc=2, pad=4, icon=False):
     tm = text_mask(text, sc); th, tw = tm.shape
     bw, bh = tw + 2 * pad, th + 2 * pad
     out = np.zeros((bh, bw, 4), np.float32); out[..., 3] = 1
     for cy, cx in ((0, 0), (0, bw - 1), (bh - 1, 0), (bh - 1, bw - 1)): out[cy, cx, 3] = 0
     out[pad:pad + th, pad:pad + tw][tm] = [1, 1, 1, 1]
+    if icon:   # headphones badge under the title box: small black box, rounded corners, white icon
+        g = np.kron(np.array([[c == '1' for c in r] for r in HEADPHONES]), np.ones((sc, sc), bool))
+        ih, iw = g.shape[0] + 8, g.shape[1] + 8
+        full = np.zeros((bh + 3 + ih, bw, 4), np.float32); full[:bh] = out
+        x0 = (bw - iw) // 2; y0 = bh + 3
+        full[y0:y0 + ih, x0:x0 + iw] = [0, 0, 0, 1]
+        for cy, cx in ((y0, x0), (y0, x0 + iw - 1), (y0 + ih - 1, x0), (y0 + ih - 1, x0 + iw - 1)): full[cy, cx, 3] = 0
+        full[y0 + 4:y0 + 4 + g.shape[0], x0 + 4:x0 + 4 + g.shape[1]][g] = [1, 1, 1, 1]
+        out = full
     return out
 
 class Caption:
-    def __init__(self, text, t_in, t_out, seed, y=392):
-        self.s = caption_sprite(text); h, w_ = self.s.shape[:2]
+    def __init__(self, text, t_in, t_out, seed, y=60, icon=False):
+        self.s = caption_sprite(text, icon=icon); h, w_ = self.s.shape[:2]
         self.x, self.y, self.t_in, self.t_out = (W - w_) // 2, y, t_in, t_out
         r = np.random.default_rng(seed)
         self.yy, self.xx = np.mgrid[0:h, 0:w_]
@@ -417,8 +427,8 @@ class Caption:
         F[Y[ok], X[ok]] = self.s[ys[ok], xs[ok], :3]
 
 CAPTIONS = []
-def cap(text, a, b): CAPTIONS.append(Caption(text, a, b, 40 + len(CAPTIONS)))
-cap("WHAT IF THE PLANETS\nPLAYED CHRISTMAS\nMUSIC?", 41.3, 43.7)
+def cap(text, a, b, icon=False): CAPTIONS.append(Caption(text, a, b, 40 + len(CAPTIONS), icon=icon))
+cap("WHAT IF THE PLANETS\nPLAYED CHRISTMAS\nMUSIC?", 41.3, 43.7, icon=True)
 cap("EARTH RINGS EVERY\nBELL IT PASSES", 2.3, 5.3)
 cap("MERCURY IS CLOSER TO\nTHE SUN, SO IT GOES\nFASTER", 6.3, 9.3)
 cap("VENUS PLAYS\nIN BETWEEN", 10.4, 13.3)

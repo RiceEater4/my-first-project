@@ -16,6 +16,7 @@ rings on the beat, and planets closer to the Sun go faster:
 Then a comet plays *Deck the Halls* (traditional, public domain). Every note lights a star,
 and when the camera pulls back the stars form a Christmas tree.
 
+Bright, light colours and a full-screen view: the camera only eases out when giant Jupiter arrives.
 Curved edges use soft in-between pixels; nothing drifts, pixels twinkle in place, and the
 planets' lit side turns with the Sun's light.
 

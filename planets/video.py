@@ -108,7 +108,7 @@ def text_mask(text, sc):
 SUN = (135.0, 336.0)
 TILT = 0.38                                                      # orbit ellipses seen from slightly above
 ORB = {'mercury': 24, 'venus': 40, 'earth': 58, 'mars': 80, 'jupiter': 116}
-PR = {'mercury': 4.0, 'venus': 6.0, 'earth': 7.0, 'mars': 5.5, 'jupiter': 13.0}
+PR = {'mercury': 5.0, 'venus': 7.0, 'earth': 8.5, 'mars': 6.5, 'jupiter': 15.0}
 SPIN = {'mercury': 2, 'venus': 1, 'earth': 6, 'mars': 5, 'jupiter': 9, 'sun': 2}   # whole turns per loop
 
 def theta(name, t):
@@ -132,9 +132,9 @@ def last_age(hits, t):
     return t - hits[i] if i >= 0 else 99.0
 
 # ================================================================== background (static values, no drift)
-SPACE = pal('#03020c', '#060518', '#0a0924', '#100d33', '#171342', '#1f1850', '#2a1e5c')
+SPACE = pal('#1b2a6e', '#22337e', '#2a3d8e', '#34489e', '#3f55ac', '#4b62b8', '#5a70c2')
 def build_space():
-    v = 1.0 + 3.6 * (YY / H) ** 1.3
+    v = 0.6 + 4.6 * (YY / H) ** 1.2
     F = dith(v, SPACE, BAYER[YY % 4, XX % 4] - 0.5).astype(np.float32)
     return np.clip(F, 0, 1)
 SPACEBG = build_space()
@@ -165,7 +165,7 @@ def sphere(F, cx, cy, r, tex, L, spin, night=None, alpha=1.0, ret=False):
     lat = np.arcsin(np.clip(-ny, -1, 1)); lon = np.arctan2(nx, nz + 1e-6) + spin
     col = tex(lat, lon)
     shade = np.clip(nx * L[0] + ny * L[1] + nz * L[2], 0, 1) if L is not None else np.ones_like(nx)
-    lit = col * (0.28 + 0.95 * shade[..., None])
+    lit = col * (0.48 + 0.75 * shade[..., None])
     if night is not None: lit = np.maximum(lit, night(lat, lon, shade))
     rim = np.clip(1 - nz, 0, 1) ** 3 * 0.25                       # thin atmosphere rim light
     lit = lit + rim[..., None] * shade[..., None] * np.array([0.6, 0.75, 1.0])
@@ -184,8 +184,8 @@ def mix3(a, b, m): return a * (1 - m[..., None]) + b * m[..., None]
 
 def tex_earth(lat, lon):
     land = nzs(lat, lon, 40) > 0.56
-    c = np.where(land[..., None], hexc('#3c8f45'), hexc('#2458b8'))
-    c = mix3(c, hexc('#d9c27a'), (land & (nzs(lat, lon, 40, NZ) > 0.7)).astype(float) * 0.5)
+    c = np.where(land[..., None], hexc('#5ad66e'), hexc('#3a8cff'))
+    c = mix3(c, hexc('#ffe08a'), (land & (nzs(lat, lon, 40, NZ) > 0.7)).astype(float) * 0.5)
     snow = np.abs(lat) > 1.05 - 0.12 * nzs(lat, lon, 30, NZ)
     c = np.where(snow[..., None], hexc('#f2f7ff'), c)
     cloud = nzs(lat, lon + 0.6, 34, NZ, 90) > 0.68
@@ -196,18 +196,18 @@ def night_earth(lat, lon, shade):
     return np.where(city[..., None], hexc('#ffd36a') * 0.95, 0)   # Christmas lights on the night side
 def tex_mercury(lat, lon):
     c = 0.55 + 0.25 * nzs(lat, lon, 50, NZ) - 0.2 * (nzs(lat, lon, 30) > 0.62)
-    return c[..., None] * hexc('#c9c2b8')
+    return np.clip(c[..., None] * hexc('#f0e6dc') * 1.15, 0, 1)
 def tex_venus(lat, lon):
     b = np.sin(lat * 7 + 3 * nzs(lat, lon, 30)) * 0.5 + 0.5
-    return mix3(hexc('#e8c47a'), hexc('#fff0c8'), b)
+    return mix3(hexc('#ffd27a'), hexc('#fff6dc'), b)
 def tex_mars(lat, lon):
-    c = mix3(hexc('#c4552d'), hexc('#7a2c18'), (nzs(lat, lon, 36) > 0.58).astype(float) * 0.7)
+    c = mix3(hexc('#ff7a45'), hexc('#c4452a'), (nzs(lat, lon, 36) > 0.58).astype(float) * 0.7)
     return np.where((lat > 1.05)[..., None], hexc('#f4f4f4'), c)
 def tex_jupiter(lat, lon):
     b = np.sin(lat * 11 + 1.2 * nzs(lat, lon, 26)) * 0.5 + 0.5
-    c = mix3(mix3(hexc('#c9a27a'), hexc('#f0dcc0'), b), hexc('#8a5a3a'), (b < 0.18).astype(float))
+    c = mix3(mix3(hexc('#f0b47a'), hexc('#fff0dc'), b), hexc('#c07a4a'), (b < 0.18).astype(float))
     spot = ((lat + 0.38) / 0.13) ** 2 + ((np.angle(np.exp(1j * (lon - 1.0)))) / 0.32) ** 2 < 1
-    return np.where(spot[..., None], hexc('#c0452c'), c)
+    return np.where(spot[..., None], hexc('#ff6a4a'), c)
 def tex_sun(lat, lon):
     g = nzs(lat, lon, 60, NZ)
     return mix3(hexc('#ff9a2a'), hexc('#fff2a8'), g)
@@ -268,12 +268,12 @@ def draw_ring(F, name, t, back, vis):
 # ================================================================== the sun
 def draw_sun(F, t):
     kick = math.exp(-last_age(PLANETS['earth']['hits'], t) / 0.15) if 2 <= t < 38.3 else 0
-    r = 12
+    r = 14
     yy, xx = np.mgrid[int(SUN[1] - 46):int(SUN[1] + 47), int(SUN[0] - 46):int(SUN[0] + 47)]
     d = np.hypot(xx + 0.5 - SUN[0], yy + 0.5 - SUN[1])
     g = np.clip(1 - (d - r) / (14 + 5 * kick), 0, 1) ** 2 * (0.7 + 0.4 * kick)
     q = np.clip(np.floor(g * 5 + BAYER[yy % 4, xx % 4] - 0.5) / 5, 0, 1)
-    F[yy, xx] = np.minimum(1, F[yy, xx] + q[..., None] * hexc('#ff8a2a') * 0.8)
+    F[yy, xx] = F[yy, xx] * (1 - q[..., None] * 0.85) + q[..., None] * hexc('#ffd56a') * 0.85
     sphere(F, SUN[0], SUN[1], r, tex_sun, None, TAU * SPIN['sun'] * t / LOOP)
 
 # ================================================================== planets (form from sparkles / burst into sparkles)
@@ -449,6 +449,7 @@ def alive(F, t, rate=0.025):
 # ================================================================== camera: one subject at a time
 def target(name, t):
     if name == 'sun': return SUN[0], SUN[1]
+    if name == 'sunup': return SUN[0], SUN[1] - 40
     if name == 'wide': return W / 2, H / 2
     if name == 'comet':
         ps = [comet_pos(t + d) for d in np.linspace(-0.9, 0.9, 13)]
@@ -457,9 +458,9 @@ def target(name, t):
     ps = [pos(name, t + d) for d in np.linspace(-0.5, 0.5, 9)]
     return sum(p[0] for p in ps) / 9, sum(p[1] for p in ps) / 9
 
-CAM = [(0.0, 'earth', 3), (5.2, 'earth', 3), (5.9, 'sun', 3), (9.3, 'sun', 3), (9.9, 'sun', 2.5), (13.3, 'sun', 2.5),
-       (13.9, 'mars', 2.5), (17.3, 'mars', 2.5), (17.9, 'jupiter', 2), (20.8, 'jupiter', 2), (21.6, 'comet', 2),
-       (36.7, 'comet', 2), (37.6, 'wide', 1), (40.9, 'wide', 1), (41.75, 'earth', 3), (42.0, 'earth', 3)]
+# Start framed on the inner planets (the whole of their orbits fit), ease out to the full
+# view when Jupiter's huge orbit arrives, stay wide for the comet and the star tree.
+CAM = [(0.0, 'sunup', 1.25), (16.6, 'sunup', 1.25), (17.9, 'wide', 1.0), (41.0, 'wide', 1.0), (42.0, 'sunup', 1.25)]
 def camera(t):
     for (t0, a, z0), (t1, b, z1) in zip(CAM, CAM[1:]):
         if t0 <= t <= t1:
@@ -467,7 +468,7 @@ def camera(t):
             (x0, y0), (x1, y1) = target(a, t), target(b, t)
             z = math.exp(math.log(z0) + (math.log(z1) - math.log(z0)) * s)
             return x0 + (x1 - x0) * s, y0 + (y1 - y0) * s, z
-    x, y = target('earth', t); return x, y, 3
+    x, y = target('sunup', t); return x, y, 1.25
 
 OX = (np.arange(W * S) + 0.5) / S; OY = (np.arange(H * S) + 0.5) / S
 def shoot(F, t):

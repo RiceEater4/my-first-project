@@ -213,23 +213,23 @@ def build_sky():
     v = (np.clip(YY / 330, 0, 1) ** 1.15) * (len(SKY) - 1)
     d = np.hypot(XX - MOON[0], YY - MOON[1])
     v = v + 2.2 * np.exp(-(d / 34) ** 2) + 1.0 * np.exp(-(d / 95) ** 2)
-    return dict(mask=np.ones((H, W), bool), v=v, p=SKY, n=0.7, n2=0.4, s=0.6)
+    return dict(mask=np.ones((H, W), bool), v=v, p=SKY, n=0.45, n2=0.3, s=0.2)
 
 def build_mountains():
     ym = 268 - 26 * np.abs(np.sin(XX / 41 + 0.4)) + 14 * np.sin(XX / 19 + 1) + 6 * np.sin(XX / 7)
     depth = np.clip((YY - ym) / 45, 0, 1)
     lit = np.clip(-(np.cos(XX / 41 + 0.4)) * 0.6 + 0.5, 0, 1)
-    mtn = dict(mask=YY >= ym, v=(len(MTN) - 1) * (1 - depth) * (0.55 + 0.45 * lit) + 0.3, p=MTN, n=0.9, n2=0.6, s=1.1)
+    mtn = dict(mask=YY >= ym, v=(len(MTN) - 1) * (1 - depth) * (0.55 + 0.45 * lit) + 0.3, p=MTN, n=0.5, n2=0.4, s=0.3)
     yh = 330 + 8 * np.sin(XX / 33 + 2) + 5 * np.sin(XX / 13)
     v = (len(SNOW) - 1.5) - np.clip((YY - yh) / 60, 0, 1) * 3.2 + 0.8 * np.exp(-((XX - 50) / 80) ** 2) - 1.3
-    hill = dict(mask=YY >= yh, v=v, p=SNOW, n=0.8, n2=0.6, s=1.2)
+    hill = dict(mask=YY >= yh, v=v, p=SNOW, n=0.45, n2=0.35, s=0.0)
     return [mtn, hill]
 
 def build_ground():
     top = GROUND - 1 + np.round(np.sin(XX / 6) * 0.6)
     m = YY >= top
     v = (len(SNOW) - 1.2) - np.clip((YY - GROUND) / 34, 0, 1) * 3.4 + 1.2 * (YY - top < 1.5) - 1.1
-    return dict(mask=m, v=v, p=SNOW, n=0.9, n2=0.7, s=1.2)
+    return dict(mask=m, v=v, p=SNOW, n=0.45, n2=0.35, s=0.0)
 
 def draw_moon(F, fld):
     d = np.hypot(XX - MOON[0], YY - MOON[1])
@@ -312,6 +312,8 @@ BALLS = {   # name: x, radius, palette (dark->light), glow colour, hits, period,
 }
 for b in BALLS.values(): b['hpx'] = height_for(b['period']) * PX_PER_M
 FORM = 0.5   # seconds a ball takes to gather out of the snow
+REFORM = 37.0
+BALLS['cat']['opener'] = True
 
 def rhythm_state(b, t):
     """centre y, squash k, alpha-mode: ('form', s) / ('ball',) / ('burst', s) / None"""
@@ -319,6 +321,9 @@ def rhythm_state(b, t):
     release, peak_end = hits[0] - T / 2, hits[-1] + T / 2
     top = GROUND - b['hpx'] - b['r']
     pop = RETURN[b['fin']]
+    if b.get('opener'):                      # this ball is on screen from the very first frame
+        if t >= REFORM: return top, 0.0, ('form', min(1.0, (t - REFORM) / FORM))
+        if t < release: return top + 1.2 * math.sin(t * 5), 0.0, ('ball',)
     if t < release - FORM or t >= pop + 0.7: return None
     if t < release: return top, 0.0, ('form', (t - (release - FORM)) / FORM)
     if t >= peak_end:
@@ -395,7 +400,7 @@ def ground_light(t, states):
         if not (17.0 <= t < 36.0): continue
         on = smooth((t - 17.0) / 0.8) * (1 - smooth((t - 35.2) / 0.8))
         a = min([t - mt for mt, n, _ in MELODY if PRESENT_INDEX[n] == i and t >= mt] + [9])
-        pool(x, LANE, 13, on * (0.55 + 2.2 * math.exp(-a / 0.15)), SPOT_C[i])
+        pool(x, LANE, 14, on * (1.3 + 2.6 * math.exp(-a / 0.18)), SPOT_C[i])
     m = melody_state(t)
     if m: pool(m[0], LANE + 1, 12, 0.8 * math.exp(-(LANE - m[1]) / 40), MEL['g'])
     return boost, tint
@@ -435,7 +440,7 @@ def draw_sky_life(F, t):
     I = band * soft * (0.45 + pulse)
     b = CUR['b']
     lvl = np.clip(np.floor(I * 5 + BAYER[(AUR_Y + b // 4) % 4, (AUR_X + b) % 4] - 0.5), 0, 4).astype(int)
-    F[70:300] = np.minimum(1, F[70:300] + AURP[lvl] * (lvl > 0)[..., None] * 0.4)
+    F[70:300] = np.minimum(1, F[70:300] + AURP[lvl] * (lvl > 0)[..., None] * 0.3)
     for x, y, k, ph in STARS:
         if math.hypot(x - MOON[0], y - MOON[1]) < 22: continue
         bb = 0.5 + 0.5 * math.sin(w(k) * t + ph)
@@ -520,19 +525,32 @@ def frame(t):
         sway_blit(F, pine_sprite(pn, t, i * 53), x, base - pn['V'].shape[0], amp, w(k) * t + x)
     states = {n: rhythm_state(b, t) for n, b in BALLS.items()}
     boost, tint = ground_light(t, states)
-    extra = np.zeros((H, W), np.float32); extra[GROUND - 12:] = boost * 1.6
+    extra = np.zeros((H, W), np.float32); extra[GROUND - 12:] = boost * 0.35
     paint_live(F, GROUNDL, fld, extra)
     gm = GROUNDL['mask'][GROUND - 12:]
-    F[GROUND - 12:][gm] = np.minimum(1, F[GROUND - 12:][gm] + tint[gm] * 0.22)
+    tq = np.floor(np.clip(tint[gm], 0, 2) * 3 + (BAYER[(GY[gm] + CUR['b'] // 4) % 4, (GX[gm] + CUR['b']) % 4] - 0.5)[:, None]) / 3
+    F[GROUND - 12:][gm] = np.clip(F[GROUND - 12:][gm] * (1 - 0.25 * np.clip(tq, 0, 1).max(1, keepdims=True)) + np.clip(tq, 0, 1.5) * 0.45, 0, 1)
+    if 17.0 <= t < 36.0:
+        on = smooth((t - 17.0) / 0.8) * (1 - smooth((t - 35.2) / 0.8))
+        bb = CUR['b']
+        for i, x in enumerate(SPOT_X):
+            a_ = min([t - mt for mt, n, _ in MELODY if PRESENT_INDEX[n] == i and t >= mt] + [9])
+            fl = math.exp(-a_ / 0.18)
+            for yy in range(LANE - 3, LANE + 4):
+                for xx in range(x - 11, x + 12):
+                    d = math.hypot((xx - x) / 11, (yy - LANE) / 3.4)
+                    if d > 1: continue
+                    lv = (1 - d) * (0.8 + 1.4 * fl) * on
+                    if lv + BAYER[(yy + bb // 4) % 4, (xx + bb) % 4] - 0.5 > 0.35:
+                        c = SPOT_C[i] * (0.75 + 0.25 * fl) + (0.5 * fl if d < 0.35 else 0)
+                        put(F, xx, yy, np.clip(c, 0, 1))
     draw_impacts(F, t)
     for i, (name, st) in enumerate(states.items()):
         if st is None: continue
         b = BALLS[name]; cy, k, mode = st
-        if mode[0] == 'ball': ball_halo(F, b['x'], cy, b['r'], b['g'], 0.55)
         draw_ball(F, b['x'], cy, b['r'], k, b['p'], mode, 5 + i)
     m = melody_state(t)
     if m:
-        if m[3][0] == 'ball': ball_halo(F, m[0], m[1], MEL['r'], MEL['g'], 0.6)
         draw_ball(F, m[0], m[1], MEL['r'], m[2], MEL['p'], m[3], 77)
     draw_snowfall(F, t)
     out = shoot(F, t)

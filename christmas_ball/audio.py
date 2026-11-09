@@ -102,7 +102,7 @@ for t_land, dur, f0 in [(bar(5) + 0.5, 0.5, 1300), (bar(7), 1.0, 1500), (bar(9),
     m = int(dur * SR); tt = np.arange(m) / SR
     add('fx', t_land - dur, np.sin(2 * np.pi * np.cumsum(f0 - 800 * tt / dur) / SR) * (tt / dur) ** 2 * 0.1)
 # a soft shimmer as each ball gathers itself out of the snow
-for t_form, root in [(1.25, 91), (5.375, 98), (9.5, 86), (12.5, 79), (17.1, 95)]:
+for t_form, root in [(37.0, 91), (5.375, 98), (9.5, 86), (12.5, 79), (17.1, 95)]:
     for j, m in enumerate([root, root + 4, root + 7]):
         add('fx', t_form + j * 0.12, glock(m, 0.12, 1.0))
     add('fx', t_form, sleigh(0.22))

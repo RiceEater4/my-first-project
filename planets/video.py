@@ -134,9 +134,14 @@ def last_age(hits, t):
 # ================================================================== background (static values, no drift)
 SPACE = pal('#080a22', '#0c0f2c', '#111436', '#171840', '#1f1b49', '#2a1f52', '#36225a')
 def build_space():
-    v = 0.4 + 6.4 * (YY / H) ** 1.35
-    F = dith(v, SPACE, BAYER[YY % 4, XX % 4] - 0.5).astype(np.float32)
-    return np.clip(F, 0, 1)
+    """4 shades, light at the top -> dark at the bottom, split by 3 smooth curves,
+    each blended through a wide ordered-dither ramp (same recipe as the style study)."""
+    shades = pal('#25204f', '#1d1a42', '#151434', '#0d0d25')
+    curves = [128 + 15 * np.sin(XX / 50 + 0.7) + 6 * np.sin(XX / 27 + 2.1),
+              250 + 18 * np.sin(XX / 55 + 2.4) + 7 * np.sin(XX / 31 + 0.3),
+              372 + 16 * np.sin(XX / 52 + 4.0) + 6 * np.sin(XX / 25 + 1.2)]
+    v = sum(np.clip((YY - cv) / 21.0 + 0.5, 0, 1) for cv in curves)
+    return shades[np.clip(np.floor(v + BAYER[YY % 4, XX % 4]), 0, 3).astype(int)].astype(np.float32)
 SPACEBG = build_space()
 rng = np.random.default_rng(21)
 BGSTARS = [(rng.uniform(0, W), rng.uniform(0, H), int(rng.integers(1, 9)), rng.uniform(0, 6.28), rng.random()) for _ in range(70)]
@@ -264,13 +269,15 @@ def clean_planet(F, name, cx, cy, r, L, spin, ret=False):
     p = np.pad(inside, 1)
     edge = inside & ~(p[:-2, 1:-1] & p[2:, 1:-1] & p[1:-1, :-2] & p[1:-1, 2:])
     lit_edge = edge & ((nx * L[0] + ny * L[1]) > 0.35)
-    col[edge] = MATP[mat[edge], 0] * 0.55
     col[lit_edge] = np.minimum(1, MATP[mat[lit_edge], 3] * 1.05)
     if name == 'earth':                              # Christmas-light cities on the night side
         h = (np.sin(lat * 91.7 + np.floor(lon * 15.3) * 12.9) * 43758.5) % 1.0
         city = (mat == MI['land']) & (d < -0.3) & (h > 0.86) & ~edge
         col[city] = hexc('#ffd36a')
     if ret: return yy[inside], xx[inside], col[inside], np.ones(inside.sum())
+    ring = ~inside & (p[:-2, 1:-1] | p[2:, 1:-1] | p[1:-1, :-2] | p[1:-1, 2:])
+    rk = ring & (yy >= 0) & (yy < H) & (xx >= 0) & (xx < W)
+    F[yy[rk], xx[rk]] = hexc('#06070e')
     ok = inside & (yy >= 0) & (yy < H) & (xx >= 0) & (xx < W)
     F[yy[ok], xx[ok]] = col[ok]
 

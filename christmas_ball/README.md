@@ -1,4 +1,4 @@
-# What If You Drop a Ball 4x Higher? (Christmas pixel short)
+# What If You Drop a Ball in the Snow? (Christmas pixel short)
 
 1080x1920, 60 fps, 38 s seamless loop, no voice: just bounces and music.
 
@@ -15,12 +15,13 @@ so dropping it 4x higher makes it bounce 2x slower. At 120 BPM the real heights 
 
 Only balls, snow, mountains, trees and sky. Each ball gathers out of drifting snow at its
 drop height and bursts back into snow on a chime at the end. The camera follows one ball at
-a time. Every surface, including the balls, is re-dithered each frame with drifting noise,
-and each ball's glow lights the snow beneath it.
+a time. Captions use plain words, no numbers. Nothing drifts: instead, about 20 times a second a
+scatter of pixels swaps with a neighbour, so every surface twinkles in place, and each
+ball's coloured glow lights the snow beneath it.
 
 ```
 python3 audio.py audio.wav
-python3 video.py drop_a_ball_4x_higher.mp4 audio.wav
+python3 video.py drop_a_ball_in_the_snow.mp4 audio.wav
 python3 video.py --stills out_dir 3.0 19.0      # preview frames
 ```
 `score.py` holds all timing and the physics, so picture and sound always stay in sync.

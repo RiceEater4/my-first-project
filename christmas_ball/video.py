@@ -43,9 +43,7 @@ NZB = torus_noise(256, 14.0, 7)     # big soft blobs (cloud shadows)
 
 CUR = {}                            # per-frame dither crawl shared by everything
 def live_fields(t):
-    ox, oy = int(t / LOOP * 256 * 7) % 256, int(t / LOOP * 256 * 4) % 256
-    sx, sy = int(t / LOOP * 256 * 2) % 256, int(t / LOOP * 256 * 1) % 256
-    b = int(t / LOOP * 4 * 240)
+    ox = oy = sx = sy = b = 0          # nothing drifts: pixels stay put and twinkle instead (see alive())
     CUR['b'] = b; CUR['o'] = (ox, oy)
     return dict(noise=NZ[(YY + oy) % 256, (XX + ox) % 256] - 0.5,
                 noise2=NZ[(YY * 2 + 37 - oy * 3) % 256, (XX * 2 + 91 + ox * 2) % 256] - 0.5,
@@ -178,13 +176,18 @@ def make_pine(height, width, p, seed, snow=True):
             ID[sm | tip] = 2
     return dict(V=V, ID=ID, p=p)
 
+_PCACHE = {}
 def pine_sprite(pn, t, seed):
+    if seed in _PCACHE: return _PCACHE[seed]
+    _PCACHE[seed] = _pine_sprite(pn, t, seed); return _PCACHE[seed]
+
+def _pine_sprite(pn, t, seed):
     V, ID = pn['V'], pn['ID']
     h, w_ = V.shape
     yy, xx = np.mgrid[0:h, 0:w_]
-    o = int(t / LOOP * 256 * 9) % 256
+    o = 0
     nz = NZ[(yy * 3 + seed + o) % 256, (xx * 3 + seed * 7) % 256] - 0.5
-    b = int(t / LOOP * 4 * 240)
+    b = 0
     bay = BAYER[(yy + b // 4) % 4, (xx + b) % 4] - 0.5
     spr = np.zeros((h, w_, 4), np.float32)
     for i, pp in ((1, pn['p']), (2, SNOW), (3, pal('#1a0e08', '#2b1a12', '#3e2618'))):
@@ -294,14 +297,14 @@ class Caption:
 
 CAPTIONS = []
 def cap(text, t_in, t_out): CAPTIONS.append(Caption(text, t_in, t_out, 40 + len(CAPTIONS)))
-cap("WHAT IF YOU\nDROP A BALL\n4X HIGHER?", 37.4, 39.75)
-cap("31 CM DROP:\nA BOUNCE\nEVERY BEAT", 2.3, 5.3)
-cap("8 CM DROP:\n4X LOWER\n= 2X FASTER", 6.3, 9.3)
-cap("1.2 M DROP:\n4X HIGHER\n= 2X SLOWER", 10.6, 13.2)
-cap("4.9 M DROP:\nONE BOUNCE\nPER BAR", 14.3, 17.0)
-cap("ADD ONE MORE\nAND IT SINGS", 17.6, 20.8)
-cap("HEIGHT SETS\nTHE RHYTHM", 23.0, 26.4)
-cap("4X HIGHER\nIS ALWAYS\n2X SLOWER", 34.7, 36.85)
+cap("WHAT IF YOU\nDROP A BALL\nIN THE SNOW?", 37.4, 39.75)
+cap("IT BOUNCES\nTO A BEAT", 2.3, 5.3)
+cap("DROP ONE LOWER\nIT BOUNCES\nFASTER", 6.3, 9.3)
+cap("FROM HIGHER UP\nIT BOUNCES\nSLOWER", 10.6, 13.2)
+cap("FROM WAY UP\nHIGH, IT TAKES\nITS TIME", 14.3, 17.0)
+cap("ONE MORE TO\nSING ALONG", 17.6, 20.8)
+cap("TOGETHER THEY\nMAKE A SONG", 23.0, 26.4)
+cap("SO THE HIGHER\nYOU DROP IT,\nTHE SLOWER\nIT BOUNCES", 34.7, 36.85)
 
 # ------------------------------------------------------------------ balls
 BALLS = {   # name: x, radius, palette (dark->light), glow colour, hits, period, finale key
@@ -513,6 +516,19 @@ def shoot(F, t):
     yi = np.clip(np.floor(cy - vh / 2 + OY / z).astype(int), 0, H - 1)
     return F[yi][:, xi]
 
+# ------------------------------------------------------------------ living pixels
+def alive(F, t, rate=0.03):
+    """~20 times a second a scatter of pixels trades places with the pixel next to it
+    (left, right, up or down at random). No drift, no direction: it just twinkles in place."""
+    tick = int(t * 20) % int(LOOP * 20)
+    r = np.random.default_rng(tick + 1000)
+    n = int(W * H * rate)
+    ys = r.integers(1, H - 1, n); xs = r.integers(1, W - 1, n)
+    d = r.integers(0, 4, n)
+    ys2 = ys + np.array([0, 0, 1, -1])[d]; xs2 = xs + np.array([1, -1, 0, 0])[d]
+    a, b = F[ys, xs].copy(), F[ys2, xs2].copy()
+    F[ys, xs] = b; F[ys2, xs2] = a
+
 # ------------------------------------------------------------------ frame
 def frame(t):
     fld = live_fields(t)
@@ -552,6 +568,7 @@ def frame(t):
     m = melody_state(t)
     if m:
         draw_ball(F, m[0], m[1], MEL['r'], m[2], MEL['p'], m[3], 77)
+    alive(F, t)
     draw_snowfall(F, t)
     out = shoot(F, t)
     scr = out[::S, ::S].copy(); before = scr.copy()

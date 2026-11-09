@@ -132,14 +132,14 @@ def last_age(hits, t):
     return t - hits[i] if i >= 0 else 99.0
 
 # ================================================================== background (static values, no drift)
-SPACE = pal('#1b2a6e', '#22337e', '#2a3d8e', '#34489e', '#3f55ac', '#4b62b8', '#5a70c2')
+SPACE = pal('#0a0b2c', '#11123c', '#1a1648', '#261a53', '#341d5c', '#452063', '#572468', '#6a2a6c')
 def build_space():
-    v = 0.6 + 4.6 * (YY / H) ** 1.2
+    v = 0.4 + 6.4 * (YY / H) ** 1.35
     F = dith(v, SPACE, BAYER[YY % 4, XX % 4] - 0.5).astype(np.float32)
     return np.clip(F, 0, 1)
 SPACEBG = build_space()
 rng = np.random.default_rng(21)
-BGSTARS = [(rng.uniform(0, W), rng.uniform(0, H), int(rng.integers(1, 9)), rng.uniform(0, 6.28), rng.random()) for _ in range(230)]
+BGSTARS = [(rng.uniform(0, W), rng.uniform(0, H), int(rng.integers(1, 9)), rng.uniform(0, 6.28), rng.random()) for _ in range(120)]
 
 def draw_bgstars(F, t):
     for x, y, k, ph, br in BGSTARS:
@@ -165,7 +165,7 @@ def sphere(F, cx, cy, r, tex, L, spin, night=None, alpha=1.0, ret=False):
     lat = np.arcsin(np.clip(-ny, -1, 1)); lon = np.arctan2(nx, nz + 1e-6) + spin
     col = tex(lat, lon)
     shade = np.clip(nx * L[0] + ny * L[1] + nz * L[2], 0, 1) if L is not None else np.ones_like(nx)
-    lit = col * (0.48 + 0.75 * shade[..., None])
+    lit = col * (0.30 + 0.95 * shade[..., None])
     if night is not None: lit = np.maximum(lit, night(lat, lon, shade))
     rim = np.clip(1 - nz, 0, 1) ** 3 * 0.25                       # thin atmosphere rim light
     lit = lit + rim[..., None] * shade[..., None] * np.array([0.6, 0.75, 1.0])
@@ -184,7 +184,7 @@ def mix3(a, b, m): return a * (1 - m[..., None]) + b * m[..., None]
 
 def tex_earth(lat, lon):
     land = nzs(lat, lon, 40) > 0.56
-    c = np.where(land[..., None], hexc('#5ad66e'), hexc('#3a8cff'))
+    c = np.where(land[..., None], hexc('#3fd46a'), hexc('#2378ff'))
     c = mix3(c, hexc('#ffe08a'), (land & (nzs(lat, lon, 40, NZ) > 0.7)).astype(float) * 0.5)
     snow = np.abs(lat) > 1.05 - 0.12 * nzs(lat, lon, 30, NZ)
     c = np.where(snow[..., None], hexc('#f2f7ff'), c)
@@ -199,18 +199,18 @@ def tex_mercury(lat, lon):
     return np.clip(c[..., None] * hexc('#f0e6dc') * 1.15, 0, 1)
 def tex_venus(lat, lon):
     b = np.sin(lat * 7 + 3 * nzs(lat, lon, 30)) * 0.5 + 0.5
-    return mix3(hexc('#ffd27a'), hexc('#fff6dc'), b)
+    return mix3(hexc('#ffb84a'), hexc('#ffe9b0'), b)
 def tex_mars(lat, lon):
-    c = mix3(hexc('#ff7a45'), hexc('#c4452a'), (nzs(lat, lon, 36) > 0.58).astype(float) * 0.7)
+    c = mix3(hexc('#ff6a32'), hexc('#c23a20'), (nzs(lat, lon, 36) > 0.58).astype(float) * 0.7)
     return np.where((lat > 1.05)[..., None], hexc('#f4f4f4'), c)
 def tex_jupiter(lat, lon):
     b = np.sin(lat * 11 + 1.2 * nzs(lat, lon, 26)) * 0.5 + 0.5
-    c = mix3(mix3(hexc('#f0b47a'), hexc('#fff0dc'), b), hexc('#c07a4a'), (b < 0.18).astype(float))
+    c = mix3(mix3(hexc('#f0a060'), hexc('#ffe6c4'), b), hexc('#b8603a'), (b < 0.18).astype(float))
     spot = ((lat + 0.38) / 0.13) ** 2 + ((np.angle(np.exp(1j * (lon - 1.0)))) / 0.32) ** 2 < 1
-    return np.where(spot[..., None], hexc('#ff6a4a'), c)
+    return np.where(spot[..., None], hexc('#ff4a32'), c)
 def tex_sun(lat, lon):
     g = nzs(lat, lon, 60, NZ)
-    return mix3(hexc('#ff9a2a'), hexc('#fff2a8'), g)
+    return mix3(hexc('#ff8a1a'), hexc('#ffe27a'), g)
 TEX = {'mercury': tex_mercury, 'venus': tex_venus, 'earth': tex_earth, 'mars': tex_mars, 'jupiter': tex_jupiter}
 
 def light_dir(name, t):
@@ -268,12 +268,14 @@ def draw_ring(F, name, t, back, vis):
 # ================================================================== the sun
 def draw_sun(F, t):
     kick = math.exp(-last_age(PLANETS['earth']['hits'], t) / 0.15) if 2 <= t < 38.3 else 0
+    hk = [h for h, _ in HOOK] + [h for h, _ in ECHO]
+    kick = max(kick, 1.3 * math.exp(-last_age(sorted(hk), t) / 0.12))
     r = 14
     yy, xx = np.mgrid[int(SUN[1] - 46):int(SUN[1] + 47), int(SUN[0] - 46):int(SUN[0] + 47)]
     d = np.hypot(xx + 0.5 - SUN[0], yy + 0.5 - SUN[1])
     g = np.clip(1 - (d - r) / (14 + 5 * kick), 0, 1) ** 2 * (0.7 + 0.4 * kick)
     q = np.clip(np.floor(g * 5 + BAYER[yy % 4, xx % 4] - 0.5) / 5, 0, 1)
-    F[yy, xx] = F[yy, xx] * (1 - q[..., None] * 0.85) + q[..., None] * hexc('#ffd56a') * 0.85
+    F[yy, xx] = F[yy, xx] * (1 - q[..., None] * 0.85) + q[..., None] * hexc('#ffa83a') * 0.85
     sphere(F, SUN[0], SUN[1], r, tex_sun, None, TAU * SPIN['sun'] * t / LOOP)
 
 # ================================================================== planets (form from sparkles / burst into sparkles)
@@ -439,7 +441,7 @@ cap("EVERY NOTE\nLIGHTS A STAR", 27.0, 30.5)
 cap("THE STARS MADE A\nCHRISTMAS TREE!", 37.5, 40.6)
 
 # ================================================================== living pixels: swap with a neighbour, in place
-def alive(F, t, rate=0.025):
+def alive(F, t, rate=0.015):
     tick = int(t * 20) % int(LOOP * 20)
     r = np.random.default_rng(tick + 1000); n = int(W * H * rate)
     ys = r.integers(1, H - 1, n); xs = r.integers(1, W - 1, n); d = r.integers(0, 4, n)

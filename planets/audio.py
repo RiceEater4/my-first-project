@@ -20,7 +20,8 @@ def env(n, a, d):
 
 def kick(v=1.0):
     n = int(0.45 * SR); t = np.arange(n) / SR
-    body = np.sin(2 * np.pi * np.cumsum(52 + 120 * np.exp(-t / 0.035)) / SR) * env(n, 0.001, 0.16)
+    body = np.sin(2 * np.pi * np.cumsum(48 + 190 * np.exp(-t / 0.028)) / SR) * env(n, 0.001, 0.2)
+    body = np.tanh(body * 2.2) / np.tanh(2.2)
     bell = np.sin(2 * np.pi * hz(91) * t) * env(n, 0, 0.05) * 0.10          # tiny bell on top
     return v * (body + bell + rng.standard_normal(n) * env(n, 0, 0.003) * 0.25)
 
@@ -34,9 +35,17 @@ def sleigh(v=1.0):
 
 def snare(v=1.0):
     n = int(0.35 * SR); t = np.arange(n) / SR
+    clap = np.zeros(n)
+    for off in (0, 0.009, 0.018, 0.027):
+        o = int(off * SR); e = np.exp(-np.arange(n - o) / SR / (0.012 if off < 0.027 else 0.09))
+        nz = rng.standard_normal(n - o); nz = nz - np.convolve(nz, np.ones(4) / 4, 'same')
+        clap[o:] += nz * e
+    return v * (clap * 0.5 + _snare_body(n, t))
+
+def _snare_body(n, t):
     no = rng.standard_normal(n); no = no - np.convolve(no, np.ones(6) / 6, 'same')
     tink = (np.sin(2 * np.pi * hz(98) * t) + 0.4 * np.sin(2 * np.pi * hz(98) * 2.76 * t)) * env(n, 0, 0.09) * 0.18
-    return v * (no * env(n, 0.0005, 0.07) * 0.55 + np.sin(2 * np.pi * 190 * t) * env(n, 0, 0.05) * 0.6 + tink)
+    return no * env(n, 0.0005, 0.06) * 0.3 + np.sin(2 * np.pi * 200 * t) * env(n, 0, 0.04) * 0.45 + tink
 
 def bass(m, v=1.0):
     n = int(1.8 * SR); t = np.arange(n) / SR; f = hz(m)
@@ -56,6 +65,20 @@ def handbell(ms, v=1.0):
     for m in ms:
         f = hz(m); s += np.sin(2 * np.pi * f * t) * np.exp(-t / 0.22) + 0.3 * np.sin(2 * np.pi * f * 3.0 * t) * np.exp(-t / 0.06)
     return v * s * np.clip(t / 0.002, 0, 1)
+
+def pluck(m, v=1.0):
+    n = int(0.7 * SR); t = np.arange(n) / SR; f = hz(m); s = np.zeros(n)
+    for h in range(1, 9): s += np.sin(2 * np.pi * f * h * t) / h * np.exp(-t * (6 + h * 4))
+    return v * s * np.clip(t / 0.002, 0, 1)
+
+for i, (t, nm) in enumerate(HOOK):                       # the hook, from frame 0
+    add('melody', t, glock(PITCH[nm] + 12, 0.95, 1.4)); add('melody', t, pluck(PITCH[nm], 0.55))
+for t in (0.0, 0.5, 1.0, 1.5): add('earth', t, kick(0.95))
+for t in (0.5, 1.5): add('mars', t, snare(0.9))
+for i in range(8): add('mercury', i * 0.25, sleigh(0.5 if i % 2 == 0 else 0.8))
+for t, nm in ECHO: add('melody', t, pluck(PITCH[nm], 0.35)); add('melody', t, glock(PITCH[nm] + 12, 0.25, 1.0))
+n_ = int(0.5 * SR); tt_ = np.arange(n_) / SR                # riser into the first Earth beat
+add('fx', 1.5, rng.standard_normal(n_) * (tt_ / 0.5) ** 3 * 0.35)
 
 # ---------------------------------------------------------------- every bell the planets ring
 H = {k: p['hits'] for k, p in PLANETS.items()}
@@ -91,10 +114,15 @@ for b in range(0, 21):
     fade = np.ones_like(st); fade[:xf] = np.linspace(0, 1, xf); fade[-xf:] = np.linspace(1, 0, xf)
     seg *= fade; end = min(N, i0 + len(seg)); pad[i0:end] += seg[:end - i0]
     if i0 + len(seg) > N: pad[:i0 + len(seg) - N] += seg[end - i0:]
-mix['pad'] = pad * np.interp(t_all, [0, 2, 21.5, 22, 38, 41, 42], [0.6, 0.6, 0.7, 1.0, 1.0, 0.7, 0.6])
+duck = np.ones(N)
+for t in sorted(set([round(x, 4) for x in PLANETS['earth']['hits'] + [0.0, 0.5, 1.0, 1.5]])):
+    i = int(t * SR) % N; m_ = int(0.42 * SR); seg = 1 - 0.65 * np.exp(-np.arange(m_) / SR / 0.11)
+    e_ = min(N, i + m_); duck[i:e_] = np.minimum(duck[i:e_], seg[:e_ - i])
+pad = pad * duck
+mix['pad'] = pad * np.interp(t_all, [0, 2, 21.5, 22, 38, 41, 42], [1.0, 0.75, 0.8, 1.0, 1.0, 0.8, 1.0])
 
 def norm(x): return x / (np.max(np.abs(x)) + 1e-9)
-gains = {'earth': 0.95, 'mercury': 0.30, 'venus': 0.30, 'mars': 0.50, 'jupiter': 0.65, 'melody': 0.80, 'pad': 0.09, 'fx': 0.45}
+gains = {'earth': 0.95, 'mercury': 0.30, 'venus': 0.30, 'mars': 0.50, 'jupiter': 0.65, 'melody': 0.80, 'pad': 0.16, 'fx': 0.45}
 dry = sum(norm(mix[k]) * g for k, g in gains.items())
 ir_n = int(1.8 * SR)
 ir = rng.standard_normal(ir_n) * np.exp(-np.arange(ir_n) / SR / 0.55)

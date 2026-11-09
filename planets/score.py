@@ -46,3 +46,9 @@ MELODY[-1] = (MELODY[-1][0], 'G', 1.0)          # last note at 37.0 = the top st
 BURST = {'mercury': 38.5, 'venus': 39.0, 'mars': 39.5, 'jupiter': 40.0}
 BURST_PITCH = {'mercury': 79, 'venus': 83, 'mars': 86, 'jupiter': 91}
 TREE_GLOW = 40.5
+
+# The hook: "fa-la-la-la-la, la-la-la-la" from Deck the Halls on bright bells, straight from frame 0
+# (then again softly every 4 bars under the groove so there is always something catchy).
+_HOOK = ['D', 'C', 'B', 'A', 'G', 'A', 'B', 'G']
+HOOK = [(i * 0.25, n) for i, n in enumerate(_HOOK)]                       # 0.0 - 1.75 s, loud
+ECHO = [(bar(b) + 1.0 + i * 0.25, n) for b in (2, 6, 10) for i, n in enumerate(_HOOK[4:])]   # soft answers

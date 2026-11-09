@@ -101,12 +101,11 @@ for j, m in enumerate([91, 95, 98, 103, 98, 95]):
 for t_land, dur, f0 in [(bar(5) + 0.5, 0.5, 1300), (bar(7), 1.0, 1500), (bar(9), 0.4, 1700)]:
     m = int(dur * SR); tt = np.arange(m) / SR
     add('fx', t_land - dur, np.sin(2 * np.pi * np.cumsum(f0 - 800 * tt / dur) / SR) * (tt / dur) ** 2 * 0.1)
-# soft mitten "pats" as each ball is caught at the end
-def pat(v):
-    n = int(0.08 * SR); x = rng.standard_normal(n) * env(n, 0.001, 0.012)
-    return np.convolve(x, np.ones(12) / 12, 'same') * v
-for t in [32.0, 32.125, 32.25, 33.0]:
-    add('fx', t, pat(0.9))
+# a soft shimmer as each ball gathers itself out of the snow
+for t_form, root in [(1.25, 91), (5.375, 98), (9.5, 86), (12.5, 79), (17.1, 95)]:
+    for j, m in enumerate([root, root + 4, root + 7]):
+        add('fx', t_form + j * 0.12, glock(m, 0.12, 1.0))
+    add('fx', t_form, sleigh(0.22))
 
 # ---------------------------------------------------------------- warm pad (quiet bed)
 t_all = np.arange(N) / SR

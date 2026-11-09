@@ -5,19 +5,18 @@
 **The fact:** a perfectly bouncy ball dropped from height *h* bounces every *T = 2·√(2h/g)*,
 so dropping it 4x higher makes it bounce 2x slower. At 120 BPM the real heights are:
 
-| Character | Drop height | Bounces every | Sound |
+| Ball | Drop height | Bounces every | Sound |
 |---|---|---|---|
-| Cat | 31 cm | 0.5 s (every beat) | kick |
-| Mouse | 8 cm | 0.25 s (8th notes) | jingle-bell ball |
-| Kid | 1.2 m | 1 s (beats 2 & 4) | snare |
-| Santa (roof) | 4.9 m | 2 s (once a bar) | bass, following the chords |
-| Robin's ball | on a xylophone | the melody | Jingle Bells chorus (public domain, 1857) |
+| Red | 31 cm | 0.5 s (every beat) | kick |
+| Gold | 8 cm | 0.25 s (8th notes) | sleigh bells |
+| Green | 1.2 m | 1 s (beats 2 & 4) | snare |
+| Blue | 4.9 m | 2 s (once a bar) | bass, following the chords |
+| Silver | between 5 glowing spots in the snow | the melody | Jingle Bells chorus (public domain, 1857) |
 
-Everything is scaled 60 px per metre, so the heights on screen are true to each other.
-
-The camera focuses on one character at a time (cat, mouse, kid, Santa, then the robin's
-xylophone) and pulls back for the reveal and the finale. Every surface is re-dithered each
-frame with drifting noise, cloud shadows and wind ripples, so the scene never freezes.
+Only balls, snow, mountains, trees and sky. Each ball gathers out of drifting snow at its
+drop height and bursts back into snow on a chime at the end. The camera follows one ball at
+a time. Every surface, including the balls, is re-dithered each frame with drifting noise,
+and each ball's glow lights the snow beneath it.
 
 ```
 python3 audio.py audio.wav

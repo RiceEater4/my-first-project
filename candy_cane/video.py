@@ -242,8 +242,9 @@ def cane_state(name, t):
     y = g - hpx * 4 * f * (1 - f)
     age = f * T
     k = max(0.0, 1 - min(f, 1 - f) * T / 0.05)
-    tilt = 0.22 * math.sin(age * 28) * math.exp(-age / 0.12) * (1 if (int(u) % 2) else -1)
-    return y, tilt, 1 - 0.18 * k, ('on',)
+    speed = abs(1 - 2 * f)                               # 0 at the top of the bounce, 1 at the ground
+    sq = 1 - 0.2 * k if k > 0 else 1 + 0.07 * speed ** 2
+    return y, 0.0, sq, ('on',)
 
 def draw_impact(F, name, t):
     w_ = WORLDS[name]; age = last_age(w_['hits'], t); g = GY
@@ -267,13 +268,32 @@ MEL_T = [m[0] for m in MELODY]; NB = len(MEL_T)
 BULB_X = [10 + i * (160 / (NB - 1)) for i in range(NB)]
 def wire_y(x): return 10 + 6 * (1 - ((x - 90) / 84) ** 2)
 BCOL = [hexc(c) for c in ('#ff3b4e', '#3fe07a', '#ffd23a', '#4aa8ff')]
+WIRE_IN, WIRE_OUT = (16.9, 17.85), (37.0, 37.5)          # unrolls before the chorus, rolls up after the finale
+def wire_reach(t):
+    """x the wire has reached (the wire grows left->right, then retracts right->left)"""
+    if t < WIRE_IN[0] or t >= WIRE_OUT[1]: return -1
+    if t < WIRE_IN[1]: return 8 + 165 * smooth((t - WIRE_IN[0]) / (WIRE_IN[1] - WIRE_IN[0]))
+    if t >= WIRE_OUT[0]: return 8 + 165 * (1 - smooth((t - WIRE_OUT[0]) / (WIRE_OUT[1] - WIRE_OUT[0])))
+    return 173
+def bulb_born(x): return WIRE_IN[0] + (WIRE_IN[1] - WIRE_IN[0]) * ((x - 8) / 165) ** 0.9
 def draw_lights(F, t):
-    for x in range(8, 173):
+    reach = wire_reach(t)
+    if reach < 0: return
+    for x in range(8, int(reach) + 1):
         put(F, x, wire_y(x), hexc('#1d4a2c'))
+    if reach < 173: put(F, reach, wire_y(reach), hexc('#3a7a4a'))   # bright tip where it is unrolling
     flash = math.exp(-(t - LIGHTS_FLASH) / 0.35) if t >= LIGHTS_FLASH else 0
     off = t >= LIGHTS_FLASH + 0.9
     for i, (x, mt) in enumerate(zip(BULB_X, MEL_T)):
-        y = int(round(wire_y(x))) + 1; c = BCOL[i % 4]
+        if x > reach:
+            if t >= WIRE_OUT[0]:                                      # popped off as the wire rolls up: tiny sparkle
+                pa = t - (WIRE_OUT[0] + (WIRE_OUT[1] - WIRE_OUT[0]) * (1 - (x - 8) / 165))
+                if 0 <= pa < 0.25:
+                    for k in range(1, 4): put(F, x + k * (1 if i % 2 else -1), wire_y(x) + 2 - k, BCOL[i % 4], 1 - pa / 0.25)
+            continue
+        age_b = t - bulb_born(x)
+        drop = int(round(-4 * math.exp(-age_b / 0.06) * math.cos(age_b * 30))) if age_b < 0.3 else 0   # bounces onto the wire
+        y = int(round(wire_y(x))) + 1 + drop; c = BCOL[i % 4]
         on = (mt <= t) and not off
         a = t - mt
         b = (1.0 + 1.2 * math.exp(-a / 0.15) if on else 0.28) + flash
@@ -412,8 +432,8 @@ def frame(t):
         drop = GY - WORLDS[nxt]['h'] * PX_PER_M
         ts = max(sc[0] for sc in SCENES if sc[0] <= t)
         y0 = cane_state(cur, ts)[0]                                 # where the cane was when it left
-        y = y0 + (drop - y0) * s_ ** 1.6                            # speeds up as it falls
-        draw_cane(F, CX - 4, y, 0.12 * math.sin(s_ * 9) * (1 - s_), 1, ('on',), 7 + ORDER.index(nxt))
+        y = y0 + (drop - y0) * smooth(s_)                           # glides and eases to a stop at its peak
+        draw_cane(F, CX - 4, y, 0.0, 1, ('on',), 7 + ORDER.index(nxt))
     draw_lights(F, t)
     for c_ in CAPTIONS: c_.draw(F, t)
     return np.repeat(np.repeat((np.clip(F, 0, 1) * 255 + 0.5).astype(np.uint8), S, 0), S, 1)

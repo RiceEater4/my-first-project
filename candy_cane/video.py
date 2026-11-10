@@ -399,7 +399,16 @@ def frame(t):
     elif kind == 'fall':                                          # the cane drops out of this world; the camera follows it down
         e = smooth(s_); off = int(round(e * H))
         G2 = world_frame(nxt, t)
-        if off > 0: F = np.concatenate([F[off:], G2[:off]], axis=0)
+        if off > 0:
+            # stack the two worlds and blend them across a soft, wavy, dithered band (no straight seam)
+            stack = np.concatenate([F, G2], axis=0)           # world A above world B
+            A_rows = np.clip(YY + off, 0, H - 1); B_rows = np.clip(YY + off - H, 0, H - 1)
+            seam = (H - off) + 5 * np.sin(XX / 23 + 0.8) + 3 * np.sin(XX / 11 + 2.0)
+            wgt = np.clip((YY - seam) / 40.0 + 0.5, 0, 1)
+            wgt = np.where(YY + off >= H, np.maximum(wgt, (YY + off >= H + 20).astype(float)), wgt)
+            wgt = np.where(YY + off < H - 20, np.minimum(wgt, 0.0), wgt)
+            useB = FULL_BAYER < wgt
+            F = np.where(useB[..., None], G2[B_rows, XX], F[A_rows, XX])
         drop = GY - WORLDS[nxt]['h'] * PX_PER_M
         ts = max(sc[0] for sc in SCENES if sc[0] <= t)
         y0 = cane_state(cur, ts)[0]                                 # where the cane was when it left

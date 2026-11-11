@@ -74,8 +74,15 @@ def dilate(m):
     return m | p[:-2, 1:-1] | p[2:, 1:-1] | p[1:-1, :-2] | p[1:-1, 2:]
 def smooth(s): s = min(1.0, max(0.0, s)); return s * s * (3 - 2 * s)
 def put(F, x, y, col, a=1.0):
+    """one chunky pixel. On the full-res frame it lands at a sub-pixel position, so moving things glide."""
+    if F.shape[0] == H * S:
+        X, Y = int(round(x * S)), int(round(y * S))
+        x0, y0, x1, y1 = max(0, X), max(0, Y), min(W * S, X + S), min(H * S, Y + S)
+        if x1 > x0 and y1 > y0: F[y0:y1, x0:x1] = F[y0:y1, x0:x1] * (1 - a) + col * a
+        return
     x, y = int(round(x)), int(round(y))
     if 0 <= x < W and 0 <= y < H: F[y, x] = F[y, x] * (1 - a) + col * a
+def up(F): return np.repeat(np.repeat(F, S, 0), S, 1)
 def last_age(hits, t):
     i = int(np.searchsorted(hits, t, side='right') - 1)
     return t - hits[i] if i >= 0 else 99.0
@@ -158,8 +165,9 @@ def draw_dot(F, x, y, core, glow, arm, size):
 def draw_star(F, x, y, t):
     kick = math.exp(-last_age(MOONS['io']['hits'], t) / 0.15) if t < END + 0.2 else 0
     born = t - MERGE
-    grow = smooth(born / 0.35)
-    ln = lambda base: int(round(base * grow + 2 * kick))
+    grow = max(0.0, 1 - math.exp(-born / 0.11) * math.cos(born * 15))       # pops in, overshoots, settles
+    tw = 1.2 * math.sin(t * 4.5)
+    ln = lambda base: max(2, int(round(base * grow + 2 * kick + tw * base / 20)))
     gold, white = hexc('#ffd86a'), hexc('#fffaf0')
     for dx in range(-2, 3):
         for dy in range(-2, 3):
@@ -183,6 +191,19 @@ def draw_star(F, x, y, t):
             th = TAU * q / 100 + 0.03
             put(F, x + r2 * math.cos(th), y + r2 * math.sin(th) * 0.9, hexc('#fffaf0'), 1 - born / 0.9)
 
+CHIMNEYS = []
+for hx, hw, hh in HOUSES:
+    base = int(HILL_NEAR[0, hx]) + 2
+    CHIMNEYS.append((hx + hw // 4 + 1, base - hh - hw // 4 - 3))
+SHOOT = [(0.9, 40, 24), (18.4, 160, 18), (23.8, 70, 12), (30.6, 168, 36)]     # shooting stars: time, x, y
+rngp = np.random.default_rng(77)
+PARTS = [(rngp.uniform(0, TAU), rngp.uniform(35, 95), rngp.random(), rngp.uniform(4, 12)) for _ in range(44)]
+
+def dot_positions(t):
+    sep = separation(t)
+    j = MID - DIRV * sep / 2; s_ = MID + DIRV * sep / 2
+    return j, s_
+
 def wide_frame(t):
     F = WIDE.copy()
     for x, y, k, ph, br in STARS:
@@ -194,31 +215,56 @@ def wide_frame(t):
             x, y, *_ = STARS[int(mt * 7) % len(STARS)]
             for k in range(1, 4):
                 for dx, dy in ((k, 0), (-k, 0), (0, k), (0, -k)): put(F, x + dx, y + dy, hexc('#ffffff'), (1 - a / 0.5) * (1 - k / 4))
-    sep = separation(t)
-    if t >= MERGE and t < REWIND[0]:
-        draw_star(F, MID[0], MID[1], t)
-        glow = 0.6
-    else:
-        jx, jy = MID - DIRV * sep / 2; sx, sy = MID + DIRV * sep / 2
-        tension = smooth((t - 22.5) / 4.5) if 22.5 < t < MERGE else 0
-        io = math.exp(-last_age(MOONS['io']['hits'], t) / 0.12) if 3 <= t < END + 0.2 else 0
-        ring = math.exp(-last_age(RING_HITS, t) / 0.08) if 13.5 <= t < END else 0
-        draw_dot(F, sx, sy, hexc('#ffe3a0'), hexc('#d8b060'), 3 + int(ring * 2 + tension * 3), 4)
-        for dx in range(-5, 6):
-            if abs(dx) > 2: put(F, sx + dx, sy + (1 if dx > 0 else 0), hexc('#e8c880'))
-        draw_dot(F, jx, jy, hexc('#fff4dc'), hexc('#e8d0a0'), 4 + int(io * 3 + tension * 4), 5)
-        if REWIND[0] <= t < REWIND[1]:                    # rewind streaks
-            for k in range(1, 6):
-                put(F, jx + DIRV[0] * k * 2, jy + DIRV[1] * k * 2, hexc('#e8d0a0'), 0.5 - k * 0.08)
-                put(F, sx - DIRV[0] * k * 2, sy - DIRV[1] * k * 2, hexc('#d8b060'), 0.5 - k * 0.08)
-        glow = 0.0
-    if t >= MERGE and t < REWIND[0]: glow = 0.6 + 0.4 * math.exp(-(t - MERGE) / 0.6)
+    for cx, cy in CHIMNEYS:                               # little chimneys
+        F[cy - 1:cy + 4, cx - 2:cx + 2] = INK; F[cy:cy + 4, cx - 1:cx + 1] = hexc('#5a3a40'); F[cy, cx - 1:cx + 1] = hexc('#e8f0fb')
+    merged = MERGE <= t < REWIND[0]
+    glow = (0.6 + 0.4 * math.exp(-(t - MERGE) / 0.6)) if merged else 0.0
     draw_tree(F, t, glow)
-    for x0, ph0, n, ph in SNOW:                           # snow falls and settles on the hill
-        cyc = LOOP / n; tau = ((t / cyc + ph0) % 1.0) * cyc; land = HILL_NEAR[0, int(x0) % W]; fall = (land + 6) / 28.0
-        if tau < fall: put(F, x0 + 3 * math.sin(tau * 1.6 + ph), -6 + 28 * tau, np.array([0.95, 0.97, 1.0]), 0.9)
-        elif tau < fall + 1.4: put(F, x0 + 3 * math.sin(fall * 1.6 + ph), land, np.array([1, 1, 1]), 0.9 * (1 - (tau - fall) / 1.4))
-    return F
+
+    def dyn(OUT, t):
+        for cx, cy in CHIMNEYS:                           # smoke drifting up, loop-safe
+            for i in range(6):
+                ph = (t / LOOP * 15 + i / 6 + cx * 0.01) % 1.0
+                put(OUT, cx + 3 * math.sin(ph * 6 + i) + ph * 7, cy - 2 - ph * 24, hexc('#7f92b8'), 0.55 * (1 - ph) * min(1, ph * 6))
+        for t0, x0, y0 in SHOOT:                          # shooting stars
+            a = t - t0
+            if 0 <= a < 0.75:
+                for k in range(12):
+                    tt = a - k * 0.018
+                    if tt < 0: continue
+                    put(OUT, x0 - 110 * tt, y0 + 52 * tt, hexc('#ffffff') if k < 3 else hexc('#bcd0ff'), (1 - k / 12) * (1 - a / 0.75))
+        if merged:
+            draw_star(OUT, MID[0], MID[1], t)
+            born = t - MERGE
+            if born < 1.4:                                # sparkles burst out and drift to a stop
+                for th, v, ph, life in PARTS:
+                    dist = v * (1 - math.exp(-born * 2.6)) / 2.6
+                    a = (1 - born / 1.4) * (0.6 + 0.4 * math.sin(born * life * 3 + ph * 6))
+                    put(OUT, MID[0] + dist * math.cos(th), MID[1] + dist * math.sin(th) * 0.9, hexc('#ffe9a0') if ph < 0.6 else hexc('#ffffff'), max(0.0, a))
+        else:
+            (jx, jy), (sx, sy) = dot_positions(t)
+            tension = smooth((t - 22.5) / 4.5) if 22.5 < t < MERGE else 0
+            if 19.0 < t < MERGE or REWIND[0] <= t < REWIND[1]:   # glowing trails
+                for k in range(1, 9):
+                    (pjx, pjy), (psx, psy) = dot_positions(t - k * 0.05)
+                    a = 0.45 * (1 - k / 9) * (1 if t < MERGE else 0.8)
+                    put(OUT, pjx, pjy, hexc('#e8d0a0'), a); put(OUT, psx, psy, hexc('#d8b060'), a)
+            io = math.exp(-last_age(MOONS['io']['hits'], t) / 0.12) if 3 <= t < END + 0.2 else 0
+            ring = math.exp(-last_age(RING_HITS, t) / 0.08) if 13.5 <= t < END else 0
+            draw_dot(OUT, sx, sy, hexc('#ffe3a0'), hexc('#d8b060'), 3 + int(ring * 2 + tension * 3), 4)
+            for dx in range(-5, 6):
+                if abs(dx) > 2: put(OUT, sx + dx, sy + (1 if dx > 0 else 0), hexc('#e8c880'))
+            draw_dot(OUT, jx, jy, hexc('#fff4dc'), hexc('#e8d0a0'), 4 + int(io * 3 + tension * 4), 5)
+            if tension > 0:                               # sparkles circling each planet as they close in
+                for i in range(4):
+                    ang = t * 5 + i * TAU / 4
+                    for (px, py), rr in (((jx, jy), 8), ((sx, sy), 7)):
+                        put(OUT, px + rr * math.cos(ang), py + rr * 0.8 * math.sin(ang), hexc('#fff6d8'), tension * (0.5 + 0.5 * math.sin(t * 9 + i)))
+        for x0, ph0, n, ph in SNOW:                       # snow falls smoothly and settles on the hill
+            cyc = LOOP / n; tau = ((t / cyc + ph0) % 1.0) * cyc; land = HILL_NEAR[0, int(x0) % W]; fall = (land + 6) / 28.0
+            if tau < fall: put(OUT, x0 + 3 * math.sin(tau * 1.6 + ph), -6 + 28 * tau, np.array([0.95, 0.97, 1.0]), 0.9)
+            elif tau < fall + 1.4: put(OUT, x0 + 3 * math.sin(fall * 1.6 + ph), land, np.array([1, 1, 1]), 0.9 * (1 - (tau - fall) / 1.4))
+    return F, dyn
 
 # ================================================================ CLOSE-UPS (through the telescope)
 SPACE = curved_bands(pal('#161d3a', '#121831', '#0e1328', '#0a0e1f'), 0, H, 3, 17).astype(np.float32)
@@ -242,7 +288,20 @@ def sphere(F, cx, cy, r, colour_fn, outline=True):
     ok = (yy >= 0) & (yy < H) & (xx >= 0) & (xx < W)
     if outline: F[yy[ring & ok], xx[ring & ok]] = INK
     F[yy[inside & ok], xx[inside & ok]] = col[inside & ok]
-    return inside, yy, xx
+    return inside, yy, xx, ring
+
+def sphere_hr(OUT, cx, cy, r, fn, avoid=None):
+    R = int(r) + 3
+    L = np.zeros((2 * R + 1, 2 * R + 1, 3), np.float32)
+    inside, yy, xx, ring = sphere(L, R, R, r, fn)
+    M = np.zeros(L.shape[:2], bool); M[yy[inside | ring], xx[inside | ring]] = True
+    Lh, Mh = up(L), up(M[..., None])[..., 0]
+    X0, Y0 = int(round((cx - R) * S)), int(round((cy - R) * S)); h, w_ = Mh.shape
+    xa, ya, xb, yb = max(0, X0), max(0, Y0), min(W * S, X0 + w_), min(H * S, Y0 + h)
+    if xb <= xa or yb <= ya: return
+    m = Mh[ya - Y0:yb - Y0, xa - X0:xb - X0]
+    if avoid is not None: m = m & ~avoid[ya:yb, xa:xb]
+    OUT[ya:yb, xa:xb][m] = Lh[ya - Y0:yb - Y0, xa - X0:xb - X0][m]
 
 JUP = (90.0, 176.0, 34.0)
 J_ZONE = pal('#7a5434', '#c4946a', '#ecd2ac', '#fff2dc'); J_BELT = pal('#4e2c18', '#8a5432', '#c07a4a', '#e6a070')
@@ -276,7 +335,7 @@ def draw_orbit(F, name, back):
         th = math.radians(q)
         if (math.sin(th) < 0) == back: put(F, JUP[0] + R * math.cos(th), JUP[1] + R * TILT * math.sin(th), hexc('#2e3a66'), 0.9)
 
-def draw_moon(F, name, t):
+def draw_moon(F, name, t, avoid=None):
     if t < MOON_JOIN[name]: return
     x, y, z = moon_pos(name, t); r = MOON_LOOK[name][1]; P = MOON_LOOK[name][2]
     j = t - MOON_JOIN[name]
@@ -285,7 +344,7 @@ def draw_moon(F, name, t):
         for k in range(2, 6): put(F, x + k, y - k, hexc('#ffffff'), 1 - j / 0.4); put(F, x - k, y + k, hexc('#ffffff'), 1 - j / 0.4)
         if r < 0.8: return
     hit = math.exp(-last_age(MOONS[name]['hits'], t) / 0.12) if t >= MOONS[name]['first'] else 0
-    sphere(F, x, y, r, lambda nx, ny, nz, lvl: np.minimum(1, P[lvl] + hit * 0.45))
+    sphere_hr(F, x, y, r, lambda nx, ny, nz, lvl: np.minimum(1, P[lvl] + hit * 0.45), avoid)
     if hit > 0.1:                                                  # little flash ring on its beat
         for q in range(16):
             th = TAU * q / 16; rr = r + 2 + 4 * (1 - hit)
@@ -295,21 +354,24 @@ def jupiter_frame(t):
     F = SPACE.copy()
     for x, y, k, ph in SPACE_STARS: put(F, x, y, hexc('#dce6ff'), 0.2 + 0.6 * (0.5 + 0.5 * math.sin(w(k) * t + ph)))
     for n in MOONS: draw_orbit(F, n, True)
-    for n in MOONS:
-        if moon_pos(n, t)[2] < 0: draw_moon(F, n, t)
-    inside, yy, xx = sphere(F, JUP[0], JUP[1], JUP[2], jupiter_col(t))
-    for n in MOONS:                                                # each moon casts a tiny shadow when it is in front
-        if t < MOON_JOIN[n]: continue
-        x, y, z = moon_pos(n, t)
-        if z > 0 and abs(x + 4 - JUP[0]) < JUP[2] - 3:
-            sx, sy = x + 4, JUP[1] + (y - JUP[1]) * 0.4 + 6
-            for dx in range(-1, 2):
-                for dy in range(-1, 2):
-                    if abs(dx) + abs(dy) < 2 and (sx + dx - JUP[0]) ** 2 + (sy + dy - JUP[1]) ** 2 < (JUP[2] - 1) ** 2: put(F, sx + dx, sy + dy, INK)
+    inside, yy, xx, ring = sphere(F, JUP[0], JUP[1], JUP[2], jupiter_col(t))
+    jm = np.zeros((H, W), bool); jm[yy[inside | ring], xx[inside | ring]] = True
     for n in MOONS: draw_orbit(F, n, False)
-    for n in MOONS:
-        if moon_pos(n, t)[2] >= 0: draw_moon(F, n, t)
-    return F
+    def dyn(OUT, t):
+        avoid = up(jm[..., None])[..., 0]
+        for n in MOONS:
+            if moon_pos(n, t)[2] < 0: draw_moon(OUT, n, t, avoid)       # behind the planet
+        for n in MOONS:                                                  # shadows cast on Jupiter
+            if t < MOON_JOIN[n]: continue
+            x, y, z = moon_pos(n, t)
+            if z > 0 and abs(x + 4 - JUP[0]) < JUP[2] - 3:
+                sx, sy = x + 4, JUP[1] + (y - JUP[1]) * 0.4 + 6
+                for dx in range(-1, 2):
+                    for dy in range(-1, 2):
+                        if abs(dx) + abs(dy) < 2 and (sx + dx - JUP[0]) ** 2 + (sy + dy - JUP[1]) ** 2 < (JUP[2] - 1) ** 2: put(OUT, sx + dx, sy + dy, INK)
+        for n in MOONS:
+            if moon_pos(n, t)[2] >= 0: draw_moon(OUT, n, t)
+    return F, dyn
 
 SAT = (90.0, 180.0, 25.0)
 S_PAL = pal('#7a6038', '#c8a46a', '#ecd4a0', '#fff4d8'); S_PAL2 = pal('#6a5030', '#b08c58', '#d8b884', '#f0dcb4')
@@ -335,14 +397,16 @@ def saturn_frame(t):
     draw_rings(F, False, t)
     sphere(F, SAT[0], SAT[1], SAT[2], saturn_col)
     draw_rings(F, True, t)
-    for i, h in enumerate(RING_HITS):                              # ring sparkles on the hi-hats
-        a = t - h
-        if 0 <= a < 0.2:
-            th = i * 2.4; x, y = SAT[0] + RX * 0.8 * math.cos(th), SAT[1] + RY * 0.8 * math.sin(th)
-            if math.sin(th) > 0 or abs(x - SAT[0]) > SAT[2] + 1:
-                k_ = 1 - a / 0.2
-                for dx, dy in ((0, 0), (1, 0), (-1, 0), (0, 1), (0, -1)): put(F, x + dx, y + dy, hexc('#ffffff'), k_ * (1 if dx == dy == 0 else 0.6))
-    return F
+    def dyn(OUT, t):
+        for i, h in enumerate(RING_HITS):                              # each hi-hat sends a glint along the ring
+            a = t - h
+            if 0 <= a < 0.3:
+                th = i * 2.4 + a * 3.0; rr = 0.78 + 0.08 * (i % 3)
+                x, y = SAT[0] + RX * rr * math.cos(th), SAT[1] + RY * rr * math.sin(th)
+                if math.sin(th) > 0 or abs(x - SAT[0]) > SAT[2] + 1:
+                    k_ = 1 - a / 0.3
+                    for dx, dy in ((0, 0), (1, 0), (-1, 0), (0, 1), (0, -1)): put(OUT, x + dx, y + dy, hexc('#ffffff'), k_ * (1 if dx == dy == 0 else 0.55))
+    return F, dyn
 
 # ================================================================ captions: plain, casual, near the top
 HEADPHONES = ["0011111100", "0100000010", "1000000001", "1000000001", "1110000111", "1110000111", "1110000111", "0110000110"]
@@ -422,13 +486,26 @@ def living_pixels(F, t):
     ys2 = ys + np.array([0, 0, 1, -1])[d]; xs2 = xs + np.array([1, -1, 0, 0])[d]
     a_, b_ = F[ys, xs].copy(), F[ys2, xs2].copy(); F[ys, xs] = b_; F[ys2, xs2] = a_
 
+def render_scene(name, t):
+    F, dyn = SCENE_FN[name](t)
+    OUT = up(F); dyn(OUT, t)
+    return OUT
+HR_BAYER = up(FULL_BAYER[..., None])[..., 0]
 def frame(t):
     cur, nxt, s_ = view(t)
-    F = SCENE_FN[cur](t)
+    OUT = render_scene(cur, t)
     if nxt is not None:
-        G = SCENE_FN[nxt](t); m = FULL_BAYER < smooth(s_); F[m] = G[m]
-    for c_ in CAPTIONS: c_.draw(F, t)
-    return np.repeat(np.repeat((np.clip(F, 0, 1) * 255 + 0.5).astype(np.uint8), S, 0), S, 1)
+        G = render_scene(nxt, t); m = HR_BAYER < smooth(s_); OUT[m] = G[m]
+    if MERGE <= t < MERGE + 0.45:                                   # screen shake when they collide
+        A = 9 * math.exp(-(t - MERGE) / 0.12)
+        dx, dy = int(round(A * math.sin(t * 97))), int(round(A * math.cos(t * 71)))
+        OUT = np.pad(OUT, ((12, 12), (12, 12), (0, 0)), mode='edge')[12 + dy:12 + dy + H * S, 12 + dx:12 + dx + W * S]
+    scr = OUT[::S, ::S].copy(); before = scr.copy()                 # captions on the pixel grid, on top
+    for c_ in CAPTIONS: c_.draw(scr, t)
+    ch = np.any(np.abs(scr - before) > 1e-6, axis=2)
+    if ch.any():
+        big = up(ch[..., None])[..., 0]; OUT[big] = up(scr)[big]
+    return (np.clip(OUT, 0, 1) * 255 + 0.5).astype(np.uint8)
 
 if __name__ == '__main__':
     if sys.argv[1] == '--stills':

@@ -185,7 +185,9 @@ def penguin(pose):
     look = pose.get('look', 0); eyes = pose.get('eyes', 'open')
     for side in (-1, 1):
         ex, ey = side * 4.6, -35.5
-        if eyes == 'happy':
+        if eyes == 'blink':
+            paint((np.abs(y - ey - 0.6) < 0.7) & (np.abs(x - ex) < 3.0), INK)
+        elif eyes == 'happy':
             d = np.hypot(x - ex, (y - ey - 1.0) * 1.2)
             paint((np.abs(d - 2.4) < 0.75) & (y < ey + 0.6) & body, INK)
         else:
@@ -289,12 +291,13 @@ def hero(t):
     x, ph = walk_state(t)
     pose = dict(hat=True, look=0, eyes='open', flop=1.2 * math.sin(t * 6))
     if ph is not None:
+        pose['dy'] = 2.2 * abs(math.sin(math.pi * ph))          # little hop on every step
         pose['tilt'] = 0.14 * math.sin(math.pi * ph)
         pose['liftL'] = 2 * max(0, math.sin(math.pi * ph)); pose['liftR'] = 2 * max(0, -math.sin(math.pi * ph))
         pose['flipL'] = 0.35 + 0.15 * math.sin(math.pi * ph); pose['flipR'] = 0.35 - 0.15 * math.sin(math.pi * ph)
         pose['look'] = 1 if t < 15.6 else 1
     else:
-        pose['sq'] = beat_bob(t)
+        pose['sq'] = beat_bob(t) * (1 + 0.018 * math.sin(t * 2.6))   # breathing
     holding = None
     for k, tp in PICKS.items():
         end = {'dull1': TOSSES['dull1'], 'dull2': TOSSES['dull2'], 'shiny': SNATCH, 'best': GIVE}[k]
@@ -309,12 +312,14 @@ def hero(t):
         if a > 0.5: pose['sq'] = 1 - 0.06 * math.exp(-last_age(KICKS, t) / 0.08)
     for k, tt in TOSSES.items():                                    # toss it behind
         a = t - tt
-        if 0 <= a < 0.25: pose['flipR'] = 1.55 + 0.9 * math.sin(math.pi * a / 0.25)
+        if -0.3 <= a < 0: pose['flipR'] = 1.55 - 0.7 * math.sin(math.pi * (a + 0.3) / 0.6); pose['tilt'] = 0.08 * (a + 0.3) / 0.3   # wind up
+        if 0 <= a < 0.25: pose['flipR'] = 1.55 + 0.9 * math.sin(math.pi * a / 0.25); pose['tilt'] = -0.1 * math.sin(math.pi * a / 0.25)
     if SNATCH <= t < 12.0:                                          # what?! hey!!
         a = t - SNATCH
         pose['eyes'] = 'wide'; pose['flipL'] = 2.0 + 0.3 * math.sin(a * 30); pose['flipR'] = 2.0 + 0.3 * math.sin(a * 30 + 1)
         pose['look'] = -1; pose['tilt'] = -0.08 * math.sin(a * 22) * math.exp(-a * 2)
         pose['sq'] = 1 + 0.08 * math.exp(-a / 0.1)
+        if a < 0.4: pose['dy'] = 12 * math.sin(math.pi * a / 0.4)  # jumps in surprise
     if 11.6 <= t < 12.2:                                            # sigh...
         pose['eyes'] = 'open'; pose['flipL'] = pose['flipR'] = 0.05; pose['sq'] = 0.95; pose['look'] = 1
     if holding == 'best':
@@ -326,11 +331,19 @@ def hero(t):
         pose['eyes'] = 'happy'; pose['look'] = 1
         a = t - GIVE
         pose['flipL'] = pose['flipR'] = 0.4 + 0.5 * max(0, math.sin(a * 10)) * math.exp(-a / 1.5)
-        pose['sq'] = beat_bob(t)
+        pose['sq'] = beat_bob(t) * (1 + 0.018 * math.sin(t * 2.6))
+        if a < 0.5: pose['dy'] = 7 * math.sin(math.pi * a / 0.5)    # happy hop
+    if t >= PLACE:                                                   # bounces to the waltz while the nest goes up
+        ab = last_age(KICKS, t); pose['dy'] = pose.get('dy', 0) + 3 * math.exp(-ab / 0.12)
+    pose['flop'] = pose['flop'] - 9 * pose.get('tilt', 0) + 0.25 * pose.get('dy', 0)   # hat follows through
+    if pose['eyes'] == 'open' and blinking(t, 0.0): pose['eyes'] = 'blink'
     return x, pose, holding
 
+def blinking(t, ph):
+    return ((t + ph) % 2.9) < 0.12
+
 PARTNER_X = 298
-EASE_TAPS = [(0.0, 0.30), (0.03, 0.25), (0.06, 0.2), (0.09, 0.15), (0.13, 0.1)]
+EASE_TAPS = [(i * 0.025, w_) for i, w_ in enumerate([0.2, 0.18, 0.15, 0.13, 0.1, 0.09, 0.07, 0.05, 0.03])]
 def eased(fn, t):
     """call fn(t) at a few recent moments and blend the numeric pose values: no more instant snaps"""
     outs = [fn(max(0.0, t - d)) for d, _ in EASE_TAPS]
@@ -352,6 +365,12 @@ def partner(t):
     if t >= PLACE:
         pose['eyes'] = 'happy'
         a = last_age(KICKS, t); pose['flipL'] = pose['flipR'] = 0.3 + 0.4 * math.exp(-a / 0.15)
+        pose['dy'] = 3 * math.exp(-last_age([k + 0.4 for k in KICKS], t) / 0.12)   # bounces off-beat to him
+    pose['sq'] = pose['sq'] * (1 + 0.018 * math.sin(t * 2.3 + 1))
+    pose['tilt'] = 0.04 * math.sin(t * 1.7)                          # gentle idle sway
+    if 13.0 < t < 16.0: pose['look'] = -1 + 0.6 * smooth((14.6 - t) / 1.0)
+    if GIVE <= t < GIVE + 0.45: pose['dy'] = 9 * math.sin(math.pi * (t - GIVE) / 0.45)   # hops when she gets it
+    if pose['eyes'] == 'open' and blinking(t, 1.3): pose['eyes'] = 'blink'
     return pose, holding
 
 def thief_state(t):
@@ -404,9 +423,9 @@ def render(t):
             draw_pebble(OUT, x - cam, yy, 'best' if i == 0 else 'nest', t, 0.6 * math.exp(-a / 0.3) if a < 1 else 0)
     # characters
     ppose, pheld = eased(partner, t)
-    ptips = draw_penguin(OUT, PARTNER_X, GY, ppose, cam)
+    ptips = draw_penguin(OUT, PARTNER_X, GY - ppose.get('dy', 0), ppose, cam)
     hx, hpose, hheld = eased(hero, t)
-    htips = draw_penguin(OUT, hx, GY, hpose, cam)
+    htips = draw_penguin(OUT, hx, GY - hpose.get('dy', 0), hpose, cam)
     if hheld:
         tx, ty = htips[1]; draw_pebble(OUT, tx, ty - 1, hheld, t, 1.0 if hheld in ('shiny', 'best') else 0)
     if pheld:
@@ -420,7 +439,7 @@ def render(t):
     if tx_ is not None:
         a = t - SNATCH
         tp = dict(tilt=-1.45, sq=1.0, brows=True, eyes='open', look=-1, flipL=2.6, flipR=2.6)
-        tips = draw_penguin(OUT, tx_ + 56, GY - 19, tp, cam)
+        tips = draw_penguin(OUT, tx_ + 56, GY - 19 - 1.2 * abs(math.sin(t * 22)), tp, cam)
         for k in range(1, 8):                                  # snow spray behind the slide
             put(OUT, tx_ + 70 + k * 5 - cam, GY - 1 - (k % 3), hexc('#ffffff'), 0.8 - k * 0.1)
         if t >= SNATCH: draw_pebble(OUT, tx_ - 40 - cam, GY - 14, 'shiny', t, 0.8)
@@ -522,7 +541,8 @@ def story_time(v):
         return COLD[0] + COLD[1] + (STORY0 - (COLD[0] + COLD[1])) * smooth(s_)
     return STORY0 + (v - COLD[1] - REW)
 REWIND_ICON = ["1000100", "1100110", "1110111", "1111111", "1110111", "1100110", "1000100"]
-def frame(v):
+def frame(vr):
+    v = vr / K
     OUT = render(story_time(v))
     if COLD[1] <= v < COLD[1] + REW:                          # rewind: icon + light scanlines
         for j, row in enumerate(REWIND_ICON):
@@ -550,7 +570,7 @@ if __name__ == '__main__':
     p = subprocess.Popen(['ffmpeg', '-v', 'error', '-y', '-f', 'rawvideo', '-pix_fmt', 'rgb24', '-s', f'{W*S}x{H*S}', '-r', str(FPS),
                           '-i', '-', '-i', wav, '-c:v', 'libx264', '-preset', 'medium', '-crf', '16', '-pix_fmt', 'yuv420p',
                           '-c:a', 'aac', '-b:a', '256k', '-shortest', '-movflags', '+faststart', out], stdin=subprocess.PIPE)
-    for f in range(int(round(VLOOP * FPS))):
+    for f in range(int(round(VLOOP * K * FPS))):
         p.stdin.write(frame(f / FPS).tobytes())
         if f % 300 == 0: print('frame', f, flush=True)
     p.stdin.close(); p.wait(); print('done', out)

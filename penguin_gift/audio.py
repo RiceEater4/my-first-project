@@ -4,13 +4,13 @@ import numpy as np, wave, sys
 from score import *
 
 SR = 48000
-N = int(LOOP * SR)
+N = int(LOOP * K * SR)
 rng = np.random.default_rng(7)
 mix = {k: np.zeros(N) for k in ['kick', 'stab', 'hat', 'bass', 'melody', 'pad', 'fx']}
 def hz(m): return 440.0 * 2 ** ((m - 69) / 12)
 
 def add(track, t, sig):
-    i = int(round(t * SR)) % N; n = len(sig); end = min(N, i + n)
+    i = int(round(t * K * SR)) % N; n = len(sig); end = min(N, i + n)
     mix[track][i:end] += sig[:end - i]
     if i + n > N: mix[track][:i + n - N] += sig[end - i:]       # wrap tails: seamless loop
 
@@ -114,7 +114,7 @@ add('fx', LOOP - 0.4, rng.standard_normal(n_) * (tt_ / 0.4) ** 3 * 0.25)  # tiny
 t_all = np.arange(N) / SR; pad = np.zeros(N)
 for k in range(-1, 22):
     t0 = max(0.0, bar(k)); t1 = min(LOOP, bar(k + 1))
-    i0, i1 = int(t0 * SR), int(t1 * SR); xf = int(0.06 * SR)
+    i0, i1 = int(t0 * K * SR), int(t1 * K * SR); xf = int(0.06 * SR)
     st = np.arange(i1 - i0 + xf) / SR; seg = np.zeros_like(st)
     for m in CHORD_NOTES[CHORDS.get(k, 'D')]:
         for det in (-0.06, 0.06):
@@ -124,7 +124,7 @@ for k in range(-1, 22):
     if i0 + len(seg) > N: pad[:i0 + len(seg) - N] += seg[end - i0:]
 duck = np.ones(N)
 for t in KICKS:
-    i = int(t * SR) % N; m_ = int(0.45 * SR); seg = 1 - 0.6 * np.exp(-np.arange(m_) / SR / 0.11)
+    i = int(t * K * SR) % N; m_ = int(0.45 * SR); seg = 1 - 0.6 * np.exp(-np.arange(m_) / SR / 0.11)
     e_ = min(N, i + m_); duck[i:e_] = np.minimum(duck[i:e_], seg[:e_ - i])
 mix['pad'] = pad * duck
 

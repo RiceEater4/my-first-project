@@ -3,6 +3,7 @@ Waltz (3/4): quarter = 0.4 s, bar = 1.2 s. Bars start at 0.4 s, so t = 0 is the 
 ("we") and the loop (26.4 s) ends right before the next pickup."""
 Q, BAR, B0, LOOP, FPS = 0.4, 1.2, 0.4, 26.4, 60
 def bar(k): return B0 + k * BAR
+K = 1.25          # pace: all times below are 'story' units; real seconds = story units x K
 
 # We Wish You a Merry Christmas (traditional English carol - public domain), key of G, durations in quarters
 P = {'D4': 62, 'E4': 64, 'F#4': 66, 'G4': 67, 'A4': 69, 'B4': 71, 'C5': 72, 'D5': 74}

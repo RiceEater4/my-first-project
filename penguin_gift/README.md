@@ -1,6 +1,6 @@
 # What If Penguins Gave Christmas Gifts? (pixel short)
 
-1080x1920, 60 fps, 26.6 s seamless loop, no voice.
+1080x1920, 60 fps, 33 s seamless loop (pace knob K in score.py), no voice.
 
 Cold open on the theft ("HE GOT ROBBED!!"), a quick rewind ("OK WAIT. LET ME EXPLAIN"), then the
 story: the search ("nope." "nope."), the perfect pebble, the belly-sliding thief, an even better

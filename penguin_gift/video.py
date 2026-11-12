@@ -75,11 +75,12 @@ def dilate(m):
     return m | p[:-2, 1:-1] | p[2:, 1:-1] | p[1:-1, :-2] | p[1:-1, 2:]
 def smooth(s): s = min(1.0, max(0.0, s)); return s * s * (3 - 2 * s)
 def up(F): return np.repeat(np.repeat(F, S, 0), S, 1)
-def put(F, x, y, col, a=1.0):
-    """one chunky pixel; on the full-res frame it lands at a sub-pixel position so motion is smooth"""
+def put(F, x, y, col, a=1.0, sz=None):
+    """one pixel (sz screen px, default a chunky 6); on the full-res frame it lands at a sub-pixel position"""
     if F.shape[0] == H * S:
+        sz = sz or S
         X, Y = int(round(x * S)), int(round(y * S))
-        x0, y0, x1, y1 = max(0, X), max(0, Y), min(W * S, X + S), min(H * S, Y + S)
+        x0, y0, x1, y1 = max(0, X), max(0, Y), min(W * S, X + sz), min(H * S, Y + sz)
         if x1 > x0 and y1 > y0: F[y0:y1, x0:x1] = F[y0:y1, x0:x1] * (1 - a) + col * a
         return
     x, y = int(round(x)), int(round(y))
@@ -87,8 +88,10 @@ def put(F, x, y, col, a=1.0):
 def last_age(hits, t):
     i = int(np.searchsorted(hits, t, side='right') - 1)
     return t - hits[i] if i >= 0 else 99.0
-def blit_hr(OUT, L, M, x0f, y0f):
-    Lh, Mh = up(L), up(M[..., None])[..., 0]
+FINE = 2                                      # characters are drawn with 2x finer pixels (3 screen px)
+def blit_hr(OUT, L, M, x0f, y0f, fine=1):
+    k = S // fine
+    Lh = np.repeat(np.repeat(L, k, 0), k, 1); Mh = np.repeat(np.repeat(M, k, 0), k, 1)
     X0, Y0 = int(round(x0f * S)), int(round(y0f * S)); h, w_ = Mh.shape
     xa, ya, xb, yb = max(0, X0), max(0, Y0), min(W * S, X0 + w_), min(H * S, Y0 + h)
     if xb <= xa or yb <= ya: return
@@ -135,9 +138,9 @@ WORLD = build_world()
 WORLD_HR = up(WORLD)
 
 # ================================================================ penguin sprite (clean shapes, black outline, rotatable)
-SC = 1.6                                     # penguin size
-SPR = 120; OX, OY = 60, 100                  # sprite size, feet origin inside it
-_sy, _sx = np.mgrid[0:SPR, 0:SPR]
+SC = 2.2                                     # penguin size (in background pixels)
+SPR = 360; OX, OY = 180, 300                 # sprite grid (fine pixels), feet origin inside it
+_sy, _sx = np.mgrid[0:SPR, 0:SPR].astype(np.float32)
 BODY, BODY_L = hexc('#1d2436'), hexc('#3a4664')
 BELLY, BELLY_S = hexc('#f6f8fc'), hexc('#d3dcec')
 ORANGE, ORANGE_D = hexc('#ff9a2a'), hexc('#cc6416')
@@ -148,7 +151,7 @@ def to_local(px, py, tilt, sq):
 def penguin(pose):
     """pose: tilt, sq, flipL, flipR (rad, 0 = down), look (-1..1), eyes ('open','happy','wide'), hat, bow, brows, liftL, liftR"""
     tilt, sq = pose.get('tilt', 0), pose.get('sq', 1)
-    u, v = (_sx + 0.5 - OX) / SC, (_sy + 0.5 - OY) / SC
+    u, v = (_sx + 0.5 - OX) / (SC * FINE), (_sy + 0.5 - OY) / (SC * FINE)
     c, s = math.cos(tilt), math.sin(tilt)
     x = (u * c + v * s) * sq; y = (-u * s + v * c) / sq
     col = np.zeros((SPR, SPR, 3), np.float32); M = np.zeros((SPR, SPR), bool)
@@ -176,7 +179,7 @@ def penguin(pose):
         tx, ty = sx_ + (-math.sin(a)) * 19 * 1.0 + side * 1.0 * math.cos(a), sy_ + math.cos(a) * 19
         # local penguin frame -> sprite pixels
         ux, uy = tx / sq, ty * sq
-        tips[side] = ((ux * c - uy * s) * SC, (ux * s + uy * c) * SC)
+        tips[side] = ((ux * c - uy * s) * SC * FINE, (ux * s + uy * c) * SC * FINE)
     for side in (-1, 1):                                                             # gentoo white eye patches
         paint(E(x, y, side * 6.2, -41.5, 3.4, 1.9), BELLY)
     look = pose.get('look', 0); eyes = pose.get('eyes', 'open')
@@ -213,20 +216,20 @@ def penguin(pose):
 
 def draw_penguin(OUT, wx, wy, pose, cam):
     col, M, tips = penguin(pose)
-    sx, sy = wx - cam - OX, wy - OY
-    blit_hr(OUT, col, M, sx, sy)
-    return {k: (sx + v_[0], sy + v_[1]) for k, v_ in tips.items()}          # flipper tips in screen coords
+    sx, sy = wx - cam - OX / FINE, wy - OY / FINE
+    blit_hr(OUT, col, M, sx, sy, FINE)
+    return {k: (sx + v_[0] / FINE, sy + v_[1] / FINE) for k, v_ in tips.items()}   # flipper tips in screen coords
 
 # ================================================================ pebbles, hearts, sparkles
 PEB = {'dull1': (hexc('#8a8f9a'), hexc('#5d6270')), 'dull2': (hexc('#9c8f86'), hexc('#6c6058')),
        'shiny': (hexc('#c9d6e4'), hexc('#7e8ea4')), 'best': (hexc('#e9f3ff'), hexc('#8aa6c8')),
        'nest': (hexc('#a3a8b4'), hexc('#6e7380'))}
-PB = 2
+PB = 3
 def draw_pebble(OUT, x, y, kind, t, shine=0.0):
     light, dark = PEB[kind]
     def pp(px, py, c, a=1.0):
         for i in range(PB):
-            for j in range(PB): put(OUT, x + px * PB + i, y + py * PB + j, c, a)
+            for j in range(PB): put(OUT, x + (px * PB + i) / FINE, y + (py * PB + j) / FINE, c, a, S // FINE)
     pts = [(-1, -1), (0, -1), (1, -1), (-2, 0), (-1, 0), (0, 0), (1, 0), (2, 0), (-1, 1), (0, 1), (1, 1)]
     ring = [(-2, -1), (-1, -2), (0, -2), (1, -2), (2, -1), (3, 0), (2, 1), (1, 2), (0, 2), (-1, 2), (-2, 1), (-3, 0)]
     for dx, dy in ring: pp(dx, dy, INK)
@@ -237,12 +240,14 @@ def draw_pebble(OUT, x, y, kind, t, shine=0.0):
         L = int(3 + 5 * shine * k)
         for j in range(1, L + 1):
             a = shine * (1 - j / (L + 1))
-            for dx, dy in ((j, 0), (-j, 0), (0, j), (0, -j)): put(OUT, x - 2 + dx, y - 6 + dy, hexc('#ffffff'), a)
+            for dx, dy in ((j, 0), (-j, 0), (0, j), (0, -j)): put(OUT, x - 1.5 + dx * 0.5, y - 5 + dy * 0.5, hexc('#ffffff'), a, S // FINE)
 HEART = ["0110110", "1111111", "1111111", "0111110", "0011100", "0001000"]
 def draw_heart(OUT, x, y, a, scale=1.0):
     for j, row in enumerate(HEART):
         for i, ch in enumerate(row):
-            if ch == '1': put(OUT, x + (i - 3) * scale, y + (j - 3) * scale, hexc('#ff4f7a') if j > 0 or i not in (1, 4) else hexc('#ff9ab4'), a)
+            if ch == '1':
+                for q in range(2):
+                    for r_ in range(2): put(OUT, x + (i - 3) * scale + q * scale / 2, y + (j - 3) * scale + r_ * scale / 2, hexc('#ff4f7a') if j > 0 or i not in (1, 4) else hexc('#ff9ab4'), a, S // FINE)
 def draw_bubble(OUT, x, y, t, a, popk):
     r = 20 * (1 + 0.6 * popk)
     for q in range(90):
@@ -324,7 +329,19 @@ def hero(t):
         pose['sq'] = beat_bob(t)
     return x, pose, holding
 
-PARTNER_X = 282
+PARTNER_X = 298
+EASE_TAPS = [(0.0, 0.30), (0.03, 0.25), (0.06, 0.2), (0.09, 0.15), (0.13, 0.1)]
+def eased(fn, t):
+    """call fn(t) at a few recent moments and blend the numeric pose values: no more instant snaps"""
+    outs = [fn(max(0.0, t - d)) for d, _ in EASE_TAPS]
+    base = outs[0]; pose = dict(base[-2] if len(base) == 3 else base[0])
+    keys = set().union(*[o[-2].keys() if len(o) == 3 else o[0].keys() for o in outs])
+    for k in keys:
+        vals = [(o[-2] if len(o) == 3 else o[0]).get(k) for o in outs]
+        if all(isinstance(v_, (int, float)) and not isinstance(v_, bool) for v_ in vals if v_ is not None):
+            num = [(v_ if v_ is not None else {'sq': 1.0}.get(k, 0.0)) for v_ in vals]
+            pose[k] = sum(v_ * wgt for v_, (_, wgt) in zip(num, EASE_TAPS))
+    return base[:-2] + (pose, base[-1]) if len(base) == 3 else (pose, base[1])
 def partner(t):
     pose = dict(bow=True, look=-1 if t > 14.0 else 0, eyes='open', sq=beat_bob(t))
     holding = None
@@ -340,22 +357,22 @@ def partner(t):
 def thief_state(t):
     t0, t1 = THIEF
     if not (t0 <= t < t1): return None
-    xs = 126 + 44                                         # where his head meets the hero's raised pebble
+    xs = 126 + 62                                         # where his head meets the hero's raised pebble
     if t < SNATCH: return 330 + (xs - 330) * (t - t0) / (SNATCH - t0)
     return xs + (-110 - xs) * (t - SNATCH) / (t1 - SNATCH)
 
 def cam_x(t):
     hx, _ = walk_state(t)
-    if t < 15.0: target = hx - 70
+    if t < 15.0: target = hx - 72
     else:
-        k = smooth((t - 15.0) / 1.2); target = (1 - k) * (hx - 70) + k * ((hx + PARTNER_X) / 2 - 90)
+        k = smooth((t - 15.0) / 1.2); target = (1 - k) * (hx - 72) + k * ((hx + PARTNER_X) / 2 - 90)
     return min(max(target, 0), WW - W)
 
-NEST_CENTER = (254, GY + 2)
+NEST_CENTER = (262, GY + 2)
 NEST_POS = []
 for i in range(len(NEST)):
     th = math.pi + TAU * i / len(NEST) * 0.999
-    NEST_POS.append((NEST_CENTER[0] + 50 * math.cos(th), NEST_CENTER[1] + 8 + 9 * math.sin(th)))
+    NEST_POS.append((NEST_CENTER[0] + 64 * math.cos(th), NEST_CENTER[1] + 9 + 10 * math.sin(th)))
 
 # ================================================================ ambient
 rng = np.random.default_rng(31)
@@ -373,7 +390,7 @@ def render(t):
     # pebbles waiting on the beach
     for k, tp in PICKS.items():
         if t < tp:
-            px = {'dull1': 92, 'dull2': 117, 'shiny': 142, 'best': 166}[k]
+            px = {'dull1': 99, 'dull2': 124, 'shiny': 149, 'best': 173}[k]
             sh = 0.0
             if k == 'shiny' and t > 6.0: sh = 0.6
             if k == 'best' and t > 11.9: sh = 1.0
@@ -386,9 +403,9 @@ def render(t):
             yy = y - 30 * (1 - min(1, a / 0.18)) ** 2 - (3 * math.sin(math.pi * (a - 0.18) / 0.14) if 0.18 < a < 0.32 else 0)
             draw_pebble(OUT, x - cam, yy, 'best' if i == 0 else 'nest', t, 0.6 * math.exp(-a / 0.3) if a < 1 else 0)
     # characters
-    ppose, pheld = partner(t)
+    ppose, pheld = eased(partner, t)
     ptips = draw_penguin(OUT, PARTNER_X, GY, ppose, cam)
-    hx, hpose, hheld = hero(t)
+    hx, hpose, hheld = eased(hero, t)
     htips = draw_penguin(OUT, hx, GY, hpose, cam)
     if hheld:
         tx, ty = htips[1]; draw_pebble(OUT, tx, ty - 1, hheld, t, 1.0 if hheld in ('shiny', 'best') else 0)
@@ -397,31 +414,31 @@ def render(t):
     for k, tt in TOSSES.items():                               # tossed pebbles fly off behind him
         a = t - tt
         if 0 <= a < 0.6:
-            x0 = {'dull1': 92, 'dull2': 117}[k] + 8
+            x0 = {'dull1': 99, 'dull2': 124}[k] + 8
             draw_pebble(OUT, x0 - 60 * a / 0.6 - cam, GY - 66 + 180 * (a - 0.25) ** 2 - 10, k, t)
     tx_ = thief_state(t)
     if tx_ is not None:
         a = t - SNATCH
         tp = dict(tilt=-1.45, sq=1.0, brows=True, eyes='open', look=-1, flipL=2.6, flipR=2.6)
-        tips = draw_penguin(OUT, tx_ + 40, GY - 14, tp, cam)
+        tips = draw_penguin(OUT, tx_ + 56, GY - 19, tp, cam)
         for k in range(1, 8):                                  # snow spray behind the slide
-            put(OUT, tx_ + 50 + k * 5 - cam, GY - 1 - (k % 3), hexc('#ffffff'), 0.8 - k * 0.1)
-        if t >= SNATCH: draw_pebble(OUT, tx_ - 28 - cam, GY - 10, 'shiny', t, 0.8)
+            put(OUT, tx_ + 70 + k * 5 - cam, GY - 1 - (k % 3), hexc('#ffffff'), 0.8 - k * 0.1)
+        if t >= SNATCH: draw_pebble(OUT, tx_ - 40 - cam, GY - 14, 'shiny', t, 0.8)
     if 0 <= t - SNATCH < 0.3:                                  # snatch puff
         a = t - SNATCH
         for q in range(10):
             th = TAU * q / 10; d = 4 + 14 * a / 0.3
-            put(OUT, hx + 20 + d * math.cos(th) - cam, GY - 58 + d * math.sin(th), hexc('#ffffff'), 1 - a / 0.3)
+            put(OUT, hx + 28 + d * math.cos(th) - cam, GY - 80 + d * math.sin(th), hexc('#ffffff'), 1 - a / 0.3)
     # thought bubble (the hook), hearts
-    if t < 2.7:
-        popk = 0 if t < 2.4 else (t - 2.4) / 0.3
+    if False:
+        popk = 0
         draw_bubble(OUT, hx + 34 - cam, GY - 122 + 1.5 * math.sin(t * 5), t, 1.0, popk)
     for i, ht in enumerate([GIVE + 0.15, GIVE + 0.5, GIVE + 0.9, 20.0, 22.4, 24.8]):
         a = t - ht
         if 0 <= a < 1.4:
             midx = (hx + PARTNER_X) / 2 - cam + (i % 3 - 1) * 8
             sc = 1.0 + 0.25 * math.exp(-a / 0.12) * math.cos(a * 25)
-            draw_heart(OUT, midx, GY - 96 - 26 * a, max(0.0, 1 - (a / 1.4) ** 2), sc * 1.6)
+            draw_heart(OUT, midx, GY - 135 - 26 * a, max(0.0, 1 - (a / 1.4) ** 2), sc * 2.0)
     for x0, ph0, n, ph in SNOW:                                # gentle snowfall that settles
         cyc = LOOP / n; tau = ((t / cyc + ph0) % 1.0) * cyc; fall = (GY + 30) / 26.0
         if tau < fall: put(OUT, x0 + 3 * math.sin(tau * 1.6 + ph), -6 + 26 * tau, np.array([1.0, 1.0, 1.0]), 0.95)
@@ -433,7 +450,7 @@ HEADPHONES = ["0011111100", "0100000010", "1000000001", "1000000001", "111000011
 def caption_sprite(text, icon=False, sc=1, pad=3):
     out = text_sprite(text, sc, pad)
     if icon:
-        g = np.array([[c_ == '1' for c_ in r] for r in HEADPHONES])
+        g = np.kron(np.array([[c_ == '1' for c_ in r] for r in HEADPHONES]), np.ones((sc, sc), bool))
         ih, iw = g.shape[0] + 4, g.shape[1] + 4; bh, bw = out.shape[:2]
         full = np.zeros((bh + 2 + ih, bw, 4), np.float32); full[:bh] = out
         x0 = (bw - iw) // 2; y0 = bh + 2
@@ -445,7 +462,7 @@ def caption_sprite(text, icon=False, sc=1, pad=3):
 
 class Caption:
     def __init__(self, text, t_in, t_out, seed, icon=False, y=34):
-        self.s = caption_sprite(text, icon); h, w_ = self.s.shape[:2]
+        self.s = caption_sprite(text, icon, sc=2, pad=5); h, w_ = self.s.shape[:2]
         self.x, self.y, self.t_in, self.t_out = (W - w_) // 2, y, t_in, t_out
         r = np.random.default_rng(seed); self.yy, self.xx = np.mgrid[0:h, 0:w_]
         self.vis = self.s[..., 3] > 0
@@ -453,7 +470,7 @@ class Caption:
         self.t_dis = 0.06 + 0.5 * (0.55 * r.random((h, w_)) + 0.45 * (self.xx / w_))
         self.dx = (r.random((h, w_)) - 0.25) * 12; self.dy = -(5 + r.random((h, w_)) * 10)
     def draw(self, F, t):
-        for tt in (t, t + LOOP, t - LOOP):
+        for tt in (t, t + VLOOP, t - VLOOP):
             if self.t_in <= tt <= self.t_out + 1.2: self._draw(F, tt)
     def _draw(self, F, t):
         a_in, a_out = t - self.t_in, t - self.t_out
@@ -478,26 +495,47 @@ class Caption:
 
 CAPTIONS = []
 def cap(text, a, b, icon=False): CAPTIONS.append(Caption(text, a, b, 40 + len(CAPTIONS), icon))
-cap("WHAT IF PENGUINS GAVE\nCHRISTMAS GIFTS?", LOOP - 0.3, LOOP + 2.2, icon=True)
-cap("OK HE'S LOOKING FOR\nTHE PERFECT ONE", 2.6, 4.2)
-cap("NOPE.", 4.3, 5.2)
-cap("NOPE.", 6.05, 6.9)
-cap("THIS ONE. PERFECT.", 7.4, 9.3)
-cap("WAIT-- HEY!!", 10.45, 11.8)
-cap("FINE. AN EVEN\nBETTER ONE", 12.1, 13.7)
-cap("NOW FOR THE\nIMPORTANT PART", 14.0, 15.7)
-cap("SHE SAID YES", 16.95, 18.2)
-cap("PLOT TWIST:\nPENGUINS REALLY DO THIS", 18.4, 20.7)
-cap("THEY GIVE PEBBLES TO\nTHE ONE THEY LIKE", 21.0, 23.4)
-cap("AND BUILD A NEST\nTOGETHER", 23.7, 25.9)
+# times are VIDEO time (cold open 0-1.2 s, rewind 1.2-1.8 s, story after that at story time + 0.2)
+cap("HE GOT\nROBBED!!", 0.0, 1.15, icon=True)
+cap("OK WAIT.\nLET ME EXPLAIN", 1.25, 2.9)
+cap("HE WANTS THE\nPERFECT PEBBLE", 3.0, 4.4)
+cap("NOPE.", 4.5, 5.4)
+cap("NOPE.", 6.25, 7.1)
+cap("THIS ONE.\nPERFECT.", 7.6, 9.5)
+cap("WAIT-- HEY!!", 10.65, 12.0)
+cap("FINE. AN EVEN\nBETTER ONE", 12.3, 13.9)
+cap("NOW THE\nIMPORTANT PART", 14.2, 15.9)
+cap("SHE SAID\nYES!!", 17.15, 18.4)
+cap("PLOT TWIST:\nPENGUINS\nREALLY DO THIS", 18.6, 20.9)
+cap("THEY GIVE\nPEBBLES TO THE\nONE THEY LIKE", 21.2, 23.6)
+cap("AND BUILD A\nNEST TOGETHER", 23.9, 26.1)
 
 HR_BAYER = up(BAYER[YY % 4, XX % 4][..., None])[..., 0]
-def frame(t):
-    OUT = render(t)
-    if t > LOOP - 0.4:                                     # soft pixel fade back to the start
-        G = render(0.0); m = HR_BAYER < smooth((t - (LOOP - 0.4)) / 0.4); OUT[m] = G[m]
+COLD = (SNATCH - 0.35, 1.2)          # story time where the cold open starts, and its length
+REW = 0.6                               # rewind length
+STORY0 = bar(1)                         # the story resumes on a downbeat (1.6 s)
+VLOOP = COLD[1] + REW + (LOOP - STORY0) # 26.6 s
+def story_time(v):
+    if v < COLD[1]: return COLD[0] + v
+    if v < COLD[1] + REW:
+        s_ = (v - COLD[1]) / REW
+        return COLD[0] + COLD[1] + (STORY0 - (COLD[0] + COLD[1])) * smooth(s_)
+    return STORY0 + (v - COLD[1] - REW)
+REWIND_ICON = ["1000100", "1100110", "1110111", "1111111", "1110111", "1100110", "1000100"]
+def frame(v):
+    OUT = render(story_time(v))
+    if COLD[1] <= v < COLD[1] + REW:                          # rewind: icon + light scanlines
+        for j, row in enumerate(REWIND_ICON):
+            for i, ch in enumerate(row[::-1]):
+                if ch == '1':
+                    for q in range(2):
+                        for r_ in range(2): put(OUT, 150 + i * 2 + q, 92 + j * 2 + r_, hexc('#ffffff'))
+        sl = (np.arange(H * S) // 3) % 4 == 0
+        OUT[sl] = OUT[sl] * 0.85
+    if v > VLOOP - 0.4:                                       # soft pixel fade back to the cold open
+        G = render(story_time(0.0)); m = HR_BAYER < smooth((v - (VLOOP - 0.4)) / 0.4); OUT[m] = G[m]
     scr = OUT[::S, ::S].copy(); before = scr.copy()
-    for c_ in CAPTIONS: c_.draw(scr, t)
+    for c_ in CAPTIONS: c_.draw(scr, v)
     ch = np.any(np.abs(scr - before) > 1e-6, axis=2)
     if ch.any():
         big = up(ch[..., None])[..., 0]; OUT[big] = up(scr)[big]
@@ -512,7 +550,7 @@ if __name__ == '__main__':
     p = subprocess.Popen(['ffmpeg', '-v', 'error', '-y', '-f', 'rawvideo', '-pix_fmt', 'rgb24', '-s', f'{W*S}x{H*S}', '-r', str(FPS),
                           '-i', '-', '-i', wav, '-c:v', 'libx264', '-preset', 'medium', '-crf', '16', '-pix_fmt', 'yuv420p',
                           '-c:a', 'aac', '-b:a', '256k', '-shortest', '-movflags', '+faststart', out], stdin=subprocess.PIPE)
-    for f in range(int(round(LOOP * FPS))):
+    for f in range(int(round(VLOOP * FPS))):
         p.stdin.write(frame(f / FPS).tobytes())
         if f % 300 == 0: print('frame', f, flush=True)
     p.stdin.close(); p.wait(); print('done', out)

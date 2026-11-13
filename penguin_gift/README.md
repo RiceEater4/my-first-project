@@ -28,3 +28,12 @@ python3 audio2.py story.wav
 python3 cold_open_audio2.py story.wav audio.wav
 python3 video2.py penguin_gift_blueprint.mp4 audio.wav
 ```
+
+## Reference-style render (`video3.py`) — current version
+Small chunky dithered penguins (6-px pixels, navy outline), three floating ice islands with soft
+shadows joined by bridges (the slippery one leads to Penny), one-line captions, pixel arrow,
+dotted slide trails, a PEBBLES counter, labels and tags.
+```
+python3 audio2.py story.wav && python3 cold_open_audio2.py story.wav audio.wav
+python3 video3.py penguin_gift_blueprint.mp4 audio.wav
+```

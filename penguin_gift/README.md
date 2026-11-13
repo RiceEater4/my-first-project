@@ -1,10 +1,11 @@
 # What If Penguins Gave Christmas Gifts? (pixel short)
 
-1080x1920, 60 fps, 33 s seamless loop (pace knob K in score.py), no voice.
+1080x1920, 60 fps, 48 s seamless loop (pace knob K in score.py), no voice.
 
 Cold open on the theft ("HE GOT ROBBED!!"), a quick rewind ("OK WAIT. LET ME EXPLAIN"), then the
-story: the search ("nope." "nope."), the perfect pebble, the belly-sliding thief, an even better
-pebble, the gift ("she said yes!!"), and the twist that gentoo penguins really do this. Every pebble
+story: the search ("nope." "nope."), the perfect pebble, the belly-sliding thief, a slip across the
+ice and a belly-slide to an even better pebble, the gift ("she said yes!!"), the twist that gentoo
+penguins really do this, and "a few weeks later..." an egg that hatches into a chick in a Santa hat. Every pebble
 of their nest lands on a note of We Wish You a Merry Christmas (traditional, public domain).
 
 Characters are drawn with 2x finer pixels than the background and every pose eases between

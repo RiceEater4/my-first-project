@@ -99,7 +99,7 @@ def blit_hr(OUT, L, M, x0f, y0f, fine=1):
     OUT[ya:yb, xa:xb][m] = Lh[ya - Y0:yb - Y0, xa - X0:xb - X0][m]
 
 # ================================================================ the world (2 screens wide), the approved background recipe
-WW = 360
+WW = 480
 GY = 266                                    # where the penguins stand
 WYY, WXX = np.mgrid[0:H, 0:WW]
 WBAY = BAYER[WYY % 4, WXX % 4]
@@ -113,7 +113,7 @@ def bands(shades, y0, y1, seed):
 def build_world():
     P = bands(pal('#cdeefd', '#b4e2fa', '#9dd5f5', '#86c7ee'), 0, 178, 3).astype(np.float32)
     # far icebergs
-    for cx, w_, h_ in ((40, 46, 22), (128, 30, 14), (205, 58, 28), (300, 40, 18), (352, 30, 12)):
+    for cx, w_, h_ in ((40, 46, 22), (128, 30, 14), (205, 58, 28), (300, 40, 18), (352, 30, 12), (420, 50, 24), (470, 34, 14)):
         top = 176 - h_ * np.clip(1 - np.abs((WXX - cx) / (w_ / 2)) ** 1.6, 0, 1)
         m = (WYY >= top) & (WYY < 178) & (np.abs(WXX - cx) < w_ / 2)
         P[dilate(m) & ~m & (WYY < 178)] = hexc('#3a6a96')
@@ -128,6 +128,11 @@ def build_world():
     P[edge] = hexc('#a8cbe8')
     # pebble beach patch (static pebbles)
     r = np.random.default_rng(4)
+    ice = (WXX >= 142) & (WXX < 336) & (WYY >= GY - 3 + np.round(1.5 * np.sin(WXX / 9))) & (WYY < GY + 16 - np.round(2 * np.sin(WXX / 13 + 1)))
+    P[ice] = bands(pal('#d4f1ff', '#bfe6fb', '#a9daf6', '#93cdf0'), GY - 3, GY + 16, 21)[ice]
+    streak = ice & (((WXX + 2 * WYY) % 23) < 2) & (((WXX - WYY) % 37) < 18)
+    P[streak] = hexc('#ffffff')
+    P[dilate(ice) & ~ice] = hexc('#7fb9de')
     for _ in range(70):
         x, y = r.uniform(18, 200), r.uniform(GY - 6, GY + 30)
         c = [hexc('#8a8f9a'), hexc('#a6abb6'), hexc('#6e7380')][r.integers(0, 3)]
@@ -139,7 +144,7 @@ WORLD_HR = up(WORLD)
 
 # ================================================================ penguin sprite (clean shapes, black outline, rotatable)
 SC = 2.2                                     # penguin size (in background pixels)
-SPR = 360; OX, OY = 180, 300                 # sprite grid (fine pixels), feet origin inside it
+SPR = 480; OX, OY = 240, 380                 # sprite grid (fine pixels), feet origin inside it
 _sy, _sx = np.mgrid[0:SPR, 0:SPR].astype(np.float32)
 BODY, BODY_L = hexc('#1d2436'), hexc('#3a4664')
 BELLY, BELLY_S = hexc('#f6f8fc'), hexc('#d3dcec')
@@ -151,7 +156,8 @@ def to_local(px, py, tilt, sq):
 def penguin(pose):
     """pose: tilt, sq, flipL, flipR (rad, 0 = down), look (-1..1), eyes ('open','happy','wide'), hat, bow, brows, liftL, liftR"""
     tilt, sq = pose.get('tilt', 0), pose.get('sq', 1)
-    u, v = (_sx + 0.5 - OX) / (SC * FINE), (_sy + 0.5 - OY) / (SC * FINE)
+    sc_ = SC * FINE * pose.get('scale', 1.0)
+    u, v = (_sx + 0.5 - OX) / sc_, (_sy + 0.5 - OY) / sc_
     c, s = math.cos(tilt), math.sin(tilt)
     x = (u * c + v * s) * sq; y = (-u * s + v * c) / sq
     col = np.zeros((SPR, SPR, 3), np.float32); M = np.zeros((SPR, SPR), bool)
@@ -179,7 +185,7 @@ def penguin(pose):
         tx, ty = sx_ + (-math.sin(a)) * 19 * 1.0 + side * 1.0 * math.cos(a), sy_ + math.cos(a) * 19
         # local penguin frame -> sprite pixels
         ux, uy = tx / sq, ty * sq
-        tips[side] = ((ux * c - uy * s) * SC * FINE, (ux * s + uy * c) * SC * FINE)
+        tips[side] = ((ux * c - uy * s) * sc_, (ux * s + uy * c) * sc_)
     for side in (-1, 1):                                                             # gentoo white eye patches
         paint(E(x, y, side * 6.2, -41.5, 3.4, 1.9), BELLY)
     look = pose.get('look', 0); eyes = pose.get('eyes', 'open')
@@ -275,7 +281,11 @@ def draw_bubble(OUT, x, y, t, a, popk):
 def walk_state(t):
     """hero x, walking phase (None if standing)"""
     x = WALKS[0][2]
+    if SLIDE[0] <= t < SLIDE[1]:                              # belly slide: fast, then slows down
+        s = (t - SLIDE[0]) / (SLIDE[1] - SLIDE[0])
+        return SLIDE[2] + (SLIDE[3] - SLIDE[2]) * (1 - (1 - s) ** 2.2), None
     for t0, t1, x0, x1 in WALKS:
+        if t >= SLIDE[1] and t1 <= SLIDE[0]: x = SLIDE[3]; continue
         if t >= t1: x = x1
         elif t >= t0:
             s = (t - t0) / (t1 - t0)
@@ -301,7 +311,7 @@ def hero(t):
     holding = None
     for k, tp in PICKS.items():
         end = {'dull1': TOSSES['dull1'], 'dull2': TOSSES['dull2'], 'shiny': SNATCH, 'best': GIVE}[k]
-        if tp - 0.3 <= t < tp:                                      # bend down to pick it up
+        if tp - 0.3 <= t < tp and k != 'best':                      # bend down to pick it up
             pose['sq'] = 1 - 0.14 * math.sin(math.pi * (t - (tp - 0.3)) / 0.3); pose['flipR'] = 0.6
         if tp <= t < end: holding = k
     if holding in ('dull1', 'dull2'):
@@ -322,10 +332,27 @@ def hero(t):
         if a < 0.4: pose['dy'] = 12 * math.sin(math.pi * a / 0.4)  # jumps in surprise
     if 11.6 <= t < 12.2:                                            # sigh...
         pose['eyes'] = 'open'; pose['flipL'] = pose['flipR'] = 0.05; pose['sq'] = 0.95; pose['look'] = 1
+    if SLIP <= t < FALL:                                            # slipping on the ice
+        a = t - SLIP
+        pose['eyes'] = 'wide'; pose['flipL'] = 1.3 + 0.7 * math.sin(a * 24); pose['flipR'] = 1.3 + 0.7 * math.sin(a * 24 + 2)
+        pose['tilt'] = 0.16 * math.sin(a * 17); pose['liftL'] = 3 * max(0, math.sin(a * 26)); pose['liftR'] = 3 * max(0, -math.sin(a * 26))
+    if FALL <= t < SLIDE[0]:                                        # timbeeer
+        k_ = smooth((t - FALL) / (SLIDE[0] - FALL)); pose['tilt'] = 1.45 * k_; pose['dy'] = 27 * k_; pose['eyes'] = 'wide'
+        pose['flipL'] = pose['flipR'] = 1.8 * (1 - k_) + 0.25 * k_
+    if SLIDE[0] <= t < GETUP:                                       # wheee
+        a = t - SLIDE[0]
+        pose['tilt'] = 1.45 + 0.03 * math.sin(a * 20); pose['dy'] = 27 + 2.5 * math.exp(-a / 0.08) * math.cos(a * 30)
+        pose['flipL'] = pose['flipR'] = 0.25 + 0.12 * math.sin(a * 14)
+        pose['eyes'] = 'happy' if t < SLIDE[1] else 'open'; pose['sq'] = 1.0
+    if GETUP <= t < GETUP + 0.7:                                    # stands back up
+        k_ = smooth((t - GETUP) / 0.7); pose['tilt'] = 1.45 * (1 - k_); pose['dy'] = 27 * (1 - k_) + 8 * math.sin(math.pi * k_)
+        pose['eyes'] = 'open'
+    if GETUP + 0.7 <= t < GETUP + 1.3:                              # shakes off the snow
+        a = t - GETUP - 0.7; pose['tilt'] = 0.14 * math.sin(a * 40) * math.exp(-a * 5); pose['eyes'] = 'happy'
     if holding == 'best':
-        pose['flipR'] = 1.85 if t < 15.6 else 1.35; pose['eyes'] = 'open'; pose['look'] = 1
-        if t >= 15.6:                                               # offers it with a little bow
-            a = t - 15.6
+        pose['flipR'] = 1.85 if t < OFFER else 1.35; pose['eyes'] = 'open'; pose['look'] = 1
+        if t >= OFFER:                                              # offers it with a little bow
+            a = t - OFFER
             pose['tilt'] = 0.16 * smooth(a / 0.4); pose['sq'] = 0.96
     if t >= GIVE:
         pose['eyes'] = 'happy'; pose['look'] = 1
@@ -335,6 +362,8 @@ def hero(t):
         if a < 0.5: pose['dy'] = 7 * math.sin(math.pi * a / 0.5)    # happy hop
     if t >= PLACE:                                                   # bounces to the waltz while the nest goes up
         ab = last_age(KICKS, t); pose['dy'] = pose.get('dy', 0) + 3 * math.exp(-ab / 0.12)
+    if CRACKS[0] <= t < HATCH: pose['eyes'] = 'wide'; pose['look'] = 1
+    if HATCH <= t < HATCH + 0.6: pose['dy'] = 9 * math.sin(math.pi * (t - HATCH) / 0.6); pose['flipL'] = pose['flipR'] = 2.0
     pose['flop'] = pose['flop'] - 9 * pose.get('tilt', 0) + 0.25 * pose.get('dy', 0)   # hat follows through
     if pose['eyes'] == 'open' and blinking(t, 0.0): pose['eyes'] = 'blink'
     return x, pose, holding
@@ -342,7 +371,7 @@ def hero(t):
 def blinking(t, ph):
     return ((t + ph) % 2.9) < 0.12
 
-PARTNER_X = 298
+PARTNER_X = 418
 EASE_TAPS = [(i * 0.025, w_) for i, w_ in enumerate([0.2, 0.18, 0.15, 0.13, 0.1, 0.09, 0.07, 0.05, 0.03])]
 def eased(fn, t):
     """call fn(t) at a few recent moments and blend the numeric pose values: no more instant snaps"""
@@ -356,9 +385,9 @@ def eased(fn, t):
             pose[k] = sum(v_ * wgt for v_, (_, wgt) in zip(num, EASE_TAPS))
     return base[:-2] + (pose, base[-1]) if len(base) == 3 else (pose, base[1])
 def partner(t):
-    pose = dict(bow=True, look=-1 if t > 14.0 else 0, eyes='open', sq=beat_bob(t))
+    pose = dict(bow=True, look=-1 if t > OFFER - 1.6 else 0, eyes='open', sq=beat_bob(t))
     holding = None
-    if 15.6 <= t < GIVE: pose['eyes'] = 'open'; pose['look'] = -1
+    if OFFER <= t < GIVE: pose['eyes'] = 'open'; pose['look'] = -1
     if GIVE <= t < PLACE:
         holding = 'best'; pose['flipL'] = 1.1; pose['eyes'] = 'happy'
     if t >= GIVE + 0.1 and t < PLACE: pose['eyes'] = 'happy'
@@ -368,7 +397,10 @@ def partner(t):
         pose['dy'] = 3 * math.exp(-last_age([k + 0.4 for k in KICKS], t) / 0.12)   # bounces off-beat to him
     pose['sq'] = pose['sq'] * (1 + 0.018 * math.sin(t * 2.3 + 1))
     pose['tilt'] = 0.04 * math.sin(t * 1.7)                          # gentle idle sway
-    if 13.0 < t < 16.0: pose['look'] = -1 + 0.6 * smooth((14.6 - t) / 1.0)
+    if OFFER - 2.6 < t < OFFER + 0.4: pose['look'] = -1 + 0.6 * smooth((OFFER - 1.0 - t) / 1.0)
+    if CRACKS[0] <= t < HATCH: pose['eyes'] = 'wide'; pose['look'] = -1
+    if HATCH <= t < HATCH + 0.6: pose['dy'] = 9 * math.sin(math.pi * (t - HATCH) / 0.6); pose['flipL'] = pose['flipR'] = 2.0
+    if t >= HATCH + 0.6: pose['eyes'] = 'happy'
     if GIVE <= t < GIVE + 0.45: pose['dy'] = 9 * math.sin(math.pi * (t - GIVE) / 0.45)   # hops when she gets it
     if pose['eyes'] == 'open' and blinking(t, 1.3): pose['eyes'] = 'blink'
     return pose, holding
@@ -382,12 +414,13 @@ def thief_state(t):
 
 def cam_x(t):
     hx, _ = walk_state(t)
-    if t < 15.0: target = hx - 72
+    T = OFFER - 0.6
+    if t < T: target = hx - 72 + (24 * smooth((t - SLIDE[0]) / 1.5) if t >= SLIDE[0] and t < GETUP + 1.0 else 0)
     else:
-        k = smooth((t - 15.0) / 1.2); target = (1 - k) * (hx - 72) + k * ((hx + PARTNER_X) / 2 - 90)
+        k = smooth((t - T) / 1.2); target = (1 - k) * (hx - 72) + k * ((hx + PARTNER_X) / 2 - 90)
     return min(max(target, 0), WW - W)
 
-NEST_CENTER = (262, GY + 2)
+NEST_CENTER = (382, GY + 2)
 NEST_POS = []
 for i in range(len(NEST)):
     th = math.pi + TAU * i / len(NEST) * 0.999
@@ -409,7 +442,7 @@ def render(t):
     # pebbles waiting on the beach
     for k, tp in PICKS.items():
         if t < tp:
-            px = {'dull1': 99, 'dull2': 124, 'shiny': 149, 'best': 173}[k]
+            px = {'dull1': 99, 'dull2': 124, 'shiny': 149, 'best': 322}[k]
             sh = 0.0
             if k == 'shiny' and t > 6.0: sh = 0.6
             if k == 'best' and t > 11.9: sh = 1.0
@@ -439,7 +472,7 @@ def render(t):
     if tx_ is not None:
         a = t - SNATCH
         tp = dict(tilt=-1.45, sq=1.0, brows=True, eyes='open', look=-1, flipL=2.6, flipR=2.6)
-        tips = draw_penguin(OUT, tx_ + 56, GY - 19 - 1.2 * abs(math.sin(t * 22)), tp, cam)
+        tips = draw_penguin(OUT, tx_ + 56, GY - 27 - 1.2 * abs(math.sin(t * 22)), tp, cam)
         for k in range(1, 8):                                  # snow spray behind the slide
             put(OUT, tx_ + 70 + k * 5 - cam, GY - 1 - (k % 3), hexc('#ffffff'), 0.8 - k * 0.1)
         if t >= SNATCH: draw_pebble(OUT, tx_ - 40 - cam, GY - 14, 'shiny', t, 0.8)
@@ -448,11 +481,24 @@ def render(t):
         for q in range(10):
             th = TAU * q / 10; d = 4 + 14 * a / 0.3
             put(OUT, hx + 28 + d * math.cos(th) - cam, GY - 80 + d * math.sin(th), hexc('#ffffff'), 1 - a / 0.3)
+    if SLIDE[0] <= t < SLIDE[1]:                               # snow spray behind the slide
+        sp = 1 - (t - SLIDE[0]) / (SLIDE[1] - SLIDE[0])
+        for k in range(1, 9):
+            put(OUT, hx - 8 - k * 5 - cam, GY - 1 - (k % 3) - 2 * math.sin(t * 30 + k), hexc('#ffffff'), (0.85 - k * 0.09) * (0.3 + 0.7 * sp))
+    if 0 <= t - PICKS['best'] < 0.45:                          # grab sparkle
+        a = t - PICKS['best']
+        for q in range(12):
+            th = TAU * q / 12; d = 3 + 16 * a / 0.45
+            put(OUT, 322 + d * math.cos(th) - cam, GY - 4 + d * math.sin(th), hexc('#fff6c0'), 1 - a / 0.45)
+    if t >= EGG_IN: draw_egg(OUT, NEST_CENTER[0] - cam, GY + 16, t)
+    if EGG_IN - 0.5 <= t < EGG_IN + 0.3:                       # snow flurry: "a few weeks later..."
+        k = math.sin(math.pi * (t - (EGG_IN - 0.5)) / 0.8)
+        m = HR_BAYER < 0.85 * k; OUT[m] = OUT[m] * 0.15 + hexc('#f4fbff') * 0.85
     # thought bubble (the hook), hearts
     if False:
         popk = 0
         draw_bubble(OUT, hx + 34 - cam, GY - 122 + 1.5 * math.sin(t * 5), t, 1.0, popk)
-    for i, ht in enumerate([GIVE + 0.15, GIVE + 0.5, GIVE + 0.9, 20.0, 22.4, 24.8]):
+    for i, ht in enumerate([GIVE + 0.15, GIVE + 0.5, GIVE + 0.9, PLACE + 0.8, PLACE + 3.2, PLACE + 5.6, HATCH + 0.2, HATCH + 0.5, HATCH + 0.9, HATCH + 1.6]):
         a = t - ht
         if 0 <= a < 1.4:
             midx = (hx + PARTNER_X) / 2 - cam + (i % 3 - 1) * 8
@@ -463,6 +509,59 @@ def render(t):
         if tau < fall: put(OUT, x0 + 3 * math.sin(tau * 1.6 + ph), -6 + 26 * tau, np.array([1.0, 1.0, 1.0]), 0.95)
         elif tau < fall + 1.2: put(OUT, x0 + 3 * math.sin(fall * 1.6 + ph), GY + 24, np.array([1, 1, 1]), 0.9 * (1 - (tau - fall) / 1.2))
     return OUT
+
+# ================================================================ the egg and the chick
+EGG_C, EGG_S = hexc('#fff6e6'), hexc('#e6d6bc')
+def egg_sprite(ang, part, crack_n):
+    """part: 'all', 'bottom', 'top'. Drawn on the fine grid (half-size pixels) with a black outline."""
+    n = 96; yy, xx = np.mgrid[0:n, 0:n].astype(np.float32)
+    u, v = xx + 0.5 - n / 2, yy + 0.5 - (n - 6)            # pivot at the bottom
+    c, s = math.cos(ang), math.sin(ang)
+    x = u * c + v * s; y = -u * s + v * c
+    rx, ry = 29, 38
+    inside = ((x / rx) ** 2 + ((y + ry) / ry) ** 2) <= 1
+    zig = -ry + 4 * np.sign(np.sin(x * 0.55)) * np.abs(np.sin(x * 0.55)) + 2
+    if part == 'bottom': inside &= y > zig
+    if part == 'top': inside &= y <= zig
+    col = np.zeros((n, n, 3), np.float32); col[inside] = EGG_C
+    col[inside & (x > 5 + 0.25 * (y + ry))] = EGG_S
+    col[inside & (((x + 13) / 5) ** 2 + ((y + 54) / 6) ** 2 < 1)] = hexc('#ffffff')       # shine
+    for k in range(crack_n):                                 # cracks grow across the shell
+        reach = -rx + (2 * rx) * (0.55 if k == 0 else 1.0)
+        cr = inside & (np.abs(y - zig) < 1.0) & (x < reach)
+        col[cr] = INK
+    ring = dilate(inside) & ~inside
+    col[ring] = INK
+    return col, inside | ring
+def draw_egg(OUT, x, y, t):
+    a_in = t - EGG_IN
+    grow = 1 - math.exp(-a_in / 0.08) * math.cos(a_in * 18) if a_in < 0.6 else 1.0
+    if t < HATCH:
+        amp = 0.05 + 0.2 * smooth((t - (EGG_IN + 1.0)) / (HATCH - EGG_IN - 1.0))
+        kk = last_age(KICKS, t); idx = int(np.searchsorted(KICKS, t, side='right'))
+        ang = amp * math.exp(-kk / 0.18) * math.sin(kk * 25) * (1 if idx % 2 else -1) if t > EGG_IN + 1.0 else 0
+        crack_n = sum(1 for cc in CRACKS if t >= cc)
+        col, M = egg_sprite(ang, 'all', crack_n)
+        if grow < 1:
+            sc = max(0.05, grow); n = col.shape[0]; yy, xx = np.mgrid[0:n, 0:n]
+            sy = np.clip(((yy - (n - 6)) / sc + (n - 6)).astype(int), 0, n - 1); sx = np.clip(((xx - n / 2) / sc + n / 2).astype(int), 0, n - 1)
+            col, M = col[sy, sx], M[sy, sx] & (np.abs(yy - (n - 6)) <= (n - 6) * sc) & (np.abs(xx - n / 2) <= n / 2 * sc)
+        blit_hr(OUT, col, M, x - 24, y - 45, FINE)
+        return
+    a = t - HATCH
+    # the chick pops up out of the shell, then bounces to the waltz
+    pop_ = min(1.0, a / 0.3); rise = 22 * (1 - (1 - pop_) ** 3) + (3 * math.exp(-a / 0.1) * math.sin(a * 30) if a > 0.3 else 0)
+    bob = 2.5 * math.exp(-last_age(KICKS, t) / 0.12) if a > 0.6 else 0
+    cp = dict(scale=0.36, hat=True, eyes='happy' if a > 0.5 else 'wide', flipL=0.9 + 0.6 * math.sin(a * 12) * math.exp(-a / 1.0),
+              flipR=0.9 + 0.6 * math.sin(a * 12 + 1) * math.exp(-a / 1.0), flop=1.5 * math.sin(t * 6), sq=1 - 0.05 * math.exp(-last_age(KICKS, t) / 0.08))
+    if cp['eyes'] == 'happy' and ((t + 0.7) % 2.3) < 0.12: cp['eyes'] = 'blink'
+    col, M, _ = penguin(cp)
+    blit_hr(OUT, col, M, x - OX / FINE, y + 14 - rise * 20 / 22 - bob - OY / FINE, FINE)
+    col, M = egg_sprite(0.0, 'bottom', 0)
+    blit_hr(OUT, col, M, x - 24, y - 45, FINE)
+    if a < 1.2:                                               # the top of the shell flies off and spins away
+        col, M = egg_sprite(a * 9, 'top', 0)
+        blit_hr(OUT, col, M, x - 24 + 30 * a, y - 45 - 40 * a + 60 * a * a, FINE)
 
 # ================================================================ captions (plain, casual, near the top)
 HEADPHONES = ["0011111100", "0100000010", "1000000001", "1000000001", "1110000111", "1110000111", "1110000111", "0110000110"]
@@ -522,12 +621,18 @@ cap("NOPE.", 4.5, 5.4)
 cap("NOPE.", 6.25, 7.1)
 cap("THIS ONE.\nPERFECT.", 7.6, 9.5)
 cap("WAIT-- HEY!!", 10.65, 12.0)
-cap("FINE. AN EVEN\nBETTER ONE", 12.3, 13.9)
-cap("NOW THE\nIMPORTANT PART", 14.2, 15.9)
-cap("SHE SAID\nYES!!", 17.15, 18.4)
-cap("PLOT TWIST:\nPENGUINS\nREALLY DO THIS", 18.6, 20.9)
-cap("THEY GIVE\nPEBBLES TO THE\nONE THEY LIKE", 21.2, 23.6)
-cap("AND BUILD A\nNEST TOGETHER", 23.9, 26.1)
+cap("FINE. AN EVEN\nBETTER ONE", 12.4, 13.3)
+cap("HOW HARD\nCAN IT BE?", 13.4, 14.1)
+cap("WHEEEE!!", 14.5, 16.2)
+cap("GOT IT.", 16.55, 17.9)
+cap("NOW THE\nIMPORTANT PART", 18.6, 20.5)
+cap("SHE SAID\nYES!!", 21.95, 23.4)
+cap("PLOT TWIST:\nPENGUINS\nREALLY DO THIS", 23.6, 25.9)
+cap("THEY GIVE\nPEBBLES TO THE\nONE THEY LIKE", 26.2, 28.6)
+cap("AND BUILD A\nNEST TOGETHER", 28.9, 31.0)
+cap("A FEW WEEKS\nLATER...", 31.5, 33.2)
+cap("WAIT... IS IT\nMOVING??", 33.6, 35.2)
+cap("BEST CHRISTMAS\nGIFT EVER", 35.55, 37.3)
 
 HR_BAYER = up(BAYER[YY % 4, XX % 4][..., None])[..., 0]
 COLD = (SNATCH - 0.35, 1.2)          # story time where the cold open starts, and its length

@@ -85,7 +85,7 @@ def pop(v=1.0):
     n = int(0.15 * SR); t = np.arange(n) / SR
     return v * np.sin(2 * np.pi * np.cumsum(500 + 900 * t / 0.15) / SR) * np.exp(-t / 0.05)
 
-MEL = MEL1 + MEL2 + NEST
+MEL = MEL1 + MEL2 + MEL3 + NEST + EGG
 for i, t in enumerate(KICKS): add('kick', t, kick(1.0 if i % 2 == 0 else 0.85))
 add('kick', 0.0, kick(0.7))
 for t in STABS:                                                    # oom-pah-PAH chord stabs
@@ -94,7 +94,7 @@ for t in STABS:                                                    # oom-pah-PAH
 for i, t in enumerate(HATS): add('hat', t, sleigh(0.45 if i % 2 else 0.75))
 for t in KICKS: add('bass', t, bass(ROOT[chord_at(t + 0.01)], 0.8))
 for i, (t, n, d) in enumerate(MEL):
-    loud = 1.0 if t < 9.6 or t >= 19.2 else 0.9
+    loud = 0.8 if t >= EGG[0][0] and t < HATCH else (1.0 if t < 9.6 or t >= 24.0 else 0.9)
     add('melody', t, glock(P[n] + 12, loud, 2.0 if d >= 0.8 else 1.4)); add('melody', t, pluck(P[n], 0.4))
 for t, n, d in NEST: add('fx', t + 0.0, tap(0.5, 1500 + (P[n] - 60) * 40))   # each nest pebble clacks on its note
 # story sounds
@@ -106,13 +106,32 @@ add('fx', SNATCH, pop(0.6)); add('fx', SNATCH + 0.05, tap(0.5, 2400))
 add('fx', 12.0, glock(98, 0.25, 1.0)); add('fx', PICKS['best'], glock(91, 0.35, 1.6)); add('fx', PICKS['best'] + 0.1, glock(98, 0.3, 1.6))
 add('fx', GIVE, glock(86, 0.4, 2.0)); add('fx', GIVE + 0.2, pop(0.5))
 for j, m in enumerate([86, 90, 93, 98]): add('fx', GIVE + 0.25 + j * 0.07, glock(m, 0.2, 1.4))
-add('fx', 2.4, pop(0.5))                                                     # thought bubble pops
+# the ice: slipping squeaks, belly-flop, a long slide, the grab, getting up
+for i in range(6): add('fx', SLIP + 0.1 + i * 0.11, tap(0.35, 2600 + 300 * (i % 2)))
+add('fx', FALL + 0.28, kick(0.6)); add('fx', FALL + 0.28, whoosh(0.2, 0.3))
+n_s = int((SLIDE[1] - SLIDE[0]) * K * SR); ts_ = np.arange(n_s) / SR
+sl = np.convolve(rng.standard_normal(n_s), np.ones(4) / 4, 'same') * np.exp(-ts_ / (SLIDE[1] - SLIDE[0]) / K * 1.5) * 0.5
+add('fx', SLIDE[0], sl)
+add('fx', SLIDE[1], kick(0.4)); add('fx', PICKS['best'], glock(91, 0.4, 1.6)); add('fx', PICKS['best'] + 0.08, glock(95, 0.35, 1.6))
+add('fx', GETUP + 0.7, pop(0.5))
+# the egg: wobble taps on every kick, two cracks, the hatch
+def crack(v=1.0):
+    n = int(0.18 * SR); t = np.arange(n) / SR; x = np.zeros(n)
+    for o in (0, 0.02, 0.045, 0.07):
+        k_ = int(o * SR); x[k_:] += rng.standard_normal(n - k_) * np.exp(-np.arange(n - k_) / SR / 0.008)
+    return v * x
+for t in KICKS:
+    if EGG_IN + 1.0 < t < HATCH: add('fx', t, tap(0.3, 1200))
+for c in CRACKS: add('fx', c, crack(0.7))
+add('fx', HATCH, pop(0.8)); add('fx', HATCH, crack(0.9)); add('fx', HATCH, sleigh(0.9))
+for j, m in enumerate([86, 90, 93, 98, 102]): add('fx', HATCH + 0.05 + j * 0.07, glock(m, 0.3, 1.8))
+add('fx', EGG_IN - 0.4, whoosh(0.6, 0.35))
 n_ = int(0.4 * SR); tt_ = np.arange(n_) / SR
 add('fx', LOOP - 0.4, rng.standard_normal(n_) * (tt_ / 0.4) ** 3 * 0.25)  # tiny riser into the loop
 
 # pad (pumps with the kick)
 t_all = np.arange(N) / SR; pad = np.zeros(N)
-for k in range(-1, 22):
+for k in range(-1, 32):
     t0 = max(0.0, bar(k)); t1 = min(LOOP, bar(k + 1))
     i0, i1 = int(t0 * K * SR), int(t1 * K * SR); xf = int(0.06 * SR)
     st = np.arange(i1 - i0 + xf) / SR; seg = np.zeros_like(st)

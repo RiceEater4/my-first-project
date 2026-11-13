@@ -98,7 +98,7 @@ def snowman():
 HOUSE, CAR, PINE, SNOWMAN = house(), car(), pine(), snowman()
 
 # ---------------- penguin (Pip) on the chunky grid ----------------
-CHAR_SCALE = 0.11
+CHAR_SCALE = 0.135
 def draw_char(F, wx, wy, pose):
     pose = dict(pose); pose['scale'] = pose.get('scale', 1.0) * CHAR_SCALE
     col, M, tips = pv.penguin(pose)
@@ -155,7 +155,7 @@ def smoke(F, T, x, y):
                 if dx * dx + dy * dy <= r * r: put(F, cx + dx, cy + dy, hexc('#c9d6ea'), a)
 def scene_home(F, T):
     blit(F, ISLAND, ISLAND_X, ISLAND_Y)
-    blit(F, HOUSE, 28, GROUND - 34); blit(F, CAR, 74, GROUND - 12); blit(F, PINE, 136, GROUND - 36); blit(F, SNOWMAN, 116, GROUND - 26)
+    blit(F, HOUSE, 22, GROUND - 34); blit(F, CAR, 62, GROUND - 12); blit(F, PINE, 138, GROUND - 36); blit(F, SNOWMAN, 118, GROUND - 26)
     d = depth(T)
     kid_y = GROUND - max(0, d - 2)
     pose = dict(hat=True, eyes='open', look=0.4, flop=1.2 * math.sin(T * 5), sq=1 + 0.02 * math.sin(T * 2.4))
@@ -163,8 +163,8 @@ def scene_home(F, T):
     if 12.0 <= T < 15.6: pose['eyes'] = 'happy'; pose['flipL'] = pose['flipR'] = 1.8 + 0.5 * math.sin(T * 12); kid_y -= 4 * abs(math.sin(T * 6))   # no school!
     if 17.8 <= T < 24: pose['eyes'] = 'wide'; pose['look'] = -0.8; pose['tilt'] = 0.06 * math.sin(T * 3)    # where's the house?
     snow_block(F, d)
-    if d < 31.5 or True: smoke(F, T, 56, GROUND - 34 - 0)
-    draw_char(F, 98, kid_y, pose)
+    smoke(F, T, 50, GROUND - 34)
+    draw_char(F, 103, kid_y, pose)
     snowfall(F, T, 30 if (T < 7.5 or T >= 58) else (70 if T < 16 else 120))
 def counters(F, T, d_override=None):
     n = day(T) if d_override is None else d_override
@@ -183,20 +183,24 @@ def scene_cut(F, T):
     w_, h_ = x1 - x0, y1 - y0; yy, xx = np.mgrid[0:h_, 0:w_]
     yabs = yy + y0
     M = yabs >= top
-    col = shade(SNOWP, 2.6 + 0.6 * (1 - xx / w_), yy, xx)
-    packed = yabs >= y1 - ice_h - packed_h
-    col[packed] = shade([hexc('#8eaacb'), hexc('#a9c1dd'), hexc('#c4d6ea')], 1.4 + 0.8 * (1 - xx / w_), yy, xx)[packed]
-    icem = yabs >= y1 - ice_h
-    col[icem] = shade([hexc('#2a6fb8'), hexc('#3f8fd6'), hexc('#6fb4ea')], 1.2 + 1.2 * (1 - xx / w_), yy, xx)[icem]
-    col[icem & (((xx + 2 * yy) % 19) < 1)] = hexc('#cfe9ff')
-    col, M = finish(col, M); pv.blit_hr(F, col, M, x0, y0, 1)
-    if a > 1.6:                                                     # your house, way down at the bottom
-        hc, hm = HOUSE; tint = hc * 0.55 + hexc('#2a6fb8') * 0.45
+    FRESH, PACK, ICEC = hexc('#f4f9ff'), hexc('#b9cde6'), hexc('#4a94dc')
+    yp, yi = y1 - ice_h - packed_h, y1 - ice_h                       # layer boundaries
+    bay = BAY[yy % 4, xx % 4]
+    col = np.zeros((h_, w_, 3), np.float32); col[:] = FRESH
+    col[(yabs + (bay - 0.5) * 6) >= yp] = PACK                       # dither only where layers meet
+    col[(yabs + (bay - 0.5) * 6) >= yi] = ICEC
+    col[(xx >= w_ - 5)] = col[(xx >= w_ - 5)] * 0.9                   # shaded right side
+    col[(yabs >= yi + 3) & (((xx + 2 * yy) % 17) < 1) & (((xx - yy) % 9) < 5)] = hexc('#bfe2ff')   # ice streaks
+    col[(yabs < yp - 3) & (((xx * 7 + yy * 13) % 61) < 1)] = hexc('#cfe2f6')                         # snow speckle
+    rim = M & ~np.roll(M, 1, 0); col[rim] = hexc('#ffffff')
+    col, M = bk.outline(col, M); pv.blit_hr(F, col, M, x0, y0, 1)
+    if a > 0.4:                                                     # your house, way down at the bottom
+        hc, hm = HOUSE; k_ = 0.45 * min(1.0, ice_h / 30.0); tint = hc * (1 - k_) + ICEC * k_
         pv.blit_hr(F, np.where(hm[..., None], tint, hc), hm, 91, y1 - 36, 1)
     draw_char(F, 110, top - 0.5, dict(hat=True, eyes='open' if a < 4 else 'wide', look=0, flop=1.2 * math.sin(T * 5), tilt=0.05 * math.sin(T * 2)))
     snowfall(F, T, 60)
     labels = [('FRESH SNOW', 24.8, 32, (x0 + 2, top + 8)), ('PACKED SNOW', 26.4, 32, (x0 + 2, y1 - ice_h - packed_h / 2)),
-              ('ICE', 27.6, 32, (x0 + 2, y1 - ice_h / 2)), ('YOUR HOUSE', 25.8, 27.8, (98, y1 - 22))]
+              ('ICE', 27.6, 32, (x0 + 2, y1 - ice_h / 2)), ('YOUR HOUSE', 24.6, 26.2, (98, y1 - 22))]
     for text, ta, tb, (ax, ay) in labels:
         if ta <= T < tb:
             ty = int(ay * S) - 80; bk.label(F, text, 24, ty, int(ax * S), int(ay * S), px=5)
@@ -222,8 +226,8 @@ def scene_trap(F, T):
     if a > 1.8:                                                     # ...and bounces straight back out
         s = min(1.0, (a - 1.8) / 0.8)
         for i in range(0, int(40 * s), 2):
-            k = i / 40; put(F, lerp(hit[0], 150, k), lerp(hit[1], 70, k), hexc('#fff6c0'))
-    tx, ty0, ty1 = 150, 100, 180                                    # thermometer
+            k = i / 40; put(F, lerp(hit[0], 122, k), lerp(hit[1], 62, k), hexc('#fff6c0'))
+    tx, ty0, ty1 = 156, 78, 158                                     # thermometer
     temp = lerp(-10, -50, smooth((a - 2.6) / 4.5))
     lvl = lerp(ty1 - 10, ty0 + 6, (temp + 60) / 80)
     for y in range(ty0, ty1):
@@ -231,15 +235,15 @@ def scene_trap(F, T):
     for y in range(ty1 - 2, ty1 + 6):
         for x in range(tx - 5, tx + 6):
             if (x - tx) ** 2 + (y - ty1 - 2) ** 2 <= 22: put(F, x, y, hexc('#e3313f'))
-    t_txt = f'{int(round(temp))} C'; bk.pixel_text(F, t_txt, int((tx - 8) * S), int((ty1 + 12) * S), px=5)
+    t_txt = f'{int(round(temp))} C'; bk.pixel_text(F, t_txt, int(tx * S) - (len(t_txt) * 30 - 5) // 2 - 20, int((ty1 + 14) * S), px=5)
     shiver = 0.08 * math.sin(T * 40) if a > 3.5 else 0
     draw_char(F, 92, GROUND - 4, dict(hat=True, eyes='wide' if a > 3.5 else 'open', look=1 if a < 3 else 0, flop=1.2 * math.sin(T * 5), tilt=shiver, flipL=0.3, flipR=0.3))
-    if a > 0.9 and a < 4.0: bk.label(F, 'SUNLIGHT', 330, 520, int(66 * S), int(118 * S), px=5)
-    if a > 2.2 and a < 6.0: bk.label(F, 'BOUNCES BACK', 620, 300, int(128 * S), int(80 * S), px=5)
+    if a > 0.9 and a < 7.9: bk.label(F, 'SUNLIGHT', 40, 1000, int(70 * S), int(160 * S), px=5)
+    if a > 2.2 and a < 7.9: bk.label(F, 'BOUNCES BACK', 420, 300, int(116 * S), int(84 * S), px=5)
     snowfall(F, T, 90)
 
 # ---------------- scene: the globe ----------------
-GC, GR = (90, 140), 50
+GC, GR = (90, 146), 60
 _ly, _lx = np.mgrid[0:64, 0:128]
 LAT = (0.5 - (_ly + 0.5) / 64) * math.pi; LON = (_lx + 0.5) / 128 * TAU
 LAND = (np.sin(LON * 2 + 0.5) * np.cos(LAT * 3) + 0.6 * np.sin(LON * 5 + LAT * 4) + 0.35 * np.cos(LON * 3 - LAT * 6)) > 0.55
@@ -248,7 +252,7 @@ def ice_line(T):
     if T < 46.0: return lerp(1.25, -0.3, smooth((T - 40.6) / 5.0))
     if T < 53.0: return -0.3
     return lerp(-0.3, 1.25, smooth((T - 53.0) / 4.5))
-VOLCS = [(-22, -8), (14, 18), (-4, 30), (26, -20)]
+VOLCS = [(-26, -10), (17, 22), (-5, 36), (31, -24)]
 def scene_globe(F, T):
     R = GR; yy, xx = np.mgrid[-R - 1:R + 2, -R - 1:R + 2]
     nx, ny = (xx + 0.5) / R, (yy + 0.5) / R; d2 = nx ** 2 + ny ** 2; M = d2 <= 1
@@ -276,7 +280,7 @@ def scene_globe(F, T):
                 for dy in range(-int(r), int(r) + 1):
                     for dx in range(-int(r), int(r) + 1):
                         if dx * dx + dy * dy <= r * r: put(F, cx + dx + ph * 6, cy - 3 - ph * 20 + dy, hexc('#5a5a66'), 0.6 * (1 - ph))
-    if 43.0 <= T < 52.0: bk.tag(F, 'SNOWBALL EARTH', 290, 1130, px=5)
+    if 43.0 <= T < 52.0: bk.tag(F, 'SNOWBALL EARTH', 332, 1290, px=5)
     if 47.6 <= T < 52.0:                                            # the big number counts up
         n = int(700_000_000 * smooth((T - 47.6) / 1.4)); t_ = f'{n:,} YEARS AGO'
         bk.pixel_text(F, t_, (WF - (len(t_) * 30 - 5)) // 2, 300, px=5, colr=(255, 200, 58))
@@ -333,16 +337,19 @@ def draw_captions(F, v):
 
 # ---------------- labels in the home scene ----------------
 def home_labels(F, T):
-    if 9.8 <= T < 11.8: bk.label(F, 'YOUR CAR', 560, 820, int(86 * S), int((GROUND - depth(T)) * S), px=5)
-    if 17.8 <= T < 22.0: bk.label(F, 'YOUR HOUSE', 200, 640, int(57 * S), int((GROUND - 34) * S), px=5)
+    if 9.8 <= T < 11.8: bk.label(F, 'YOUR CAR', 330, 900, int(75 * S), int((GROUND - depth(T)) * S), px=5)
+    if 17.8 <= T < 22.0: bk.label(F, 'YOUR HOUSE', 170, 640, int(51 * S), int((GROUND - 34) * S), px=5)
 
 # ---------------- compose ----------------
 SCENE_FN = {'home': scene_home, 'cut': scene_cut, 'trap': scene_trap, 'globe': scene_globe}
+FAST = [False]                     # True during the time-lapse cold open (labels hidden)
 def scene_at(T):
     k = max(i for i, (t0, _) in enumerate(SCENES) if T >= t0); return k
 def draw_scene(name, T):
     F = BG.copy(); SCENE_FN[name](F, T)
-    if name == 'home': counters(F, T); home_labels(F, T)
+    if name == 'home':
+        counters(F, T)
+        if not FAST[0]: home_labels(F, T)
     return F
 def render(T):
     k = scene_at(T); t0, name = SCENES[k]
@@ -357,11 +364,12 @@ def render(T):
 COLD0, COLD_LEN, REW = 19.0, 1.8, 0.8
 VLOOP = COLD_LEN + REW + LOOP
 def story_time(v):
-    if v < COLD_LEN: return COLD0 + v
-    if v < COLD_LEN + REW: return (COLD0 + COLD_LEN) * (1 - smooth((v - COLD_LEN) / REW))
+    if v < COLD_LEN: return 7.0 + (22.0 - 7.0) * min(1.0, v / (COLD_LEN - 0.35))     # time-lapse: day 1 -> day 30 in under 2 s
+    if v < COLD_LEN + REW: return 22.0 * (1 - smooth((v - COLD_LEN) / REW))
     return v - COLD_LEN - REW
 REWIND_ICON = ["1000100", "1100110", "1110111", "1111111", "1110111", "1100110", "1000100"]
 def frame(v):
+    FAST[0] = v < COLD_LEN + REW
     F = render(story_time(v))
     if COLD_LEN <= v < COLD_LEN + REW:
         for j, row in enumerate(REWIND_ICON):

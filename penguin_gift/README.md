@@ -17,3 +17,14 @@ python3 cold_open_audio.py story.wav audio.wav
 python3 video.py what_if_penguins_gave_gifts.mp4 audio.wav
 ```
 Title and description: `post.txt`.
+
+## Blueprint remake (`video2.py`) — 86 s
+Navy blueprint grid, floating ice diorama, navy-outlined pixel characters, unboxed bold captions.
+Story: meet Pip and Penny -> he wants to give her a pebble -> the search -> the thief (set up behind
+an iceberg) steals it -> a better pebble across the ice -> belly-slide -> the gift -> the twist ->
+the nest -> the thief had a crush too -> the egg hatches.
+```
+python3 audio2.py story.wav
+python3 cold_open_audio2.py story.wav audio.wav
+python3 video2.py penguin_gift_blueprint.mp4 audio.wav
+```

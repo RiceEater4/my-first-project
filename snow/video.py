@@ -168,7 +168,9 @@ def scene_home(F, T):
     snowfall(F, T, 30 if (T < 7.5 or T >= 58) else (70 if T < 16 else 120))
 def counters(F, T, d_override=None):
     n = day(T) if d_override is None else d_override
-    t1 = f'DAYS OF SNOW: {n}'; t2 = f'SNOW: {SNOW_M.get(n, "...")} M'
+    m = n * 0.15
+    m_txt = '50+' if n >= 365 else (f'{m:.1f}' if m < 1 else f'{m:.0f}')
+    t1 = f'DAYS OF SNOW: {n}'; t2 = f'SNOW: {m_txt} M'
     bk.pixel_text(F, t1, (WF - (len(t1) * 30 - 5)) // 2, 360, px=5, colr=(225, 235, 255))
     bk.pixel_text(F, t2, (WF - (len(t2) * 30 - 5)) // 2, 420, px=5, colr=(170, 200, 240))
 

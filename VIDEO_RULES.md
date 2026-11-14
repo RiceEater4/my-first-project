@@ -7,6 +7,18 @@
 - Work the "what if" into the hook itself.
 - The first 5-7 seconds are straight and direct: say the thing and show it happening. No setup.
 
+## Story / script
+- Every line has to make sense on its own and follow from the line before. If a fact matters,
+  say WHY it matters (e.g. "teenage boys keep their antlers" -> say what that changes).
+- No dangling endings. The last 10 seconds must pay off the hook and land a clear point,
+  not just repeat a line ("Rudolph? Definitely a girl." -> "...and? so what?").
+- Length: about 1 minute. Minimum 58 seconds, and it should run over 58 seconds,
+  so there is room to explain everything properly.
+
+## Narration (ElevenLabs, voice: Ethan, uB5dGadiIOtRLnqbQl9M)
+- Captions use the narration's exact words, timed word by word to the voice.
+- Music sits well under the voice (calm, quiet bed); voice clear but not too loud.
+
 ## Layout
 - The visual sits in the middle of the screen or a bit higher.
 - The caption sits right below the visual (see style_study/layout_reference.png).

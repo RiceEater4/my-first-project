@@ -67,11 +67,15 @@ add(fx, 0.0, bells(0.8)); add(fx, 0.0, glock(91, 0.4)); add(fx, 0.05, glock(95, 
 d = rv.drop_time(); add(fx, d, whoosh(0.25, 0.4)); add(fx, d + 0.5, clunk(0.9)); add(fx, d + 0.75, clunk(0.4))
 for k, pt in enumerate(rv.pop_times()): add(fx, pt, boing(0.5)); add(fx, pt + 0.55, clunk(0.35))
 for bt in rv.bonk_times(): add(fx, bt, clunk(0.9)); add(fx, bt, kick(0.5))
-add(fx, SEG[9][0] + 0.2, sad_trombone(0.5))
-for i in (2, 4, 6, 8, 10, 11): add(fx, SEG[i][0], whoosh(0.3, 0.25))
-add(fx, SEG[5][0] + 1.4, glock(98, 0.3)); add(fx, SEG[11][0] + 1.0, glock(91, 0.35)); add(fx, SEG[11][0] + 1.1, glock(98, 0.3))
-for k in range(5): add(fx, SEG[11][1] + k * 0.08, glock(86 + k * 3, 0.25, 1.6))
-voice = voice / (np.max(np.abs(voice)) + 1e-9)
+c = rv.cycle_drop(); add(fx, c, whoosh(0.25, 0.4)); add(fx, c + 0.5, clunk(0.8))
+for k in range(4): add(fx, rv.SEG[rv.L_CYCLE][0] + 0.3 + k * 0.5, glock(86 + k * 2, 0.15, 1.0))      # antlers growing
+add(fx, rv.chunk_start(rv.L_NEVER, 3), sad_trombone(0.5))
+for i_ in (2, 3, 6, 8, 10, 12, 14): add(fx, SEG[i_][0], whoosh(0.3, 0.25))
+add(fx, rv.chunk_start(rv.L_RUDOLPH, 1), glock(98, 0.3))
+for k in range(9): add(fx, SEG[rv.L_SANTA][0] + k * 0.22, glock(84 + k, 0.12, 0.8))                  # antler counter ticks
+add(fx, rv.chunk_start(rv.L_TEEN, 6), glock(91, 0.3)); add(fx, rv.chunk_start(rv.L_TEEN, 6) + 0.1, glock(95, 0.25))
+add(fx, rv.chunk_start(rv.L_END, 6), glock(91, 0.35)); add(fx, rv.chunk_start(rv.L_END, 6) + 0.1, glock(98, 0.3))
+for k in range(5): add(fx, SEG[-1][1] + k * 0.08, glock(86 + k * 3, 0.25, 1.6))
 mix = voice * 1.0 + music + fx * 0.30
 mix = mix / (np.max(np.abs(mix)) + 1e-9) * 0.95
 st = np.stack([mix, mix], 1)

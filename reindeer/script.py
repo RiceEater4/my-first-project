@@ -1,35 +1,41 @@
-"""Narration script for 'What If Santa's Reindeer Were Boys?' (one entry per voice line).
-Each line: (narration, caption chunks, highlight words). Facts: male reindeer shed antlers in early
-winter after the autumn rut; females keep theirs until spring; bulls can lose ~20-25% of their
-body weight during the rut; young males keep their antlers longer than adult bulls."""
+"""Narration script for 'What If Santa's Reindeer Were Boys?' (v2, ~1 minute).
+Facts: reindeer regrow antlers every year; adult males drop theirs in early winter after the autumn rut;
+females keep theirs until spring; bulls can lose up to ~25% of their weight in the rut; young males
+fight far less and keep their antlers through winter."""
 LINES = [
-    ("Santa's reindeer are all girls.", ["SANTA'S REINDEER", "ARE ALL GIRLS."], ('GIRLS',)),
-    ("Look at the antlers.", ["LOOK AT", "THE ANTLERS."], ('ANTLERS',)),
-    ("Boy reindeer drop their antlers in early winter... way before Christmas.", ["BOYS DROP", "THEIR ANTLERS", "IN EARLY WINTER...", "BEFORE CHRISTMAS."], ('DROP', 'BEFORE')),
-    ("Girls keep theirs all winter long.", ["GIRLS KEEP THEIRS", "ALL WINTER."], ('KEEP', 'WINTER')),
-    ("So every reindeer pulling Santa's sleigh on Christmas Eve...", ["SO EVERY REINDEER", "PULLING THE SLEIGH", "ON CHRISTMAS EVE..."], ('EVERY', 'CHRISTMAS')),
-    ("is a girl. Yes. Even Rudolph.", ["IS A GIRL.", "EVEN RUDOLPH."], ('GIRL', 'RUDOLPH')),
-    ("So what if Santa's reindeer were boys?", ["SO WHAT IF THEY", "WERE BOYS?"], ('BOYS',)),
-    ("Nine reindeer. Zero antlers.", ["NINE REINDEER.", "ZERO ANTLERS."], ('ZERO',)),
-    ("And they'd be exhausted. Boys spend the whole fall fighting... and lose up to a quarter of their weight.", ["AND EXHAUSTED.", "THEY FIGHT", "ALL FALL...", "AND LOSE A QUARTER", "OF THEIR WEIGHT."], ('EXHAUSTED', 'FIGHT', 'QUARTER')),
-    ("Santa would never make it.", ["SANTA WOULD", "NEVER MAKE IT."], ('NEVER',)),
-    ("Unless they're teenage boys. Young ones keep their antlers longer.", ["UNLESS THEY'RE", "TEENAGE BOYS.", "YOUNG ONES KEEP", "THEIRS LONGER."], ('TEENAGE', 'LONGER')),
-    ("But Rudolph? Definitely a girl. Merry Christmas.", ["BUT RUDOLPH?", "DEFINITELY A GIRL.", "MERRY CHRISTMAS."], ('RUDOLPH', 'GIRL', 'CHRISTMAS')),
+    ("Santa's reindeer are all girls.", ('GIRLS',)),
+    ("And the proof is right on their heads.", ('PROOF', 'HEADS')),
+    ("Every year, reindeer grow brand new antlers... then drop them.", ('GROW', 'DROP')),
+    ("Boy reindeer drop theirs in early winter... way before Christmas.", ('BOY', 'BEFORE')),
+    ("Girls keep theirs until spring.", ('GIRLS', 'KEEP')),
+    ("So on Christmas Eve, a reindeer with antlers is almost always a girl.", ('ANTLERS', 'GIRL')),
+    ("And Santa's reindeer always have antlers.", ('ALWAYS', 'ANTLERS')),
+    ("So yes. Even Rudolph is a girl.", ('RUDOLPH', 'GIRL')),
+    ("But what if Santa's reindeer were boys?", ('BOYS',)),
+    ("By Christmas Eve: nine reindeer, zero antlers.", ('ZERO',)),
+    ("And they'd be exhausted. Boys fight all fall... and lose up to a quarter of their weight.", ('EXHAUSTED', 'FIGHTING', 'QUARTER')),
+    ("Pulling a sleigh around the world? Santa would never make it.", ('NEVER',)),
+    ("Unless they're teenage boys. Young ones barely fight, so they keep their antlers... and their energy.", ('TEENAGE', 'KEEP', 'ENERGY')),
+    ("So Santa's team is girls... or teenagers.", ('GIRLS', 'TEENAGERS')),
+    ("And Rudolph always has antlers on Christmas Eve. Grown-up boys don't. So the most famous reindeer in the world... is a girl. Merry Christmas.", ('RUDOLPH', "DON'T", 'GIRL', 'CHRISTMAS')),
 ]
 NARRATION = "\n\n".join(l[0] for l in LINES)
-
-# Caption breaks: the narration word for word, split with '|' into short on-screen chunks.
 CAPTION_BREAKS = [
     "Santa's reindeer | are all girls.",
-    "Look at | the antlers.",
-    "Boy reindeer | drop their antlers | in early winter... | way before Christmas.",
-    "Girls keep theirs | all winter long.",
-    "So every reindeer | pulling Santa's sleigh | on Christmas Eve...",
-    "is a girl. | Yes. | Even Rudolph.",
-    "So what if | Santa's reindeer | were boys?",
-    "Nine reindeer. | Zero antlers.",
-    "And they'd be exhausted. | Boys spend | the whole fall | fighting... | and lose up to | a quarter | of their weight.",
-    "Santa would | never make it.",
-    "Unless they're | teenage boys. | Young ones keep | their antlers longer.",
-    "But Rudolph? | Definitely a girl. | Merry Christmas.",
+    "And the proof | is right on their heads.",
+    "Every year, | reindeer grow | brand new antlers... | then drop them.",
+    "Boy reindeer | drop theirs | in early winter... | way before Christmas.",
+    "Girls keep theirs | until spring.",
+    "So on Christmas Eve, | a reindeer with antlers | is almost always | a girl.",
+    "And Santa's reindeer | always have antlers.",
+    "So yes. | Even Rudolph | is a girl.",
+    "But what if | Santa's reindeer | were boys?",
+    "By Christmas Eve: | nine reindeer, | zero antlers.",
+    "And they'd be exhausted. | Boys fight | all fall... | and lose up to | a quarter | of their weight.",
+    "Pulling a sleigh | around the world? | Santa would | never make it.",
+    "Unless | they're teenage boys. | Young ones | barely fight, | so they keep | their antlers... | and their energy.",
+    "So Santa's team | is girls... | or teenagers.",
+    "And Rudolph | always has antlers | on Christmas Eve. | Grown-up boys don't. | So the most famous | reindeer in the world... | is a girl. | Merry Christmas.",
 ]
+for brk, (txt, _) in zip(CAPTION_BREAKS, LINES):
+    assert brk.replace('|', ' ').split() == txt.split(), txt

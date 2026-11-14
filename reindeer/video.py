@@ -187,121 +187,160 @@ def sweat(F, x, y, a):
     for k in range(3): put(F, x, y + k, hexc('#9fd8ff'), a)
     put(F, x - 1, y + 2, hexc('#9fd8ff'), a)
 
+# ---------------- caption chunk times (from captions.json) ----------------
+CAPJ = json.load(open(os.path.join(HERE, 'captions.json')))
+def chunk_start(line, k):
+    cs = [c for c in CAPJ if c['line'] == line]; return cs[min(k, len(cs) - 1)]['t0']
+
 # ---------------- event times (shared with the audio mix) ----------------
-def drop_time(): return SEG[2][0] + (SEG[2][1] - SEG[2][0]) * 0.42          # the boy's antlers fall (on "...early winter")
+L_HOOK, L_PROOF, L_CYCLE, L_BOYDROP, L_GIRLKEEP, L_XMAS, L_SANTA, L_RUDOLPH, L_WHATIF, L_ZERO, L_FIGHT, L_NEVER, L_TEEN, L_TEAM, L_END = range(15)
+def drop_time(): return chunk_start(L_BOYDROP, 1) + 0.25                       # on "drop theirs"
+def cycle_drop(): return chunk_start(L_CYCLE, 3) + 0.2                        # on "then drop them"
 def pop_times():
-    base = SEG[6][0] + 0.9; span = max(1.0, SEG[7][0] + 0.5 - base)        # all nine pop off under "were boys?"
+    base = chunk_start(L_WHATIF, 2) + 0.15; span = max(1.2, SEG[L_ZERO][0] + 0.9 - base)
     return [base + span * k / 9 for k in (0, 4, 8, 2, 6, 1, 5, 3, 7)]
 def bonk_times():
-    a, b = SEG[8]; p0 = a + (b - a) * 0.0; return [p0 + (b - a) * 0.45 * (k + 0.5) / 3 for k in range(3)]
+    a = chunk_start(L_FIGHT, 1); b = chunk_start(L_FIGHT, 3); return [a + (b - a) * (k + 0.5) / 3 for k in range(3)]
 
 # ---------------- scenes ----------------
 def seg_of(t):
     i = 0
     for k, (a, b) in enumerate(SEG):
-        if t >= a: i = k
+        if t >= a - 0.05: i = k
     return i
 def loc(t, i):
     a, b = SEG[i]; nxt = SEG[i + 1][0] if i + 1 < len(SEG) else END
-    return t - a, (t - a) / max(0.3, nxt - a)
+    return t - a, min(1.0, max(0.0, (t - a) / max(0.3, nxt - a)))
 TEAM = [(62, 0), (100, 0), (138, 0), (70, -8), (108, -8), (146, -8), (78, -16), (116, -16), (154, -16)]   # x, y offset
-def team(F, t, antlers, eye='open', thin=0.0, bob=True, sink=0.0, wobble=0.0, rud_glow=0.0, pop_times=None):
+def team(F, t, antlers, eye='open', thin=0.0, bob=True, sink=0.0, wobble=0.0, rud_glow=0.0, pop_times_=None, young=False):
     order = sorted(range(9), key=lambda k: TEAM[k][1])
     pv.blit_hr(F, SLEIGH[0], SLEIGH[1], 2, GROUND - 30 - 14 + sink, 1)
     for k in order:
         x, dy = TEAM[k]
         b = 0.8 * abs(math.sin(t * 6 + k)) if bob else 0
-        a_ = antlers if pop_times is None else (1.0 if t < pop_times[k] else 0.0)
-        nose = 'red' if k == 2 else 'black'
-        draw_deer(F, x, GROUND + dy - b + sink * (0.3 if k % 3 else 0), scale=0.74, antlers=a_, nose=nose, step=(t * 1.6 + k * 0.3) % 1 if bob else 0,
-                  eye=eye, thin=thin, tilt=wobble * math.sin(t * 9 + k))
-        if pop_times is not None and 0 <= t - pop_times[k] < 0.9:
-            a2 = t - pop_times[k]
+        a_ = antlers if pop_times_ is None else (1.0 if t < pop_times_[k] else 0.0)
+        draw_deer(F, x, GROUND + dy - b + sink * (0.3 if k % 3 else 0), scale=0.74, antlers=a_, nose='red' if k == 2 else 'black',
+                  step=(t * 1.6 + k * 0.3) % 1 if bob else 0, eye=eye, thin=thin, tilt=wobble * math.sin(t * 9 + k), young=young and k != 2)
+        if pop_times_ is not None and 0 <= t - pop_times_[k] < 0.9:
+            a2 = t - pop_times_[k]
             loose_antler(F, x + 14 + 18 * a2, GROUND + dy - 48 - 30 * a2 + 90 * a2 * a2, a2 * 7)
         if k == 2 and rud_glow > 0:
             nx, ny = x + 19, GROUND + dy - 26
             for r in range(1, 5):
                 for q in range(16):
                     th = TAU * q / 16; put(F, nx + r * math.cos(th), ny + r * math.sin(th), hexc('#ff4a5a'), rud_glow * 0.5 * (1 - r / 5))
+def bar_meter(F, label_, pct, x, y, good=True):
+    w_ = 300
+    F[y:y + 44, x:x + w_] = hexc('#0a1430'); F[y + 4:y + 40, x + 4:x + 4 + int((w_ - 8) * pct)] = hexc('#7ed37a') if good else hexc('#ff6a5a')
+    bk.pixel_text(F, label_, x, y - 48, px=6, colr=(225, 235, 255))
+def boy_girl(F, t, boy_ant, girl_ant=1.0, boy_eye='open', girl_eye='open'):
+    draw_deer(F, 54, GROUND, scale=0.95, antlers=boy_ant, eye=boy_eye)
+    draw_deer(F, 122, GROUND, scale=0.95, antlers=girl_ant, eye=girl_eye)
+    bk.label(F, 'BOY', 140, 560, int(48 * S), int((GROUND - 46) * S), px=6)
+    bk.label(F, 'GIRL', 800, 560, int(124 * S), int((GROUND - 46) * S), px=6)
+def falling_antler(F, t, t0, x0, y0):
+    a2 = t - t0
+    if a2 < 0: return
+    fall = min(1.0, a2 / 0.5); bounce = 4 * abs(math.sin(min(a2, 1.2) * 8)) * math.exp(-a2 * 4) if a2 > 0.5 else 0
+    loose_antler(F, x0 + 10 * fall, lerp(y0, GROUND - 6, fall ** 2) - bounce, fall * 2.6)
 
 def scene(F, t):
     i = seg_of(t); a, p = loc(t, i)
     big_x, big_y = 74, GROUND + 4
-    if i <= 1:                                          # hook: Rudolph, big, right away
-        step = 0
+    if i in (L_HOOK, L_PROOF):
         draw_deer(F, big_x, big_y, scale=1.55, antlers=1.0, nose='red', eye='happy' if (t % 3.1) > 0.15 else 'tired')
         sparkle(F, 136, 92, 0.7 + 0.3 * math.sin(t * 6))
-        if i == 0 and t > 0.4: bk.label(F, 'GIRL', 720, 330, int(118 * S), int(100 * S), px=6)
-        if i == 1:
+        if i == L_HOOK and t > 0.4: bk.label(F, 'GIRL', 720, 330, int(118 * S), int(100 * S), px=6)
+        if i == L_PROOF:
             fl = 0.5 + 0.5 * math.sin(t * 10)
             for sx, sy in ((128, 66), (140, 72), (118, 74)): sparkle(F, sx, sy, fl)
             bk.label(F, 'ANTLERS', 640, 230, int(130 * S), int(70 * S), px=6)
             bk.arrow(F, int(96 * S), int(52 * S))
-    elif i in (2, 3):                                   # boy vs girl through the winter
-        months = ['NOVEMBER', 'DECEMBER'] if i == 2 else ['DECEMBER', 'JANUARY', 'FEBRUARY', 'MARCH']
-        mi = min(len(months) - 1, int(p * len(months)))
-        calendar(F, months[mi])
-        drop_t = drop_time()
-        boy_ant = 1.0 if t < drop_t else 0.0
-        boy_eye = 'shock' if 0 <= t - drop_t < 1.2 else 'open'
-        draw_deer(F, 54, GROUND, scale=0.95, antlers=boy_ant, eye=boy_eye)
-        draw_deer(F, 122, GROUND, scale=0.95, antlers=1.0, eye='happy' if i == 3 else 'open')
-        if t >= drop_t:
-            a2 = t - drop_t
-            fall = min(1.0, a2 / 0.5); bounce = 4 * abs(math.sin(min(a2, 1.2) * 8)) * math.exp(-a2 * 4) if a2 > 0.5 else 0
-            loose_antler(F, 62 + 10 * fall, lerp(GROUND - 52, GROUND - 6, fall ** 2) - bounce, fall * 2.6)
-        bk.label(F, 'BOY', 140, 560, int(48 * S), int((GROUND - 46) * S), px=6)
-        bk.label(F, 'GIRL', 800, 560, int(124 * S), int((GROUND - 46) * S), px=6)
-        if i == 3:
-            for sx, sy in ((132, 100), (140, 106)): sparkle(F, sx, sy, 0.5 + 0.5 * math.sin(t * 7 + sx))
-    elif i in (4, 5):                                   # the sleigh team: count the girls
-        team(F, t, 1.0, rud_glow=0.7 if i == 5 else 0)
-        n = 9 if i == 5 else min(9, int(p * 10))
-        counter(F, f'GIRLS: {n} / 9', colr=(255, 200, 58) if n == 9 else (225, 235, 255))
-        if i == 5 and a > 0.8: bk.label(F, 'RUDOLPH', 720, 470, int(152 * S), int((GROUND - 24) * S), px=6)
-    elif i == 6:                                        # what if... they were boys: antlers pop off
-        team(F, t, 1.0, pop_times=pop_times(), eye='shock')
+    elif i == L_CYCLE:                                  # antlers grow every year... then fall off
+        cd = cycle_drop()
+        grow = smooth((t - SEG[i][0]) / max(0.5, cd - 0.4 - SEG[i][0]))
+        calendar(F, 'SPRING' if grow < 0.4 else ('SUMMER' if grow < 0.95 or t < cd - 0.2 else 'WINTER'))
+        ant = grow if t < cd else 0.0
+        draw_deer(F, 90, GROUND, scale=1.1, antlers=max(0.05, ant) if t < cd else 0.0, eye='happy' if t < cd else 'shock')
+        if t < cd: bk.label(F, 'GROW', 720, 480, int(104 * S), int((GROUND - 52) * S), px=6)
+        else: bk.label(F, 'DROP', 720, 480, int(104 * S), int((GROUND - 14) * S), px=6)
+        falling_antler(F, t, cd, 98, GROUND - 60)
+    elif i == L_BOYDROP:
+        months = ['NOVEMBER', 'DECEMBER']; calendar(F, months[min(1, int(p * 2))])
+        d = drop_time()
+        boy_girl(F, t, 1.0 if t < d else 0.0, boy_eye='shock' if 0 <= t - d < 1.2 else 'open')
+        falling_antler(F, t, d, 62, GROUND - 52)
+    elif i == L_GIRLKEEP:
+        months = ['DECEMBER', 'JANUARY', 'FEBRUARY', 'MARCH', 'APRIL']; calendar(F, months[min(4, int(p * 5))])
+        boy_girl(F, t, 0.0, girl_eye='happy')
+        loose_antler(F, 72, GROUND - 6, 2.6)
+        for sx, sy in ((132, 100), (140, 106)): sparkle(F, sx, sy, 0.5 + 0.5 * math.sin(t * 7 + sx))
+    elif i == L_XMAS:                                   # on Christmas Eve: antlers = girl
+        calendar(F, 'DEC 24')
+        boy_girl(F, t, 0.0, girl_eye='happy')
+        if p > 0.45: bk.tag(F, 'ANTLERS = GIRL', 330, 380, px=6)
+    elif i == L_SANTA:                                  # and Santa's reindeer always have antlers
+        team(F, t, 1.0)
+        n = min(9, int(p * 12)); counter(F, f'ANTLERS: {n} / 9', colr=(255, 200, 58) if n == 9 else (225, 235, 255))
+    elif i == L_RUDOLPH:                                # so yes, even Rudolph is a girl
+        team(F, t, 1.0, rud_glow=0.8)
+        counter(F, 'GIRLS: 9 / 9', colr=(255, 200, 58))
+        if a > 0.5: bk.label(F, 'RUDOLPH', 720, 470, int(152 * S), int((GROUND - 24) * S), px=6)
+    elif i == L_WHATIF:                                 # what if they were boys? antlers pop off
+        team(F, t, 1.0, pop_times_=pop_times(), eye='shock')
         bk.tag(F, 'WHAT IF?', 410, 230, px=7)
-    elif i == 7:                                        # nine reindeer, zero antlers
-        team(F, t, 0.0, eye='open')
-        counter(F, 'ANTLERS: 0', colr=(255, 200, 58))
-    elif i == 8:                                        # exhausted: the fight, then the weight drop
-        if p < 0.45:
-            k_ = p / 0.45; gap = 18 - 14 * abs(math.sin(k_ * math.pi * 3))
+    elif i == L_ZERO:
+        team(F, t, 0.0, pop_times_=pop_times(), eye='open')
+        calendar(F, 'DEC 24', y=150)
+        if t > pop_times()[-1] + 0.6: counter(F, 'ANTLERS: 0', y=320, colr=(255, 200, 58))
+    elif i == L_FIGHT:                                  # they fought all fall... and lost weight
+        if t < chunk_start(L_FIGHT, 3):
+            k_ = (t - SEG[i][0]) / max(0.5, chunk_start(L_FIGHT, 3) - SEG[i][0]); gap = 18 - 14 * abs(math.sin(k_ * math.pi * 3))
             draw_deer(F, 90 - gap - 26, GROUND, scale=0.95, antlers=1.0, eye='shock')
             col, M, (ox, oy) = reindeer(scale=0.95, antlers=1.0, eye='shock'); col, M = col[:, ::-1], M[:, ::-1]
             pv.blit_hr(F, col, M, 90 + gap + 26 - (M.shape[1] - ox), GROUND - oy, 1)
             if gap < 7:
                 for q in range(8): put(F, 90 + 6 * math.cos(q), GROUND - 46 + 6 * math.sin(q), hexc('#ffe27a'))
-            bk.tag(F, 'FIGHTING SEASON', 300, 230, px=6)
+            bk.tag(F, 'FALL: FIGHTING SEASON', 200, 230, px=6)
         else:
-            k_ = smooth((p - 0.45) / 0.4)
+            k_ = smooth((t - chunk_start(L_FIGHT, 3)) / max(0.6, SEG[i][1] - chunk_start(L_FIGHT, 3)))
             draw_deer(F, 90, GROUND, scale=1.15, antlers=0.0, eye='tired', thin=k_)
             sweat(F, 118, 70, 1.0)
-            pct = int(round(100 - 25 * k_)); bar_w = int(500 * pct / 100)
-            F[240:290, 290:790] = hexc('#0a1430'); F[244:286, 294:294 + bar_w - 8] = hexc('#ff6a5a') if k_ > 0.5 else hexc('#7ed37a')
-            bk.pixel_text(F, f'WEIGHT: {pct}%', 330, 180, px=7, colr=(225, 235, 255))
-            if k_ > 0.9: bk.pixel_text(F, '-25%', 812, 245, px=7, colr=(255, 106, 90))
-    elif i == 9:                                        # Santa would never make it
+            pct = int(round(100 - 25 * k_))
+            bar_meter(F, f'WEIGHT: {pct}%', pct / 100, 390, 290, good=k_ < 0.5)
+            if k_ > 0.9: bk.pixel_text(F, '-25%', 720, 300, px=7, colr=(255, 106, 90))
+    elif i == L_NEVER:                                  # pulling a sleigh around the world? never
         team(F, t, 0.0, eye='tired', thin=1.0, bob=False, sink=6 * smooth(p), wobble=0.06)
         for k in range(3): sweat(F, TEAM[k][0] + 14, GROUND + TEAM[k][1] - 30, 0.8)
         counter(F, 'SPEED: 0 MPH', colr=(255, 106, 90))
-    elif i == 10:                                       # unless... teenage boys
-        draw_deer(F, 58, GROUND, scale=0.95, antlers=0.0, eye='tired', thin=1.0)
-        draw_deer(F, 124, GROUND, scale=0.8, antlers=1.0, young=True, eye='happy', step=(t * 1.5) % 1 if p < 0.3 else 0)
-        bk.label(F, 'ADULT BOY', 60, 560, int(48 * S), int((GROUND - 40) * S), px=6)
-        bk.label(F, 'TEEN BOY', 700, 560, int(128 * S), int((GROUND - 38) * S), px=6)
-    else:                                               # Rudolph, definitely a girl
-        draw_deer(F, big_x, big_y, scale=1.55, antlers=1.0, nose='red', eye='happy')
-        nx, ny = big_x + 40, big_y - 54
-        g = 0.6 + 0.4 * math.sin(t * 5)
-        for r in range(2, 9):
-            for q in range(24):
-                th = TAU * q / 24; put(F, nx + r * math.cos(th), ny + r * math.sin(th), hexc('#ff4a5a'), g * 0.35 * (1 - r / 9))
-        bk.label(F, 'GIRL', 720, 330, int(118 * S), int(100 * S), px=6)
-        for hx, ph in ((40, 0), (150, 1.3), (60, 2.1)):
-            hy = 60 - ((t * 14 + ph * 20) % 50)
-            put(F, hx, hy, hexc('#ff4f7a')); put(F, hx + 1, hy, hexc('#ff4f7a')); put(F, hx, hy + 1, hexc('#ff4f7a')); put(F, hx + 1, hy + 1, hexc('#ff4f7a'))
+    elif i == L_TEEN:                                   # teenage boys keep their antlers... and their energy
+        draw_deer(F, 52, GROUND, scale=0.95, antlers=0.0, eye='tired', thin=1.0)
+        draw_deer(F, 126, GROUND - 2 * abs(math.sin(t * 5)), scale=0.82, antlers=1.0, young=True, eye='happy', step=(t * 1.5) % 1)
+        bk.label(F, 'ADULT BOY', 40, 560, int(48 * S), int((GROUND - 40) * S), px=6)
+        bk.label(F, 'TEEN BOY', 700, 560, int(130 * S), int((GROUND - 38) * S), px=6)
+        if t >= chunk_start(L_TEEN, 6) - 0.1:
+            bar_meter(F, 'ENERGY', 0.18, 90, 300, good=False); bar_meter(F, 'ENERGY', 1.0, 690, 300, good=True)
+    elif i == L_TEAM:                                   # so Santa's team is girls... or teenagers
+        team(F, t, 1.0, young=t >= chunk_start(L_TEAM, 2))
+        bk.tag(F, 'GIRLS' if t < chunk_start(L_TEAM, 2) else 'GIRLS OR TEENS', 410 if t < chunk_start(L_TEAM, 2) else 310, 230, px=7)
+    else:                                               # Rudolph has antlers on Christmas Eve -> a girl
+        if t < chunk_start(L_END, 4):
+            calendar(F, 'DEC 24')
+            draw_deer(F, 52, GROUND, scale=0.95, antlers=1.0, nose='red', eye='happy')
+            bk.label(F, 'RUDOLPH', 60, 560, int(48 * S), int((GROUND - 46) * S), px=6)
+            if t >= chunk_start(L_END, 3) - 0.1:
+                draw_deer(F, 124, GROUND, scale=0.95, antlers=0.0, eye='tired', thin=0.6)
+                bk.label(F, 'GROWN-UP BOY', 600, 560, int(124 * S), int((GROUND - 40) * S), px=6)
+        else:
+            draw_deer(F, big_x, big_y, scale=1.55, antlers=1.0, nose='red', eye='happy')
+            nx, ny = big_x + 40, big_y - 54; g = 0.6 + 0.4 * math.sin(t * 5)
+            for r in range(2, 9):
+                for q in range(24):
+                    th = TAU * q / 24; put(F, nx + r * math.cos(th), ny + r * math.sin(th), hexc('#ff4a5a'), g * 0.35 * (1 - r / 9))
+            if t >= chunk_start(L_END, 6) - 0.1: bk.label(F, 'GIRL', 720, 330, int(118 * S), int(100 * S), px=6)
+            for hx, ph in ((40, 0), (150, 1.3), (60, 2.1)):
+                hy = 60 - ((t * 14 + ph * 20) % 50)
+                for dx_, dy_ in ((0, 0), (1, 0), (0, 1), (1, 1)): put(F, hx + dx_, hy + dy_, hexc('#ff4f7a'))
 
 # ---------------- snow + captions ----------------
 rng = np.random.default_rng(3)
@@ -343,7 +382,7 @@ def frame(t):
     F = base_frame()
     scene(F, t); snow(F, t)
     i = seg_of(t)
-    if i >= 1 and 0 <= t - SEG[i][0] < 0.12 and i in (2, 4, 6, 8, 10, 11):        # quick pixel wipe on scene changes
+    if i >= 1 and 0 <= t - SEG[i][0] < 0.12 and i in (2, 3, 6, 8, 10, 12, 14):        # quick pixel wipe on scene changes
         m = HR_BAYER < (1 - (t - SEG[i][0]) / 0.12) * 0.7; F[m] = F[m] * 0.4 + hexc('#f4fbff') * 0.6
     captions(F, t)
     return (np.clip(F, 0, 1) * 255 + 0.5).astype(np.uint8)

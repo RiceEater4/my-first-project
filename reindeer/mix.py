@@ -47,18 +47,16 @@ M = [(0, 71, 1), (1, 71, 1), (2, 71, 2), (4, 71, 1), (5, 71, 1), (6, 71, 2), (8,
 CH = [(55, 59, 62), (55, 59, 62), (55, 60, 64), (55, 59, 62), (55, 60, 64), (55, 59, 62), (54, 57, 62), (55, 59, 62)]
 for rep in range(int(END / 16) + 1):
     t0 = rep * 16.0
-    for b, m, d in M: add(music, t0 + b * 0.5, glock(m + 12, 0.55))
-    for k in range(32): add(music, t0 + k * 0.5, kick(0.45 if k % 2 == 0 else 0.3))
-    for k in range(64): add(music, t0 + k * 0.25, bells(0.25 if k % 2 else 0.4))
+    for b, m, d in M: add(music, t0 + b * 0.5, glock(m, 0.35, 2.2))          # one octave lower: softer music box
     for bar in range(8):
         n = int(2 * SR); t = np.arange(n) / SR
-        pad = sum(np.sin(2 * np.pi * hz(m) * t) + 0.3 * np.sin(4 * np.pi * hz(m) * t) for m in CH[bar]) * 0.12
-        pad *= np.clip(t / 0.05, 0, 1) * np.clip((2 - t) / 0.05, 0, 1); add(music, t0 + bar * 2, pad)
+        pad = sum(np.sin(2 * np.pi * hz(m) * t) + 0.15 * np.sin(4 * np.pi * hz(m) * t) for m in CH[bar]) * 0.10
+        pad *= np.clip(t / 0.3, 0, 1) * np.clip((2 - t) / 0.3, 0, 1); add(music, t0 + bar * 2, pad)
 music /= np.max(np.abs(music)) + 1e-9
 # duck the music under the voice
 venv = np.convolve(np.abs(voice), np.ones(int(0.05 * SR)) / (0.05 * SR), 'same')
 venv = np.convolve((venv > 0.02).astype(float), np.ones(int(0.25 * SR)) / (0.25 * SR), 'same')
-music *= 0.42 - 0.27 * np.clip(venv, 0, 1)
+music *= 0.11 - 0.075 * np.clip(venv, 0, 1)
 music[int((END - 1.0) * SR):] *= np.linspace(1, 0, N - int((END - 1.0) * SR))
 # ---- sound effects on the story beats
 sys.path.insert(0, HERE)
@@ -73,8 +71,9 @@ add(fx, SEG[9][0] + 0.2, sad_trombone(0.5))
 for i in (2, 4, 6, 8, 10, 11): add(fx, SEG[i][0], whoosh(0.3, 0.25))
 add(fx, SEG[5][0] + 1.4, glock(98, 0.3)); add(fx, SEG[11][0] + 1.0, glock(91, 0.35)); add(fx, SEG[11][0] + 1.1, glock(98, 0.3))
 for k in range(5): add(fx, SEG[11][1] + k * 0.08, glock(86 + k * 3, 0.25, 1.6))
-mix = voice * 1.0 + music + fx * 0.55
-mix = np.tanh(mix / (np.max(np.abs(mix)) + 1e-9) * 1.4) / np.tanh(1.4) * 0.95
+voice = voice / (np.max(np.abs(voice)) + 1e-9)
+mix = voice * 1.0 + music + fx * 0.30
+mix = mix / (np.max(np.abs(mix)) + 1e-9) * 0.95
 st = np.stack([mix, mix], 1)
 with wave.open(sys.argv[1], 'wb') as w:
     w.setnchannels(2); w.setsampwidth(2); w.setframerate(SR); w.writeframes((st * 32767).astype('<i2').tobytes())

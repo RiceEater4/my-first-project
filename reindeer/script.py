@@ -17,3 +17,19 @@ LINES = [
     ("But Rudolph? Definitely a girl. Merry Christmas.", ["BUT RUDOLPH?", "DEFINITELY A GIRL.", "MERRY CHRISTMAS."], ('RUDOLPH', 'GIRL', 'CHRISTMAS')),
 ]
 NARRATION = "\n\n".join(l[0] for l in LINES)
+
+# Caption breaks: the narration word for word, split with '|' into short on-screen chunks.
+CAPTION_BREAKS = [
+    "Santa's reindeer | are all girls.",
+    "Look at | the antlers.",
+    "Boy reindeer | drop their antlers | in early winter... | way before Christmas.",
+    "Girls keep theirs | all winter long.",
+    "So every reindeer | pulling Santa's sleigh | on Christmas Eve...",
+    "is a girl. | Yes. | Even Rudolph.",
+    "So what if | Santa's reindeer | were boys?",
+    "Nine reindeer. | Zero antlers.",
+    "And they'd be exhausted. | Boys spend | the whole fall | fighting... | and lose up to | a quarter | of their weight.",
+    "Santa would | never make it.",
+    "Unless they're | teenage boys. | Young ones keep | their antlers longer.",
+    "But Rudolph? | Definitely a girl. | Merry Christmas.",
+]

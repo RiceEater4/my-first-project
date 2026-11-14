@@ -326,17 +326,11 @@ def caption_sprite(line, hl):
         d.text((x, 11), w_, font=font, fill=colr + (255,), stroke_width=7, stroke_fill=(8, 14, 30, 255))
         x += ww + sp
     return np.asarray(img).astype(np.float32) / 255
-CAPS = []
-for (txt, chunks, hl), (a, b) in zip(LINES, SEG):
-    words = [len(c.split()) for c in chunks]; tot = sum(words); t0 = a
-    for c, nw in zip(chunks, words):
-        t1 = t0 + (b - a) * nw / tot
-        CAPS.append((t0, t1, caption_sprite(c, set(hl))))
-        t0 = t1
+CAPS = [(c['t0'], c['t1'], caption_sprite(c['text'], set(c['hl']))) for c in json.load(open(os.path.join(HERE, 'captions.json')))]
 def captions(F, t):
     for a, b, spr in CAPS:
         if a <= t < b:
-            dy = int(10 * (1 - min(1.0, (t - a) / 0.08)))
+            dy = int(6 * (1 - min(1.0, (t - a) / 0.06)))
             h_ = spr.shape[0]; A = spr[..., 3:4]
             F[CAP_Y + dy:CAP_Y + dy + h_] = F[CAP_Y + dy:CAP_Y + dy + h_] * (1 - A) + spr[..., :3] * A
     if t < SEG[0][1] + 0.4:                                     # headphones icon under the first caption

@@ -187,6 +187,14 @@ def sweat(F, x, y, a):
     for k in range(3): put(F, x, y + k, hexc('#9fd8ff'), a)
     put(F, x - 1, y + 2, hexc('#9fd8ff'), a)
 
+# ---------------- event times (shared with the audio mix) ----------------
+def drop_time(): return SEG[2][0] + (SEG[2][1] - SEG[2][0]) * 0.42          # the boy's antlers fall (on "...early winter")
+def pop_times():
+    base = SEG[6][0] + 0.9; span = max(1.0, SEG[7][0] + 0.5 - base)        # all nine pop off under "were boys?"
+    return [base + span * k / 9 for k in (0, 4, 8, 2, 6, 1, 5, 3, 7)]
+def bonk_times():
+    a, b = SEG[8]; p0 = a + (b - a) * 0.0; return [p0 + (b - a) * 0.45 * (k + 0.5) / 3 for k in range(3)]
+
 # ---------------- scenes ----------------
 def seg_of(t):
     i = 0
@@ -233,7 +241,7 @@ def scene(F, t):
         months = ['NOVEMBER', 'DECEMBER'] if i == 2 else ['DECEMBER', 'JANUARY', 'FEBRUARY', 'MARCH']
         mi = min(len(months) - 1, int(p * len(months)))
         calendar(F, months[mi])
-        drop_t = SEG[2][0] + (SEG[2][1] - SEG[2][0]) * 0.55
+        drop_t = drop_time()
         boy_ant = 1.0 if t < drop_t else 0.0
         boy_eye = 'shock' if 0 <= t - drop_t < 1.2 else 'open'
         draw_deer(F, 54, GROUND, scale=0.95, antlers=boy_ant, eye=boy_eye)
@@ -252,9 +260,7 @@ def scene(F, t):
         counter(F, f'GIRLS: {n} / 9', colr=(255, 200, 58) if n == 9 else (225, 235, 255))
         if i == 5 and a > 0.8: bk.label(F, 'RUDOLPH', 720, 470, int(152 * S), int((GROUND - 24) * S), px=6)
     elif i == 6:                                        # what if... they were boys: antlers pop off
-        base = SEG[6][0] + 0.6; span = max(1.0, (SEG[6][1] - SEG[6][0]) - 0.6)
-        pops = [base + span * k / 9 for k in (0, 4, 8, 2, 6, 1, 5, 3, 7)]
-        team(F, t, 1.0, pop_times=pops, eye='shock')
+        team(F, t, 1.0, pop_times=pop_times(), eye='shock')
         bk.tag(F, 'WHAT IF?', 410, 230, px=7)
     elif i == 7:                                        # nine reindeer, zero antlers
         team(F, t, 0.0, eye='open')
@@ -275,7 +281,7 @@ def scene(F, t):
             pct = int(round(100 - 25 * k_)); bar_w = int(500 * pct / 100)
             F[240:290, 290:790] = hexc('#0a1430'); F[244:286, 294:294 + bar_w - 8] = hexc('#ff6a5a') if k_ > 0.5 else hexc('#7ed37a')
             bk.pixel_text(F, f'WEIGHT: {pct}%', 330, 180, px=7, colr=(225, 235, 255))
-            if k_ > 0.9: bk.pixel_text(F, '-25%', 820, 245, px=7, colr=(255, 106, 90))
+            if k_ > 0.9: bk.pixel_text(F, '-25%', 812, 245, px=7, colr=(255, 106, 90))
     elif i == 9:                                        # Santa would never make it
         team(F, t, 0.0, eye='tired', thin=1.0, bob=False, sink=6 * smooth(p), wobble=0.06)
         for k in range(3): sweat(F, TEAM[k][0] + 14, GROUND + TEAM[k][1] - 30, 0.8)

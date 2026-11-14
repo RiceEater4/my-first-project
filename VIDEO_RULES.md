@@ -15,7 +15,11 @@
 - Length: about 1 minute. Minimum 58 seconds, and it should run over 58 seconds,
   so there is room to explain everything properly.
 
-## Narration (ElevenLabs, voice: Ethan, uB5dGadiIOtRLnqbQl9M)
+## Narration (ElevenLabs, voice: Jett - Gritty, Spunky Young Hero, 6IwYbsNENZgAB1dtBZDp)
+- Use Jett from now on (was Ethan, uB5dGadiIOtRLnqbQl9M).
+- Use eleven_v4 acting tags: calmer setup lines, then [shouting] / [excited] / [intense] on the hook
+  words with stretched spelling, e.g. "Santa's reindeer... are all girls. [shouting] WHAAAAT?!"
+- Hook style: blunt fact -> big shouted reaction -> the proof.
 - Captions use the narration's exact words, timed word by word to the voice.
 - Music sits well under the voice (calm, quiet bed); voice clear but not too loud.
 

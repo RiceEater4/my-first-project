@@ -25,8 +25,10 @@
 
 ## Characters
 - Characters never block each other: give every character its own space (no overlapping sprites).
-- Every character has all its body parts clearly drawn: Santa needs arms (and hands), animals need
-  visible legs, ears, etc.
+- Every character has all its body parts, kept SIMPLE: Santa gets plain arms + mittens, animals get
+  clear legs and ears. Simple shapes, not detailed anatomy.
+- Draw characters in layers (body, head, arms...) each with its own outline, flat colours, no dither
+  noise on faces. Reference: style_study/santa_redone_closeup.png
 - Clean, readable faces and details: eyes, nose, mouth, beak are clear shapes (with a highlight),
   not single dots. Check every character up close at full size before rendering.
 

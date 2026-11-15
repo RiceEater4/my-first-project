@@ -378,9 +378,10 @@ def frame(t):
     if i not in (L_EVERY, L_EYES, L_WHY) and not (i == L_LIT and t > SEG[L_LIT][0] + 0.6): rv.snow(F, t)
     if i in CUTS and 0 <= t - SEG[i][0] < 0.12:
         m = rv.HR_BAYER < (1 - (t - SEG[i][0]) / 0.12) * 0.7; F[m] = F[m] * 0.4 + hexc('#f4fbff') * 0.6
-    for st in SHOUTS:
-        if 0 <= t - st < 0.35:
-            A = 14 * math.exp(-(t - st) / 0.1); dx, dy = int(A * math.sin(t * 90)), int(A * math.cos(t * 70))
+    for k_, st in enumerate(SHOUTS):
+        dur, amp, dec = (SEG[L_WHAT][1] - SEG[L_WHAT][0] + 0.2, 26, 0.45) if k_ == 0 else (0.35, 14, 0.1)
+        if 0 <= t - st < dur:
+            A = amp * math.exp(-(t - st) / dec); dx, dy = int(A * math.sin(t * 90)), int(A * math.cos(t * 70))
             F = np.roll(np.roll(F, dx, 1), dy, 0)
     captions(F, t)
     return (np.clip(F, 0, 1) * 255 + 0.5).astype(np.uint8)

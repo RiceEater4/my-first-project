@@ -9,6 +9,12 @@ N = int(END * SR); rng = np.random.default_rng(5)
 raw = subprocess.run(['ffmpeg', '-v', 'error', '-i', os.path.join(HERE, 'narration.mp3'), '-ac', '1', '-ar', str(SR), '-f', 'f32le', '-'], capture_output=True).stdout
 voice = np.zeros(N); v = np.frombuffer(raw, np.float32); voice[:min(N, len(v))] = v[:N]
 voice /= np.max(np.abs(voice)) + 1e-9
+# the hook scream: drive it hot (saturated = louder and grittier without clipping) plus a short slap echo
+i0, i1 = int((SEG[1][0] - 0.05) * SR), int((SEG[1][1] + 0.25) * SR)
+seg_ = voice[i0:i1].copy(); hot = np.tanh(3.2 * seg_) / np.tanh(3.2)
+fade = np.clip(np.minimum(np.arange(i1 - i0), np.arange(i1 - i0)[::-1]) / (0.01 * SR), 0, 1)
+voice[i0:i1] = seg_ * (1 - fade) + hot * fade
+d = int(0.11 * SR); echo = np.zeros(N); echo[i0 + d:i1 + d] = voice[i0:i1] * 0.28; voice += echo
 def hz(m): return 440 * 2 ** ((m - 69) / 12)
 def add(buf, t, sig):
     i = int(t * SR); e = min(N, i + len(sig))

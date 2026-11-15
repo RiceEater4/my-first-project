@@ -1,0 +1,124 @@
+"""Clean layered pixel characters (simple body parts, flat colours, each part outlined, readable faces).
+Every function returns (colour array, mask) in grid pixels (1 grid px = 6 screen px)."""
+import math
+import numpy as np
+from blueprint_kit import hexc, OUTLINE
+
+class Layers:
+    def __init__(self, w, h):
+        self.c = np.zeros((h, w, 3), np.float32); self.m = np.zeros((h, w), bool)
+    def add(self, mask, fill, outline=True):
+        col = np.zeros_like(self.c); fill(col, mask) if callable(fill) else col.__setitem__(mask, fill)
+        if outline:
+            p = np.pad(mask, 1); ring = (p[:-2, 1:-1] | p[2:, 1:-1] | p[1:-1, :-2] | p[1:-1, 2:]) & ~mask
+            self.c[ring] = OUTLINE; self.m |= ring
+        self.c[mask] = col[mask]; self.m |= mask
+    def out(self, flip=False):
+        return (self.c[:, ::-1].copy(), self.m[:, ::-1].copy()) if flip else (self.c, self.m)
+
+def seg(px, py, ax, ay, bx, by):
+    dx, dy = bx - ax, by - ay; t = np.clip(((px - ax) * dx + (py - ay) * dy) / (dx * dx + dy * dy + 1e-9), 0, 1)
+    return np.hypot(px - (ax + t * dx), py - (ay + t * dy))
+
+def santa():
+    W_, H_ = 46, 52; yy, xx = np.mgrid[0:H_, 0:W_].astype(np.float32); cx = 23; L = Layers(W_, H_)
+    RED, RED_D, RED_L, WH, WH_S = hexc('#d22a38'), hexc('#a0182a'), hexc('#ee4a52'), hexc('#ffffff'), hexc('#dfe6f0')
+    legs = (yy >= 40) & (yy < 46) & ((np.abs(xx - 17) <= 3) | (np.abs(xx - 29) <= 3))
+    boots = (yy >= 45) & (yy < 50) & ((np.abs(xx - 16.5) <= 4) | (np.abs(xx - 29.5) <= 4))
+    L.add(legs | boots, lambda c, m: (c.__setitem__(m, RED_D), c.__setitem__(boots, hexc('#1b1418'))))
+    body = ((xx - cx) / 12) ** 2 + ((yy - 32) / 11) ** 2 <= 1
+    def bc(c, m):
+        c[m] = RED; c[m & (xx > cx + 5)] = RED_D; c[m & (xx < cx - 6) & (yy < 30)] = RED_L; c[m & (np.abs(xx - cx) < 1.6)] = WH
+        b = m & (np.abs(yy - 34) < 1.6); c[b] = hexc('#1b1418'); c[b & (np.abs(xx - cx) < 2.6)] = hexc('#ffcc4a')
+        c[b & (np.abs(xx - cx) < 1.1) & (np.abs(yy - 34) < 0.6)] = hexc('#1b1418'); c[m & (yy > 40.5)] = WH
+    L.add(body, bc)
+    head = ((xx - cx) / 7) ** 2 + ((yy - 15) / 6.5) ** 2 <= 1
+    beard = (((xx - cx) / 8.5) ** 2 + ((yy - 21) / 6.5) ** 2 <= 1) & (yy >= 17)
+    def hc(c, m):
+        c[m] = hexc('#f6c9a8'); c[m & (xx > cx + 4)] = hexc('#e8b090'); c[beard] = WH; c[beard & (xx > cx + 4) & (yy > 21)] = WH_S
+        for ex in (cx - 3, cx + 3):
+            c[(xx >= ex - 1) & (xx < ex + 1) & (yy >= 14) & (yy < 17)] = hexc('#1b1428'); c[(xx >= ex - 1) & (xx < ex) & (yy >= 14) & (yy < 15)] = WH
+        c[((xx - cx) / 1.8) ** 2 + ((yy - 18) / 1.5) ** 2 <= 1] = hexc('#e8807a')
+        for ck in (cx - 5, cx + 5): c[((xx - ck) / 1.2) ** 2 + ((yy - 17.6) / 0.9) ** 2 <= 1] = hexc('#f2a0a0')
+        c[(yy >= 21.5) & (yy < 23) & (np.abs(xx - cx) < 2)] = hexc('#8a3a3a')
+    L.add(head | beard, hc)
+    hat = (yy >= 1) & (yy < 10) & (np.abs(xx - cx - (10 - yy) * 0.5) <= 1.5 + (yy - 1) * 0.85)
+    L.add(hat, lambda c, m: (c.__setitem__(m, RED), c.__setitem__(m & (xx > cx + 3), RED_D)))
+    brim = (yy >= 9) & (yy < 12) & (np.abs(xx - cx) <= 8)
+    L.add(brim, lambda c, m: (c.__setitem__(m, WH), c.__setitem__(m & (yy >= 11), WH_S)))
+    L.add(((xx - (cx + 7.5)) / 2.4) ** 2 + ((yy - 2) / 2.4) ** 2 <= 1, WH)
+    for side in (-1, 1):
+        sx = cx + side * 11
+        arm = (np.abs((xx - sx) - side * (yy - 26) * 0.3) <= 2.4) & (yy >= 25) & (yy <= 34)
+        L.add(arm, lambda c, m: (c.__setitem__(m, RED if side < 0 else RED_D), c.__setitem__(m & (yy >= 33), WH)))
+        mit = ((xx - (sx + side * 3.2)) / 2.7) ** 2 + ((yy - 36.5) / 2.7) ** 2 <= 1
+        L.add(mit, lambda c, m: (c.__setitem__(m, hexc('#1f7a3e')), c.__setitem__(m & (yy < 36), hexc('#2f9a52'))))
+    return L.out()
+
+THERMAL = {'body': hexc('#3a2a8a'), 'body_d': hexc('#241a5e'), 'belly': hexc('#5a3aa8'), 'leg': hexc('#1d1650'),
+           'head': hexc('#7a3aa8'), 'nose': hexc('#ffe45a'), 'nose_ring': hexc('#ff4a2a'), 'antler': hexc('#120e30'), 'eye': hexc('#ff8a3a')}
+def reindeer(nose='red', eye_col='#1b1428', antlers=True, thermal=False, step=0.0, head_down=0.0, glow=0.0, flip=False):
+    """side view facing right, ~64x60 grid px. nose: 'red' or 'black'. head_down 0..1 lowers the head to the snow."""
+    W_, H_ = 66, 62; yy, xx = np.mgrid[0:H_, 0:W_].astype(np.float32); L = Layers(W_, H_)
+    BR, BR_D, BR_L, CREAM, HOOF = hexc('#8a5a36'), hexc('#6a4226'), hexc('#a8744a'), hexc('#efe0c4'), hexc('#2a1a12')
+    if thermal: BR, BR_D, BR_L, CREAM, HOOF = THERMAL['body'], THERMAL['body_d'], THERMAL['belly'], THERMAL['belly'], THERMAL['leg']
+    oy = 12 * head_down                                          # head offset when sniffing the snow
+    hx, hy = 47 + 4 * head_down, 22 + oy
+    for k, (lx, ph, back) in enumerate(((17, 0, True), (35, math.pi, True), (21, math.pi, False), (39, 0, False))):
+        off = 2.4 * math.sin(step * math.tau + ph) if step else 0
+        leg = seg(xx, yy, lx, 40, lx + off, 55) <= 1.8
+        hoof = seg(xx, yy, lx + off, 54, lx + off + 1, 56) <= 1.9
+        L.add(leg | hoof, lambda c, m: (c.__setitem__(m, BR_D if back else BR), c.__setitem__(hoof, HOOF)))
+    L.add(((xx - 12) / 2.6) ** 2 + ((yy - 31) / 3) ** 2 <= 1, CREAM)                          # tail
+    body = ((xx - 28) / 16) ** 2 + ((yy - 35) / 8.5) ** 2 <= 1
+    L.add(body, lambda c, m: (c.__setitem__(m, BR), c.__setitem__(m & (yy > 38), BR_L if not thermal else BR_L),
+                              c.__setitem__(m & (xx < 18) & (yy < 33), BR_D)))
+    neck = seg(xx, yy, 38, 33, hx - 4, hy + 2) <= 4.6
+    L.add(neck, CREAM)
+    if antlers:
+        A = np.zeros_like(body)
+        ax, ay = hx - 3, hy - 4
+        for (a, b) in (((0, 0), (-3, -9)), ((-3, -9), (-8, -15)), ((-3, -9), (1, -15)), ((-5, -12), (-10, -11)),
+                       ((3, 0), (6, -8)), ((6, -8), (4, -14)), ((6, -8), (10, -12))):
+            A |= seg(xx, yy, ax + a[0], ay + a[1], ax + b[0], ay + b[1]) <= 1.2
+        L.add(A, THERMAL['antler'] if thermal else hexc('#d9c08a'))
+    head = ((xx - hx) / 6) ** 2 + ((yy - hy) / 5) ** 2 <= 1
+    snout = ((xx - (hx + 6)) / 4.4) ** 2 + ((yy - (hy + 2)) / 3.2) ** 2 <= 1
+    ear = ((xx - (hx - 5)) / 3) ** 2 + ((yy - (hy - 3)) / 1.6) ** 2 <= 1
+    L.add(ear, BR_D)
+    def head_fill(c, m):
+        c[m] = THERMAL['head'] if thermal else BR; c[snout] = THERMAL['head'] if thermal else BR_L
+        ex, ey = hx + 1, hy - 1                                                                 # clear eye: 2x2 + highlight
+        e = (xx >= ex - 1) & (xx < ex + 2) & (yy >= ey - 1) & (yy < ey + 2)                      # 3x3 eye
+        c[e] = THERMAL['eye'] if thermal else hexc(eye_col)
+        if eye_col != '#1b1428' and not thermal: c[(xx >= ex) & (xx < ex + 2) & (yy >= ey) & (yy < ey + 2)] = hexc('#1b1428')
+        c[(xx >= ex - 1) & (xx < ex) & (yy >= ey - 1) & (yy < ey)] = hexc('#ffffff')
+    L.add(head | snout, head_fill)
+    nx, ny = hx + 10, hy + 1.5
+    nm = ((xx - nx) / 2.4) ** 2 + ((yy - ny) / 2.2) ** 2 <= 1
+    if thermal: L.add(nm, lambda c, m: (c.__setitem__(m, THERMAL['nose']), c.__setitem__(m & (((xx - nx) / 2.4) ** 2 + ((yy - ny) / 2.2) ** 2 > 0.45), THERMAL['nose_ring'])))
+    elif nose == 'red': L.add(nm, lambda c, m: (c.__setitem__(m, hexc('#ff2a3c')), c.__setitem__(m & (xx < nx - 0.5) & (yy < ny - 0.5), hexc('#ffb0b8'))))
+    else: L.add(nm, lambda c, m: (c.__setitem__(m, hexc('#2a1c20')), c.__setitem__(m & (xx < nx - 0.5) & (yy < ny - 0.5), hexc('#5a4048'))))
+    col, M = L.out(flip)
+    return col, M, ((nx if not flip else W_ - 1 - nx), ny), ((hx + 1) if not flip else W_ - 1 - (hx + 1), hy - 1)
+
+def wolf(uv=False, flip=True, step=0.0):
+    """side view facing right (flipped to face left by default), ~52x36."""
+    W_, H_ = 54, 38; yy, xx = np.mgrid[0:H_, 0:W_].astype(np.float32); L = Layers(W_, H_)
+    G, G_D, G_L = (hexc('#7a8090'), hexc('#555a68'), hexc('#c4c8d2')) if not uv else (hexc('#14102a'), hexc('#0c0a1c'), hexc('#1e1838'))
+    for lx, ph in ((14, 0), (20, math.pi), (32, math.pi), (38, 0)):
+        off = 2 * math.sin(step * math.tau + ph) if step else 0
+        L.add(seg(xx, yy, lx, 24, lx + off, 35) <= 1.6, G_D)
+    L.add(seg(xx, yy, 8, 18, 1, 24) <= 2.6, G)                                                   # tail
+    L.add(((xx - 26) / 15) ** 2 + ((yy - 20) / 6.5) ** 2 <= 1, lambda c, m: (c.__setitem__(m, G), c.__setitem__(m & (yy > 22), G_L)))
+    head = ((xx - 42) / 6) ** 2 + ((yy - 13) / 5) ** 2 <= 1
+    snout = ((xx - 49) / 4.5) ** 2 + ((yy - 15) / 2.4) ** 2 <= 1
+    ears = ((yy >= 3) & (yy < 10) & (np.abs(xx - 38.5) <= (yy - 3) * 0.32)) | ((yy >= 3) & (yy < 10) & (np.abs(xx - 44) <= (yy - 3) * 0.32))
+    def hf(c, m):
+        c[m] = G; c[snout] = G_L
+        c[(xx >= 42) & (xx < 45) & (yy >= 10) & (yy < 13)] = hexc('#ffd84a')
+        c[(xx >= 43) & (xx < 45) & (yy >= 11) & (yy < 13)] = hexc('#1b1428')
+        c[(xx >= 42) & (xx < 43) & (yy >= 10) & (yy < 11)] = hexc('#ffffff')
+        c[((xx - 53) / 1.3) ** 2 + ((yy - 14.5) / 1.1) ** 2 <= 1] = hexc('#1b1428')
+    L.add(head | snout | ears, hf)
+    return L.out(flip)

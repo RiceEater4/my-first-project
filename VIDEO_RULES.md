@@ -23,6 +23,13 @@
 - Captions use the narration's exact words, timed word by word to the voice.
 - Music sits well under the voice (calm, quiet bed); voice clear but not too loud.
 
+## Characters
+- Characters never block each other: give every character its own space (no overlapping sprites).
+- Every character has all its body parts clearly drawn: Santa needs arms (and hands), animals need
+  visible legs, ears, etc.
+- Clean, readable faces and details: eyes, nose, mouth, beak are clear shapes (with a highlight),
+  not single dots. Check every character up close at full size before rendering.
+
 ## Layout
 - The visual sits in the middle of the screen or a bit higher.
 - The caption sits right below the visual (see style_study/layout_reference.png).

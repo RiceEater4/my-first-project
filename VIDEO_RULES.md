@@ -15,6 +15,17 @@
 - Length: about 1 minute. Minimum 58 seconds, and it should run over 58 seconds,
   so there is room to explain everything properly.
 
+## Ending + CTA (every video)
+- Order: story payoff line first, then the CTA as the very last line (~3 s). No "Merry Christmas" sign-off.
+- CTA = a specific comment question about the video's topic + the naughty-list subscribe joke, e.g.
+  "Comment which superpower you'd want... and subscribe, or Santa's putting you on the naughty list."
+  Swap the question per topic ("Comment if you'd let a penguin near Santa...", "Comment boy or girl Rudolph...").
+  The naughty-list subscribe line stays the same every time (signature ending).
+- Voice: comment part said normally, naughty-list part [mischievous] / smirking.
+- Visuals: the main character turns to camera; a pixel comment bubble pops up showing the answer options;
+  a red pixel SUBSCRIBE button gets pressed (click + sparkle); Santa slides in beside (never overlapping)
+  holding a NAUGHTY LIST scroll. Captions as usual, COMMENT and SUBSCRIBE in yellow.
+
 ## Narration (ElevenLabs, voice: Jett - Gritty, Spunky Young Hero, 6IwYbsNENZgAB1dtBZDp)
 - Use Jett from now on (was Ethan, uB5dGadiIOtRLnqbQl9M).
 - Use eleven_v4 acting tags: calmer setup lines, then [shouting] / [excited] / [intense] on the hook

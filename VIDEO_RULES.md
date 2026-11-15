@@ -21,8 +21,6 @@
   words with stretched spelling, e.g. "Santa's reindeer... are all girls. [shouting] WHAAAAT?!"
 - Hook style: blunt fact -> big shouted reaction -> the proof.
 - Captions use the narration's exact words, timed word by word to the voice.
-- The hook scream is LOUD and aggressive: record it as its own take ([screaming] [furious] WHAAAAAAAT?!?!, ~1.5 s),
-  splice it in, drive it hot in the mix (~5-6 dB above the narration, saturated + short slap echo) with a big shake.
 - Music sits well under the voice (calm, quiet bed); voice clear but not too loud.
 
 ## Characters

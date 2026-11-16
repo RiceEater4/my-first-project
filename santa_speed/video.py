@@ -253,7 +253,7 @@ def scene(F, t):
             sx = lerp(220, -150, ((t - cs(L_METEOR, 3)) * 0.9) % 1)
             for j in range(80): put(F, sx + 120 + j, 128 + 6 * math.sin(j * 0.5 + t * 30), FLAME[min(3, j // 20)], 1 - j / 80)
             flames(F, sx, sx + 125, 152, t, hmax=12); draw_team(F, sx, 108, t)
-            big_num(F, 'X50', 330, px=12, colr=(255, 120, 60))
+            big_num(F, 'X50', 940, px=11, colr=(255, 120, 60))
     elif i == L_FIRE:                                            # the reindeer catch fire
         rv.island(F); burnt = ramp(t, cs(L_FIRE, 2), 1.2)
         nose, eye = draw_deer(F, 90, nose='red')

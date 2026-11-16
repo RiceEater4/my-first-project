@@ -122,3 +122,71 @@ def wolf(uv=False, flip=True, step=0.0):
         c[((xx - 53) / 1.3) ** 2 + ((yy - 14.5) / 1.1) ** 2 <= 1] = hexc('#1b1428')
     L.add(head | snout | ears, hf)
     return L.out(flip)
+
+def sleigh(santa_in=True):
+    """side view facing right, ~48x40; Santa (front view, waist up) sits in it; gift sack behind him"""
+    W_, H_ = 50, 44; yy, xx = np.mgrid[0:H_, 0:W_].astype(np.float32); L = Layers(W_, H_)
+    RED, RED_D, GOLD = hexc('#d22a38'), hexc('#a0182a'), hexc('#ffcc4a')
+    sack = ((xx - 11) / 7.5) ** 2 + ((yy - 17) / 8) ** 2 <= 1
+    L.add(sack, lambda c, m: (c.__setitem__(m, hexc('#8a5a36')), c.__setitem__(m & (xx > 13), hexc('#6a4226'))))
+    for gx, gy, gc in ((8, 9, '#3a8aff'), (14, 8, '#5ae07a')):
+        g = (np.abs(xx - gx) <= 2.5) & (np.abs(yy - gy) <= 2.5)
+        L.add(g, lambda c, m, gc=gc: (c.__setitem__(m, hexc(gc)), c.__setitem__(m & ((np.abs(xx - gx) < 0.6) | (np.abs(yy - gy) < 0.6)), GOLD)))
+    body = (yy >= 22) & (yy < 34) & (xx >= 4) & (xx <= 40 + (yy - 22) * 0.4) & ~((((xx - 40) / 5) ** 2 + ((yy - 22) / 4) ** 2 <= 1) & (yy < 24))
+    front = ((xx - 42) / 4.5) ** 2 + ((yy - 24) / 6) ** 2 <= 1
+    L.add(body | front, lambda c, m: (c.__setitem__(m, RED), c.__setitem__(m & (yy > 30), RED_D),
+                                       c.__setitem__(m & (np.abs(yy - 26) < 0.8) & (xx < 41), GOLD)))
+    run = ((yy >= 38) & (yy < 40) & (xx >= 2) & (xx <= 44)) | (((xx - 45) / 3) ** 2 + ((yy - 36) / 3) ** 2 <= 1) & ~(((xx - 45) / 1.6) ** 2 + ((yy - 36) / 1.6) ** 2 <= 1) & (xx > 44)
+    struts = ((np.abs(xx - 12) < 1) | (np.abs(xx - 32) < 1)) & (yy >= 34) & (yy < 38)
+    L.add(run | struts, GOLD)
+    return L.out()
+
+def house(broken=False, lit=True):
+    """front view ~42x40 with snowy roof, chimney, door and two windows"""
+    W_, H_ = 42, 40; yy, xx = np.mgrid[0:H_, 0:W_].astype(np.float32); L = Layers(W_, H_)
+    L.add((xx >= 28) & (xx < 33) & (yy >= 2) & (yy < 14), lambda c, m: (c.__setitem__(m, hexc('#a8504a')), c.__setitem__(m & (yy < 4), hexc('#ffffff'))))
+    L.add((xx >= 6) & (xx < 36) & (yy >= 17) & (yy < 38), lambda c, m: (c.__setitem__(m, hexc('#f0dcb8')), c.__setitem__(m & (xx > 30), hexc('#d8c09a'))))
+    roof = (yy >= 4) & (yy < 18) & (np.abs(xx - 20.5) <= (yy - 3) * 1.45)
+    L.add(roof, lambda c, m: (c.__setitem__(m, hexc('#c8303a')), c.__setitem__(m & (np.abs(xx - 20.5) > (yy - 3) * 1.45 - 2.5), hexc('#ffffff'))))
+    L.add((xx >= 18) & (xx < 24) & (yy >= 28) & (yy < 38), lambda c, m: (c.__setitem__(m, hexc('#6a4226')), c.__setitem__(m & (np.abs(xx - 22.5) < 0.6) & (np.abs(yy - 33) < 0.6), hexc('#ffcc4a'))))
+    for wx in (9, 26):
+        win = (xx >= wx) & (xx < wx + 7) & (yy >= 21) & (yy < 28)
+        def wf(c, m, wx=wx):
+            c[m] = hexc('#1d2848') if broken else (hexc('#ffd84a') if lit else hexc('#9fd8ff'))
+            if not broken: c[m & ((np.abs(xx - (wx + 3)) < 0.6) | (np.abs(yy - 24) < 0.6))] = hexc('#6a4226')
+            else:
+                c[m & (np.abs((xx - wx) - (yy - 21)) < 0.7)] = hexc('#cfe9ff'); c[m & (np.abs((xx - wx) + (yy - 21) - 6) < 0.7) & (yy < 25)] = hexc('#cfe9ff')
+        L.add(win, wf)
+    return L.out()
+
+def professor():
+    """front view ~32x52: grey hair, glasses, lab coat, pointer"""
+    W_, H_ = 34, 54; yy, xx = np.mgrid[0:H_, 0:W_].astype(np.float32); cx = 16; L = Layers(W_, H_)
+    L.add((yy >= 42) & (yy < 52) & ((np.abs(xx - 12.5) <= 2.2) | (np.abs(xx - 19.5) <= 2.2)), lambda c, m: (c.__setitem__(m, hexc('#3a4664')), c.__setitem__(m & (yy >= 49), hexc('#1b1418'))))
+    coat = (yy >= 22) & (yy < 45) & (np.abs(xx - cx) <= 7 + (yy - 22) * 0.12)
+    L.add(coat, lambda c, m: (c.__setitem__(m, hexc('#f4f6fb')), c.__setitem__(m & (xx > cx + 4), hexc('#d8dee8')),
+                              c.__setitem__(m & (np.abs(xx - cx) < 2) & (yy < 30), hexc('#5a8ad8')), c.__setitem__(m & (np.abs(xx - cx) < 0.6) & (yy >= 30), hexc('#c4ccd8'))))
+    for side in (-1, 1):
+        arm = (np.abs((xx - (cx + side * 9)) - side * (yy - 24) * 0.25) <= 2) & (yy >= 23) & (yy <= 36)
+        L.add(arm, hexc('#e8ecf4'))
+        L.add(((xx - (cx + side * 12)) / 2.2) ** 2 + ((yy - 37.5) / 2.2) ** 2 <= 1, hexc('#f6c9a8'))
+    L.add(seg(xx, yy, cx + 12, 37, cx + 17, 24) <= 0.8, hexc('#8a5a36'), outline=False)
+    head = ((xx - cx) / 7) ** 2 + ((yy - 13) / 8) ** 2 <= 1
+    hair = (((xx - (cx - 7)) / 3.2) ** 2 + ((yy - 10) / 4.5) ** 2 <= 1) | (((xx - (cx + 7)) / 3.2) ** 2 + ((yy - 10) / 4.5) ** 2 <= 1) | (((xx - cx) / 5) ** 2 + ((yy - 5) / 2.2) ** 2 <= 1)
+    def hf(c, m):
+        c[m] = hexc('#f6c9a8'); c[hair & m] = hexc('#dfe3ea')
+        for ex in (cx - 3, cx + 3):
+            g = (np.abs(xx - ex) <= 2.5) & (np.abs(yy - 13) <= 2); c[g] = hexc('#1b1428')
+            c[(np.abs(xx - ex) <= 1.5) & (np.abs(yy - 13) <= 1)] = hexc('#cfe9ff'); c[(xx >= ex - 0.5) & (xx < ex + 0.5) & (yy >= 12.5) & (yy < 13.5)] = hexc('#1b1428')
+        c[(np.abs(yy - 13) < 0.6) & (np.abs(xx - cx) < 1)] = hexc('#1b1428')
+        c[(yy >= 17.5) & (yy < 18.5) & (np.abs(xx - cx) < 2.5)] = hexc('#8a3a3a'); c[(yy >= 16.5) & (yy < 17.5) & (np.abs(np.abs(xx - cx) - 3) < 0.6)] = hexc('#8a3a3a')
+    L.add(head | hair, hf)
+    return L.out()
+
+def scroll():
+    """unrolled list ~26x36"""
+    W_, H_ = 26, 38; yy, xx = np.mgrid[0:H_, 0:W_].astype(np.float32); L = Layers(W_, H_)
+    L.add((xx >= 3) & (xx < 23) & (yy >= 4) & (yy < 34), lambda c, m: (c.__setitem__(m, hexc('#f6ead0')),
+          c.__setitem__(m & (yy >= 10) & ((yy.astype(int) - 10) % 4 == 0) & (xx >= 6) & (xx < 20), hexc('#c8a878'))))
+    for ry in (3, 34): L.add((xx >= 1) & (xx < 25) & (np.abs(yy - ry) <= 1.6), lambda c, m: (c.__setitem__(m, hexc('#d8c098')), c.__setitem__(m & (yy > ry), hexc('#b89a6a'))))
+    return L.out()

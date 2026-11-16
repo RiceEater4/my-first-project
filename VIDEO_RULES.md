@@ -35,6 +35,8 @@
 - Music sits well under the voice (calm, quiet bed); voice clear but not too loud.
 
 ## Characters
+- Continuity: characters never vanish and reappear. If something happens to them (explosion, crash), show where
+  they go (e.g. blasted out of the fireball, arcing down, crash-landing) before the next shot uses them.
 - Characters never block each other: give every character its own space (no overlapping sprites).
 - Every character has all its body parts, kept SIMPLE: Santa gets plain arms + mittens, animals get
   clear legs and ears. Simple shapes, not detailed anatomy.

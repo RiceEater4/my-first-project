@@ -77,6 +77,11 @@ fx = np.zeros(N)
 add(fx, 0.0, bells(0.6)); add(fx, 0.3, whoosh(1.0, 0.5))
 add(fx, cs(v_.L_HOOK, 3), boom(1.0)); add(fx, cs(v_.L_HOOK, 3), crash(0.5))
 add(fx, SEG[v_.L_WHAT][0], boom(0.8)); add(fx, SEG[v_.L_WHAT][0], whoosh(0.3, 0.5))
+def thud(v=1.0):
+    n = int(0.35 * SR); t = np.arange(n) / SR
+    return v * (np.sin(2 * np.pi * np.cumsum(90 * np.exp(-t / 0.06) + 45) / SR) * env(n, 0.09) + np.convolve(rng.standard_normal(n), np.ones(40) / 40, 'same') * env(n, 0.03) * 4)
+bt = cs(v_.L_HOOK, 3)
+add(fx, bt + 0.15, whoosh(1.1, 0.35)); add(fx, bt + 1.35, thud(0.9)); add(fx, bt + 1.55, thud(0.8))
 for i_ in range(2, 16): add(fx, SEG[i_][0], whoosh(0.3, 0.22))
 for k in range(10): add(fx, cs(v_.L_HOMES, 1) + k * 0.22, glock(84 + (k % 5) * 2, 0.12, 0.6))
 for k in range(12): add(fx, SEG[v_.L_HOURS][0] + k * 0.25, click(0.5))

@@ -59,9 +59,28 @@ def deer(**kw):
     key = tuple(sorted((k, round(v, 2) if isinstance(v, float) else v) for k, v in kw.items()))
     if key not in _dc: _dc[key] = ch.reindeer(**kw)
     return _dc[key]
-def draw_deer(F, cx, feet=GROUND + 1, **kw):
+def draw_deer(F, cx, feet=GROUND + 1, soot=0.0, **kw):
     col, M, (nx, ny), (ex, ey) = deer(**kw); x0, y0 = cx - 33, feet - 56
-    pv.blit_hr(F, col, M, x0, y0, 1); return (x0 + nx, y0 + ny), (x0 + ex, y0 + ey)
+    if soot > 0: col = col * (1 - 0.55 * soot) + hexc('#2a2430') * 0.25 * soot
+    pv.blit_hr(F, col, M, x0, y0, 1)
+    if soot > 0: put(F, x0 + ex - 1, y0 + ey - 1, hexc('#ffffff'))
+    return (x0 + nx, y0 + ny), (x0 + ex, y0 + ey)
+SANTA_LAND, DEER_LAND = 58, 132                       # where they crash-land after the explosion
+def blasted(F, t, boom_t):
+    """Santa and Rudolph thrown out of the fireball, arcing down onto the island (sooty)"""
+    k = t - boom_t
+    for who, x0_, x_end, delay, dur, hgt in (('santa', 46, SANTA_LAND, 0.15, 1.2, 46), ('deer', 116, DEER_LAND, 0.25, 1.3, 38)):
+        if k < delay: continue
+        f = min(1.0, (k - delay) / dur)
+        x = lerp(x0_, x_end, f); feet = lerp(112, GROUND + 1, f) - hgt * math.sin(math.pi * f)
+        land = k - delay - dur
+        sq = 1.0 if land < 0 else 1 - 0.25 * math.exp(-land * 7) * abs(math.cos(land * 18))
+        if who == 'santa': draw_santa(F, x, feet, soot=1.0, squash=sq)
+        else: draw_deer(F, x, feet, soot=1.0, nose='red', step=0.25 if f < 1 else 0.0)
+        if f < 1:
+            for j in range(4): put(F, x - (x_end - 80) * 0.04 * j, feet - 20 + j * 3 * (1 if x_end < 80 else -1) * 0, hexc('#8a90a0'), 0.6 - j * 0.12)
+        if 0 <= land < 0.4:
+            for j in range(6): put(F, x - 12 + j * 5, GROUND - 2 - land * 20 * (j % 2 + 1), hexc('#f4f8ff'), 1 - land / 0.4)
 def draw_team(F, x, y, t, soot=0.0, deer_soot=0.0, show_deer=True):
     """Rudolph pulling the sleigh with Santa inside; (x, y) = sleigh top-left. Returns Rudolph's nose."""
     sc, sm = SANTA; crop_c, crop_m = sc[0:30, 9:37], sm[0:30, 9:37]
@@ -194,14 +213,16 @@ def scene(F, t):
             heat = ramp(t, cs(L_HOOK, 2), max(0.3, boom_t - cs(L_HOOK, 2)))
             if heat > 0: flames(F, x + 4, x + 120, 106, t, hmax=8, a=heat)
         else:
-            k = ramp(t, boom_t, 0.9); explosion(F, 80, 88, k)
-            if k > 0.25:
-                c, M = SANTA; hat_c, hat_m = c[0:13, 12:36], M[0:13, 12:36]
-                hy = 88 - 80 * math.sin(math.pi * min(1, (t - boom_t) / 1.6)) ; pv.blit_hr(F, hat_c, hat_m, 70 + (t - boom_t) * 14, hy, 1)
-                smoke(F, 80, 100, t, a=1 - k * 0.5)
+            k = ramp(t, boom_t, 0.9); smoke(F, 80, 96, t, a=1 - k * 0.4)
+            blasted(F, t, boom_t); explosion(F, 80, 88, k)
+            for j in range(10):                                   # sleigh debris falling
+                dt_ = t - boom_t; ang = TAU * j / 10 + 0.4
+                dx_, dy_ = 50 * dt_ * math.cos(ang), -40 * dt_ * math.sin(ang) + 60 * dt_ * dt_
+                if 88 + dy_ < GROUND - 2: put(F, 80 + dx_, 88 + dy_, FLAME[3] if j % 2 else hexc('#ffcc4a'))
     elif i == L_WHAT:                                            # sooty Santa: WHAAAAT?!
         rv.island(F); jump = 8 * abs(math.sin(a * 8)) * math.exp(-a * 1.2)
-        draw_santa(F, 90, GROUND + 1 - jump, soot=1.0); smoke(F, 84, 92, t); smoke(F, 98, 94, t + 0.4)
+        draw_santa(F, SANTA_LAND, GROUND + 1 - jump, soot=1.0); draw_deer(F, DEER_LAND, GROUND + 1 - jump * 0.6, soot=1.0, nose='red')
+        smoke(F, SANTA_LAND - 4, 94, t); smoke(F, SANTA_LAND + 8, 96, t + 0.4); smoke(F, DEER_LAND + 4, 100, t + 0.2)
         ctext(F, '!?', 330, px=14)
     elif i == L_HOMES:                                           # 200 million homes
         globe(F, t, cy=118, homes=ramp(t, cs(L_HOMES, 1), 2.0), night=False)

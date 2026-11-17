@@ -17,7 +17,7 @@ W, H, S, FPS = 180, 320, 6, 60
 WF, HF = W * S, H * S
 TAU = 2 * math.pi
 hexc, put, smooth, lerp, NAVY, BAY = rv.hexc, rv.put, rv.smooth, rv.lerp, rv.NAVY, rv.BAY
-glow, ctag, ctext, big_num, draw_cursor, draw_santa, draw_deer = sv.glow, sv.ctag, sv.ctext, sv.big_num, sv.draw_cursor, sv.draw_santa, sv.draw_deer
+glow, ctag, ctext, big_num, draw_cursor = sv.glow, sv.ctag, sv.ctext, sv.big_num, sv.draw_cursor
 T_ = json.load(open(os.path.join(HERE, 'timing.json'))); SEG, END = T_['lines'], T_['total']
 CAPJ = json.load(open(os.path.join(HERE, 'captions.json')))
 def cs(line, k):
@@ -26,6 +26,25 @@ def cs(line, k):
  L_FRIENDS, L_BOSS, L_BOTH, L_CTA) = range(17)
 GROUND = rv.GROUND
 def ramp(t, t0, d=0.5): return smooth(min(1.0, max(0.0, (t - t0) / d)))
+
+# ---------------- invisible floor: soft pixel shadows instead of a platform ----------------
+def shadow(F, cx, feet, w_, a=0.42):
+    """dithered oval shadow on the invisible floor (grid coords), two soft bands"""
+    rx, ry = w_ * 0.5, max(2.2, w_ * 0.09)
+    x0, x1, y0, y1 = int(cx - rx - 1), int(cx + rx + 2), int(feet - ry - 1), int(feet + ry + 2)
+    yy, xx = np.mgrid[y0:y1, x0:x1]; d = ((xx + 0.5 - cx) / rx) ** 2 + ((yy + 0.5 - feet) / ry) ** 2
+    k = np.where(d <= 0.45, a, np.where(d <= 1.0, a * 0.55, 0.0)) * (BAY[yy % 4, xx % 4] < 0.92)
+    ya, yb, xa, xb = max(0, y0), min(H, y1), max(0, x0), min(W, x1)
+    K = np.repeat(np.repeat(k[ya - y0:yb - y0, xa - x0:xb - x0], S, 0), S, 1)[..., None]
+    F[ya * S:yb * S, xa * S:xb * S] *= (1 - K) + K * np.array([0.35, 0.4, 0.6])
+def floor(F): pass                                           # no platform: characters stand on an invisible floor
+def draw_santa(F, cx, feet=GROUND + 1, **kw):
+    if kw.get('bob', 0) < 30: shadow(F, cx, feet, 40 * max(0.6, 1 - kw.get('bob', 0) / 40))
+    return sv.draw_santa(F, cx, feet, **kw)
+def draw_deer(F, cx, feet=GROUND + 1, **kw):
+    shadow(F, cx, feet, 56); return sv.draw_deer(F, cx, feet, **kw)
+def draw_prof(F, cx, feet=GROUND + 1, bob=0.0):
+    shadow(F, cx, feet, 28); c, M = sv.spr('prof', ch.professor); pv.blit_hr(F, c, M, cx - 17, feet - 54 - bob, 1)
 
 # ---------------- sprites ----------------
 _c = {}
@@ -37,13 +56,13 @@ HOLLY = dict(outfit='#d22a38', outfit_d='#a0182a', hat='#d22a38')
 def draw_elf(F, cx, who, feet=GROUND + 1, bob=0.0, **kw):
     args = dict(TINSEL if who == 'tinsel' else HOLLY); args.update(kw)
     c, M = spr(('elf', who, tuple(sorted(kw.items()))), lambda: ch.elf(**args))
-    pv.blit_hr(F, c, M, cx - 19, feet - 53 - bob, 1); return cx, feet - 53 - bob
+    shadow(F, cx, feet, 30 * max(0.6, 1 - bob / 30)); pv.blit_hr(F, c, M, cx - 19, feet - 53 - bob, 1); return cx, feet - 53 - bob
 def draw_gift(F, cx, kind, feet=GROUND + 1, big=False, bob=0.0, scale_open=0.0):
     if kind == 'neat': c, M = spr(('gn', big), lambda: ch.gift_neat(w=60, h=48) if big else ch.gift_neat())
     else: c, M = spr(('gm', big), lambda: ch.gift_messy(w=64, h=52, seed=4) if big else ch.gift_messy())
-    h_, w_ = M.shape; pv.blit_hr(F, c, M, cx - w_ / 2, feet - h_ - bob, 1); return cx - w_ / 2, feet - h_ - bob, w_, h_
+    h_, w_ = M.shape; shadow(F, cx, feet, w_ * 0.9 * max(0.6, 1 - bob / 30)); pv.blit_hr(F, c, M, cx - w_ / 2, feet - h_ - bob, 1); return cx - w_ / 2, feet - h_ - bob, w_, h_
 def draw_mug(F, cx, bottom):
-    c, M = spr('mug', ch.mug); pv.blit_hr(F, c, M, cx - 11, bottom - 20, 1)
+    c, M = spr('mug', ch.mug); shadow(F, cx - 2, GROUND + 1, 18 * max(0.5, 1 - (GROUND + 1 - bottom) / 30)); pv.blit_hr(F, c, M, cx - 11, bottom - 20, 1)
 HEART = ["0110110", "1111111", "1111111", "0111110", "0011100", "0001000"]
 def heart(F, x, y, a=1.0, colr='#ff4f7a'):
     for r_, row in enumerate(HEART):
@@ -81,15 +100,15 @@ def seg_of(t):
 def scene(F, t):
     i = seg_of(t); a = t - SEG[i][0]
     if i == L_HOOK:                                              # Tinsel and her terrible gift
-        rv.island(F); draw_elf(F, 58, 'tinsel', bob=abs(math.sin(t * 3)))
+        floor(F); draw_elf(F, 58, 'tinsel', bob=abs(math.sin(t * 3)))
         draw_gift(F, 122, 'messy')
         bk.label(F, 'BAD WRAPPING', 560, 470, int(122 * S), int((GROUND - 34) * S), px=6)
     elif i == L_GENIUS:                                          # ...are GENIUSES!
-        rv.island(F); jump = 8 * abs(math.sin(a * 7)) * math.exp(-a * 1.3)
+        floor(F); jump = 8 * abs(math.sin(a * 7)) * math.exp(-a * 1.3)
         draw_elf(F, 58, 'tinsel', bob=jump, cap=True, mood='proud', arms='up'); draw_gift(F, 122, 'messy')
         sparkles(F, 58, 100, 30, 12, t); ctag(F, 'GENIUS', 300, px=12)
     elif i == L_TINSEL:                                          # wraps like a raccoon in a hurry
-        rv.island(F); draw_elf(F, 50, 'tinsel', mood='shock' if (t * 4) % 2 < 1 else 'happy', arms='up' if (t * 6) % 2 < 1 else 'hold')
+        floor(F); draw_elf(F, 50, 'tinsel', mood='shock' if (t * 4) % 2 < 1 else 'happy', arms='up' if (t * 6) % 2 < 1 else 'hold')
         bx = draw_gift(F, 124, 'messy', bob=abs(math.sin(t * 14)) * 2)
         paper_bits(F, 124, 116, t, n=18)
         bk.label(F, 'TINSEL', 60, 440, int(50 * S), int((GROUND - 56) * S), px=6)
@@ -102,16 +121,16 @@ def scene(F, t):
             if t >= ts - 0.05: bk.label(F, txt, lx, ly, int(ax * S), int(ay * S), px=7)
         if t >= cs(L_MESS, 3) - 0.05: bk.pixel_text(F, '?', 900, 700, px=12, colr=(255, 200, 58))
     elif i == L_HOLLY:                                           # Holly: fancy-store gifts
-        rv.island(F); draw_elf(F, 58, 'holly', mood='proud', arms='hold'); draw_gift(F, 122, 'neat')
+        floor(F); draw_elf(F, 58, 'holly', mood='proud', arms='hold'); draw_gift(F, 122, 'neat')
         if t >= cs(L_HOLLY, 1) - 0.05: bk.label(F, 'HOLLY', 60, 440, int(58 * S), int((GROUND - 56) * S), px=6)
         if t >= cs(L_HOLLY, 4) - 0.05: sparkles(F, 122, 128, 22, 10, t, n=8); ctag(F, 'FANCY', 280, px=8)
     elif i == L_WINS:                                            # everyone thinks Holly wins
-        rv.island(F); draw_elf(F, 40, 'tinsel', mood='sad'); draw_elf(F, 140, 'holly', mood='proud', arms='up', bob=abs(math.sin(t * 4)) * 2)
+        floor(F); draw_elf(F, 40, 'tinsel', mood='sad'); draw_elf(F, 140, 'holly', mood='proud', arms='up', bob=abs(math.sin(t * 4)) * 2)
         for k in range(5):
             ph = (t * 0.8 + k / 5) % 1; heart(F, 128 + k * 6, 92 - ph * 30, 1 - ph)
         ctag(F, 'WINNER?', 300, px=8)
     elif i in (L_TEST, L_MORE):                                  # scientists tested it: same gift, neat vs sloppy
-        rv.island(F); c, M = sv.spr('prof', ch.professor); pv.blit_hr(F, c, M, 30 - 17, GROUND + 1 - 54, 1)
+        floor(F); draw_prof(F, 30)
         draw_gift(F, 92, 'neat'); draw_gift(F, 144, 'messy')
         if t >= cs(L_TEST, 2) - 0.05 or i == L_MORE: ctag(F, 'SAME GIFT', 260, px=7)
         if t >= cs(L_TEST, 3) - 0.05 or i == L_MORE: bk.pixel_text(F, 'NEAT', int(80 * S), int((GROUND + 6) * S) - 230, px=5)
@@ -122,7 +141,7 @@ def scene(F, t):
             for k in range(n_h): heart(F, 144 - 18 + k * 9, 92 - (k % 2) * 4)
             if t >= cs(L_MORE, 1) - 0.05: ctag(F, 'LIKED MORE', 380, px=7)
     elif i in (L_WHY, L_MUG):                                    # perfect wrap -> sky-high expectations -> just a mug
-        rv.island(F)
+        floor(F)
         opened = i == L_MUG and t >= cs(L_MUG, 1) - 0.1
         if not opened: draw_gift(F, 60, 'neat', bob=abs(math.sin(t * 3)))
         else:
@@ -138,7 +157,7 @@ def scene(F, t):
             if t >= cs(L_MUG, 2) - 0.05: ctag(F, 'DISAPPOINTED', 200, px=7)
         else: meter(F, 158, 'GOT', 0, '#e8303a')
     elif i == L_MESSY:                                           # messy wrap -> low expectations -> better!
-        rv.island(F)
+        floor(F)
         opened = t >= cs(L_MESSY, 2) - 0.1
         if not opened: draw_gift(F, 60, 'messy')
         else:
@@ -148,7 +167,7 @@ def scene(F, t):
         meter(F, 158, 'GOT', 0.3 * ramp(t, cs(L_MESSY, 3), 0.5), '#5ae07a')
         if t >= cs(L_MESSY, 3) - 0.05: ctag(F, 'BETTER!', 200, px=9)
     elif i == L_SANTA:                                           # what if Santa found out?
-        rv.island(F); draw_santa(F, 46, bob=abs(math.sin(t * 3)) * 1.2)
+        floor(F); draw_santa(F, 46, bob=abs(math.sin(t * 3)) * 1.2)
         c, M = spr('scrl', ch.scroll); pv.blit_hr(F, c, M, 70, GROUND - 46, 1)
         bk.pixel_text(F, 'STUDY', int(72.5 * S), int((GROUND - 38) * S), px=3, colr=(30, 36, 60))
         promo = t >= cs(L_SANTA, 2) - 0.05
@@ -156,18 +175,18 @@ def scene(F, t):
         if not promo: ctag(F, 'WHAT IF', 300, px=8)
         else: ctag(F, 'HEAD WRAPPER', 300, px=7); sparkles(F, 140, 104, 24, 10, t, n=8)
     elif i == L_NOBODY:                                          # re-hook
-        rv.island(F); draw_elf(F, 90, 'tinsel', cap=True, mood='shock')
+        floor(F); draw_elf(F, 90, 'tinsel', cap=True, mood='shock')
         k = ramp(t, SEG[L_NOBODY][0], 0.4); F *= 1 - 0.55 * k
         glow(F, 90, 110, 40, '#ffcc4a', 0.25 * k)
         ctag(F, 'NOBODY TELLS YOU', 300, px=7); bk.pixel_text(F, '!', 680, 520, px=12, colr=(255, 200, 58))
     elif i == L_FRIENDS:                                         # only with friends and family
-        rv.island(F); draw_elf(F, 38, 'tinsel', mood='happy', arms='hold'); draw_gift(F, 82, 'messy')
+        floor(F); draw_elf(F, 38, 'tinsel', mood='happy', arms='hold'); draw_gift(F, 82, 'messy')
         draw_deer(F, 142, nose='red', flip=True)
         for k in range(4):
             ph = (t * 0.8 + k / 4) % 1; heart(F, 132 + k * 6, 86 - ph * 26, 1 - ph)
         if t >= cs(L_FRIENDS, 1) - 0.05: ctag(F, 'FRIENDS + FAMILY', 300, px=7)
     elif i == L_BOSS:                                            # boss: wrap it perfect
-        rv.island(F); draw_santa(F, 142); bk.label(F, 'BOSS', 900, 520, int(142 * S), int((GROUND - 54) * S), px=6)
+        floor(F); draw_santa(F, 142); bk.label(F, 'BOSS', 900, 520, int(142 * S), int((GROUND - 54) * S), px=6)
         neat = t >= cs(L_BOSS, 2) - 0.05
         if not neat:
             draw_elf(F, 38, 'tinsel', mood='shock'); draw_gift(F, 88, 'messy')
@@ -179,14 +198,14 @@ def scene(F, t):
                 ph = (t * 0.8 + k / 3) % 1; heart(F, 136 + k * 7, 92 - ph * 24, 1 - ph)
             if t >= cs(L_BOSS, 4) - 0.05: ctag(F, 'NEAT = YOU CARE', 300, px=7)
     elif i == L_BOTH:                                            # everybody wins
-        rv.island(F); fam = t >= cs(L_BOTH, 1) - 0.05; boss = t >= cs(L_BOTH, 3) - 0.05; win = t >= cs(L_BOTH, 4) - 0.05
+        floor(F); fam = t >= cs(L_BOTH, 1) - 0.05; boss = t >= cs(L_BOTH, 3) - 0.05; win = t >= cs(L_BOTH, 4) - 0.05
         draw_elf(F, 50, 'tinsel', cap=True, mood='proud', arms='up' if win else 'down', bob=abs(math.sin(t * 5)) * 3 if win else 0)
         draw_elf(F, 130, 'holly', mood='proud', arms='up' if win else 'down', bob=abs(math.sin(t * 5 + 1)) * 3 if win else 0)
         if fam: bk.pixel_text(F, 'FAMILY', int(50 * S) - 105, int((GROUND - 64) * S), px=6, colr=(90, 224, 122))
         if boss: bk.pixel_text(F, 'BOSS', int(130 * S) - 70, int((GROUND - 64) * S), px=6, colr=(255, 200, 58))
         if win: ctag(F, 'EVERYBODY WINS', 280, px=7); sparkles(F, 90, 96, 70, 14, t, n=14)
     else:                                                        # CTA: tag the worst wrapper + subscribe or naughty list
-        rv.island(F)
+        floor(F)
         sl = ramp(t, SEG[L_CTA][0], 0.6)
         draw_santa(F, lerp(-30, 44, sl), bob=abs(math.sin(t * 3)) * 1.2)
         draw_elf(F, 146, 'tinsel', mood='happy'); draw_gift(F, 112, 'messy')

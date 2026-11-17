@@ -46,6 +46,8 @@
   not single dots. Check every character up close at full size before rendering.
 
 ## Layout
+- No platform/island by default: characters and objects stand on an invisible floor with a soft pixel shadow under
+  each one (like other pixel-art YouTubers). Use a platform only when the scene needs one. Use the whole width for movement.
 - The visual sits in the middle of the screen or a bit higher.
 - The caption sits right below the visual (see style_study/layout_reference.png).
 - Captions: one line, bold, no box, yellow key word.

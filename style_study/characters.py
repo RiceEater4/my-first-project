@@ -190,3 +190,102 @@ def scroll():
           c.__setitem__(m & (yy >= 10) & ((yy.astype(int) - 10) % 4 == 0) & (xx >= 6) & (xx < 20), hexc('#c8a878'))))
     for ry in (3, 34): L.add((xx >= 1) & (xx < 25) & (np.abs(yy - ry) <= 1.6), lambda c, m: (c.__setitem__(m, hexc('#d8c098')), c.__setitem__(m & (yy > ry), hexc('#b89a6a'))))
     return L.out()
+
+def elf(outfit='#2f9a52', outfit_d='#1f7a3e', hat='#2f9a52', messy=False, mood='happy', arms='down', cap=False):
+    """front view ~36x50. messy: hair tufts + tape on the hat. mood: happy / sad / shock / proud"""
+    W_, H_ = 38, 54; yy, xx = np.mgrid[0:H_, 0:W_].astype(np.float32); cx = 19; L = Layers(W_, H_)
+    SKIN, SKIN_D = hexc('#f6c9a8'), hexc('#e8b090')
+    shoes = (((xx - 13) / 4.2) ** 2 + ((yy - 50) / 2) ** 2 <= 1) | (((xx - 25) / 4.2) ** 2 + ((yy - 50) / 2) ** 2 <= 1)
+    legs = (yy >= 42) & (yy < 50) & ((np.abs(xx - 15) <= 1.8) | (np.abs(xx - 23) <= 1.8))
+    L.add(legs | shoes, lambda c, m: (c.__setitem__(m, hexc('#c81e2e')), c.__setitem__(m & ((((xx - 13) / 4.2) ** 2 + ((yy - 50) / 2) ** 2 <= 1) | (((xx - 25) / 4.2) ** 2 + ((yy - 50) / 2) ** 2 <= 1)), hexc('#6a4226'))))
+    body = (yy >= 27) & (yy < 44) & (np.abs(xx - cx) <= 6 + (yy - 27) * 0.28)
+    def bf(c, m):
+        c[m] = hexc(outfit); c[m & (xx > cx + 3)] = hexc(outfit_d)
+        c[m & (np.abs(yy - 37) < 1.2)] = hexc('#1b1418'); c[m & (np.abs(yy - 37) < 1.2) & (np.abs(xx - cx) < 1.6)] = hexc('#ffcc4a')
+        zig = (yy < 30 + (np.abs(((xx - cx) % 4) - 2))) & m; c[zig] = hexc('#ffffff')
+    L.add(body, bf)
+    for side in (-1, 1):
+        sx = cx + side * 8
+        if arms == 'up':
+            arm = seg(xx, yy, sx, 29, sx + side * 5, 20) <= 1.9; hx_, hy_ = sx + side * 5.5, 18.5
+        elif arms == 'hold':
+            arm = seg(xx, yy, sx, 29, cx + side * 4, 36) <= 1.9; hx_, hy_ = cx + side * 3.5, 37
+        else:
+            arm = seg(xx, yy, sx, 29, sx + side * 2, 38) <= 1.9; hx_, hy_ = sx + side * 2.2, 39.5
+        L.add(arm, hexc(outfit_d if side > 0 else outfit))
+        L.add(((xx - hx_) / 2.2) ** 2 + ((yy - hy_) / 2.2) ** 2 <= 1, SKIN)
+    head = ((xx - cx) / 7) ** 2 + ((yy - 20) / 6.8) ** 2 <= 1
+    ears = ((yy >= 15) & (yy < 22) & (xx < cx - 5) & (xx > cx - 12) & (np.abs(yy - 19 + (cx - 5 - xx) * 0.5) < 2.2 - (cx - 5 - xx) * 0.25)) | \
+           ((yy >= 15) & (yy < 22) & (xx > cx + 5) & (xx < cx + 12) & (np.abs(yy - 19 + (xx - cx - 5) * 0.5) < 2.2 - (xx - cx - 5) * 0.25))
+    L.add(ears, SKIN)
+    def hf(c, m):
+        c[m] = SKIN; c[m & (xx > cx + 4)] = SKIN_D
+        for ex in (cx - 3, cx + 3):
+            if mood == 'proud':
+                c[(np.abs(xx - ex) <= 1.5) & (np.abs(yy - 20 + 0.6 * (1 - ((xx - ex) / 1.5) ** 2)) < 0.6)] = hexc('#1b1428')
+            else:
+                hgt = 4 if mood == 'shock' else 3
+                c[(xx >= ex - 1) & (xx < ex + 1) & (yy >= 18) & (yy < 18 + hgt)] = hexc('#1b1428')
+                c[(xx >= ex - 1) & (xx < ex) & (yy >= 18) & (yy < 19)] = hexc('#ffffff')
+        for ck in (cx - 5, cx + 5): c[((xx - ck) / 1.2) ** 2 + ((yy - 23) / 0.9) ** 2 <= 1] = hexc('#f2a0a0')
+        if mood in ('happy', 'proud'):
+            c[(yy >= 24.5) & (yy < 25.5) & (np.abs(xx - cx) < 2)] = hexc('#8a3a3a'); c[(yy >= 23.5) & (yy < 24.5) & (np.abs(np.abs(xx - cx) - 2.5) < 0.6)] = hexc('#8a3a3a')
+        elif mood == 'sad':
+            c[(yy >= 24.5) & (yy < 25.5) & (np.abs(xx - cx) < 2)] = hexc('#8a3a3a'); c[(yy >= 25.5) & (yy < 26.5) & (np.abs(np.abs(xx - cx) - 2.5) < 0.6)] = hexc('#8a3a3a')
+        else:
+            c[((xx - cx) / 1.5) ** 2 + ((yy - 25) / 1.5) ** 2 <= 1] = hexc('#5a1a2a')
+    L.add(head, hf)
+    if cap:
+        capm = ((yy >= 9) & (yy < 12) & (np.abs(xx - cx) <= 9)) | ((yy >= 12) & (yy < 15) & (np.abs(xx - cx) <= 5))
+        L.add(capm, hexc('#1b1428'))
+        L.add(seg(xx, yy, cx + 8, 10, cx + 9, 17) <= 0.7, hexc('#ffcc4a'), outline=False)
+    else:
+        hatm = (yy >= 2) & (yy < 15) & (np.abs(xx - cx - (15 - yy) * 0.55) <= 1 + (yy - 2) * 0.55)
+        L.add(hatm, lambda c, m: (c.__setitem__(m, hexc(hat)), c.__setitem__(m & (xx > cx + 5), hexc(outfit_d))))
+        L.add((yy >= 13) & (yy < 16) & (np.abs(xx - cx) <= 7.5), hexc('#ffffff'))
+        L.add(((xx - (cx + 9)) / 2) ** 2 + ((yy - 2.5) / 2) ** 2 <= 1, hexc('#ffcc4a'))
+        if messy:
+            L.add((np.abs((xx - cx + 2) - (yy - 6) * 0.9) < 1.3) & (yy >= 4) & (yy < 9), hexc('#e8eef6'), outline=False)
+    if messy:
+        tufts = ((yy >= 15) & (yy < 18) & ((np.abs(xx - (cx - 7)) < 1) | (np.abs(xx - (cx + 7)) < 1) | (np.abs(xx - (cx - 5)) < 0.6)))
+        L.add(tufts, hexc('#e8a83a'))
+    return L.out()
+
+def gift_neat(paper='#3a8aff', ribbon='#ffcc4a', w=26, h=22):
+    W_, H_ = w + 4, h + 12; yy, xx = np.mgrid[0:H_, 0:W_].astype(np.float32); L = Layers(W_, H_); cx = W_ / 2
+    box = (xx >= 2) & (xx < w + 2) & (yy >= 10) & (yy < h + 10)
+    def bf(c, m):
+        c[m] = hexc(paper); c[m & (xx > w - 3)] = hexc(paper) * 0.8
+        c[m & ((np.abs(xx + 0.5 - cx) < 2) | (np.abs(yy - 10 - h * 0.45) < 1.6))] = hexc(ribbon)
+        c[m & (yy < 13)] = c[m & (yy < 13)] * 1.0
+    L.add(box, bf)
+    bow = (((xx - (cx - 4)) / 4) ** 2 + ((yy - 7) / 2.8) ** 2 <= 1) | (((xx - (cx + 4)) / 4) ** 2 + ((yy - 7) / 2.8) ** 2 <= 1)
+    L.add(bow, hexc(ribbon)); L.add(((xx - cx) / 1.8) ** 2 + ((yy - 8) / 1.8) ** 2 <= 1, hexc(ribbon) * 0.85)
+    return L.out()
+
+def gift_messy(w=28, h=24, seed=2):
+    """lumpy, torn, over-taped, bow squashed off to one side"""
+    W_, H_ = w + 8, h + 12; yy, xx = np.mgrid[0:H_, 0:W_].astype(np.float32); L = Layers(W_, H_)
+    rng = np.random.default_rng(seed); cx, cy = W_ / 2, 10 + h / 2
+    ang = np.arctan2(yy - cy, xx - cx); rr = 1 + 0.10 * np.sin(ang * 3 + 1) + 0.07 * np.sin(ang * 7 + 2)
+    blob = (np.maximum(np.abs(xx - cx) / (w / 2), np.abs(yy - cy) / (h / 2)) ** 1.0 <= rr * 0.98)
+    def bf(c, m):
+        c[m] = hexc('#e8303a'); c[m & (xx + yy * 0.6 > cx + cy * 0.6 + 4)] = hexc('#ff5a64')
+        c[m & (np.abs(xx - cx - 3 + (yy - cy) * 0.4) < 0.8)] = hexc('#a0182a')
+        torn = m & (((xx - (cx + w * 0.28)) / 5) ** 2 + ((yy - (cy + h * 0.22)) / 4) ** 2 <= 1)
+        c[torn] = hexc('#b8835a'); c[torn & (xx < cx + w * 0.28 - 3)] = hexc('#ffffff')
+        for k in range(6):
+            tx, ty, ta = rng.uniform(4, W_ - 4), rng.uniform(12, H_ - 4), rng.uniform(-1, 1)
+            tape = m & (np.abs((yy - ty) - ta * (xx - tx)) < 1.6) & (np.abs(xx - tx) < 6)
+            c[tape] = c[tape] * 0.45 + hexc('#f4f8ff') * 0.55
+    L.add(blob, bf)
+    bow = (((xx - (W_ - 6)) / 3.5) ** 2 + ((yy - 10) / 2) ** 2 <= 1) | (((xx - (W_ - 3)) / 2.2) ** 2 + ((yy - 13) / 3) ** 2 <= 1)
+    L.add(bow, hexc('#ffcc4a'))
+    return L.out()
+
+def mug():
+    W_, H_ = 22, 20; yy, xx = np.mgrid[0:H_, 0:W_].astype(np.float32); L = Layers(W_, H_)
+    L.add(~((((xx - 16) / 4) ** 2 + ((yy - 9) / 4) ** 2) <= 0.35) & ((((xx - 16) / 4) ** 2 + ((yy - 9) / 4) ** 2) <= 1) & (xx > 14), hexc('#f4f6fb'))
+    L.add((xx >= 2) & (xx < 15) & (yy >= 3) & (yy < 18), lambda c, m: (c.__setitem__(m, hexc('#f4f6fb')), c.__setitem__(m & (xx > 11), hexc('#d8dee8')),
+                                                                     c.__setitem__(m & (np.abs(yy - 10) < 1.5) & (xx < 12), hexc('#e8303a'))))
+    return L.out()

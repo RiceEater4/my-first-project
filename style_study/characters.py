@@ -219,16 +219,30 @@ def elf(outfit='#2f9a52', outfit_d='#1f7a3e', hat='#2f9a52', messy=False, mood='
            ((yy >= 15) & (yy < 22) & (xx > cx + 5) & (xx < cx + 12) & (np.abs(yy - 19 + (xx - cx - 5) * 0.5) < 2.2 - (xx - cx - 5) * 0.25))
     L.add(ears, SKIN)
     def hf(c, m):
-        c[m] = SKIN; c[m & (xx > cx + 4)] = SKIN_D
+        c[m] = SKIN if mood != 'angry' else hexc('#f08a7a'); c[m & (xx > cx + 4)] = SKIN_D if mood != 'angry' else hexc('#d86a5a')
         for ex in (cx - 3, cx + 3):
-            if mood == 'proud':
+            if mood in ('proud', 'real'):
                 c[(np.abs(xx - ex) <= 1.5) & (np.abs(yy - 20 + 0.6 * (1 - ((xx - ex) / 1.5) ** 2)) < 0.6)] = hexc('#1b1428')
             else:
                 hgt = 4 if mood == 'shock' else 3
                 c[(xx >= ex - 1) & (xx < ex + 1) & (yy >= 18) & (yy < 18 + hgt)] = hexc('#1b1428')
                 c[(xx >= ex - 1) & (xx < ex) & (yy >= 18) & (yy < 19)] = hexc('#ffffff')
         for ck in (cx - 5, cx + 5): c[((xx - ck) / 1.2) ** 2 + ((yy - 23) / 0.9) ** 2 <= 1] = hexc('#f2a0a0')
-        if mood in ('happy', 'proud'):
+        if mood == 'real':                                                  # crow's feet: the eyes crinkle
+            for sd_ in (-1, 1):
+                ex = cx + sd_ * 5.5
+                c[(np.abs(xx - ex) < 0.6) & (yy >= 18) & (yy < 19)] = hexc('#c8806a'); c[(np.abs(xx - ex) < 0.6) & (yy >= 20) & (yy < 21)] = hexc('#c8806a')
+        if mood == 'angry':
+            for sd_ in (-1, 1):
+                c[(np.abs(yy - (16.6 + sd_ * (xx - cx) * 0.35)) < 0.6) & (np.abs(xx - (cx + sd_ * 3)) < 2)] = hexc('#1b1428')
+        if mood in ('fake', 'real'):                                        # big toothy grin
+            c[(yy >= 23.5) & (yy < 26.5) & (np.abs(xx - cx) < 3.5 - (yy - 23.5) * 0.6)] = hexc('#8a3a3a')
+            c[(yy >= 23.5) & (yy < 24.5) & (np.abs(xx - cx) < 3)] = hexc('#ffffff')
+            if mood == 'fake':
+                c[(np.abs(xx - (cx + 6)) < 0.6) & (yy >= 15) & (yy < 18)] = hexc('#9fd8ff'); c[(np.abs(xx - (cx + 6)) < 1.1) & (yy >= 17) & (yy < 18)] = hexc('#9fd8ff')
+        elif mood == 'angry':
+            c[(yy >= 25) & (yy < 26) & (np.abs(xx - cx) < 2)] = hexc('#5a1a2a'); c[(yy >= 26) & (yy < 27) & (np.abs(np.abs(xx - cx) - 2.5) < 0.6)] = hexc('#5a1a2a')
+        elif mood in ('happy', 'proud'):
             c[(yy >= 24.5) & (yy < 25.5) & (np.abs(xx - cx) < 2)] = hexc('#8a3a3a'); c[(yy >= 23.5) & (yy < 24.5) & (np.abs(np.abs(xx - cx) - 2.5) < 0.6)] = hexc('#8a3a3a')
         elif mood == 'sad':
             c[(yy >= 24.5) & (yy < 25.5) & (np.abs(xx - cx) < 2)] = hexc('#8a3a3a'); c[(yy >= 25.5) & (yy < 26.5) & (np.abs(np.abs(xx - cx) - 2.5) < 0.6)] = hexc('#8a3a3a')
@@ -288,4 +302,24 @@ def mug():
     L.add(~((((xx - 16) / 4) ** 2 + ((yy - 9) / 4) ** 2) <= 0.35) & ((((xx - 16) / 4) ** 2 + ((yy - 9) / 4) ** 2) <= 1) & (xx > 14), hexc('#f4f6fb'))
     L.add((xx >= 2) & (xx < 15) & (yy >= 3) & (yy < 18), lambda c, m: (c.__setitem__(m, hexc('#f4f6fb')), c.__setitem__(m & (xx > 11), hexc('#d8dee8')),
                                                                      c.__setitem__(m & (np.abs(yy - 10) < 1.5) & (xx < 12), hexc('#e8303a'))))
+    return L.out()
+
+def cat_candle(lit=True):
+    """an orange candle shaped like a sitting cat, wick + flame on its head"""
+    W_, H_ = 26, 36; yy, xx = np.mgrid[0:H_, 0:W_].astype(np.float32); L = Layers(W_, H_); cx = 13
+    body = ((xx - cx) / 9) ** 2 + ((yy - 27) / 8) ** 2 <= 1
+    head = ((xx - cx) / 7) ** 2 + ((yy - 17) / 6) ** 2 <= 1
+    ears = ((yy >= 9) & (yy < 14) & ((np.abs(xx - (cx - 4.5)) <= (yy - 9) * 0.45) | (np.abs(xx - (cx + 4.5)) <= (yy - 9) * 0.45)))
+    def f(c, m):
+        c[m] = hexc('#ff9a3a'); c[m & (xx > cx + 3)] = hexc('#e8782a')
+        for ex in (cx - 2.5, cx + 2.5): c[(np.abs(xx - ex) < 0.8) & (yy >= 16) & (yy < 18)] = hexc('#1b1428')
+        c[(np.abs(xx - cx) < 0.8) & (yy >= 19) & (yy < 20)] = hexc('#e8607a')
+        for wy in (19.5, 20.5):
+            c[(np.abs(yy - wy) < 0.4) & (np.abs(np.abs(xx - cx) - 6) < 1.2)] = hexc('#ffd8b0')
+        c[m & (np.abs(yy - 29) < 0.7) & (np.abs(xx - cx) < 8)] = hexc('#e8782a')
+    L.add(body | head | ears, f)
+    L.add((np.abs(xx - cx) < 0.6) & (yy >= 7) & (yy < 11), hexc('#3a2a20'), outline=False)
+    if lit:
+        fl = ((xx - cx) / 1.6) ** 2 + ((yy - 4.5) / 3) ** 2 <= 1
+        L.add(fl, lambda c, m: (c.__setitem__(m, hexc('#ffcc4a')), c.__setitem__(m & (yy > 4.5), hexc('#fff6a0'))), outline=False)
     return L.out()

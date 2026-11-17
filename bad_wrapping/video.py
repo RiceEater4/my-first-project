@@ -35,6 +35,7 @@ def shadow(F, cx, feet, w_, a=0.42):
     yy, xx = np.mgrid[y0:y1, x0:x1]; d = ((xx + 0.5 - cx) / rx) ** 2 + ((yy + 0.5 - feet) / ry) ** 2
     k = np.where(d <= 0.45, a, np.where(d <= 1.0, a * 0.55, 0.0)) * (BAY[yy % 4, xx % 4] < 0.92)
     ya, yb, xa, xb = max(0, y0), min(H, y1), max(0, x0), min(W, x1)
+    if yb <= ya or xb <= xa: return
     K = np.repeat(np.repeat(k[ya - y0:yb - y0, xa - x0:xb - x0], S, 0), S, 1)[..., None]
     F[ya * S:yb * S, xa * S:xb * S] *= (1 - K) + K * np.array([0.35, 0.4, 0.6])
 def floor(F): pass                                           # no platform: characters stand on an invisible floor

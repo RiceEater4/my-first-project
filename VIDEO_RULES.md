@@ -19,6 +19,12 @@
 - Length: about 1 minute. Minimum 58 seconds, and it should run over 58 seconds,
   so there is room to explain everything properly.
 
+## Mid-video subscribe (every video)
+- Viewers drop around 40 s, so the subscribe ask goes in the MIDDLE, around 20-25 s, right after the first big payoff.
+- It is SCREAMED like the hook: a short identity line, then [shouting] "SUBSCRIBE!" with the same screen shake,
+  boom and a big SUBSCRIBE button pop + click on screen. e.g. "If you wrap like a raccoon too... [shouting] SUBSCRIBE!"
+- Keep it quick (~2-3 s), then straight back into the explanation.
+
 ## Ending + CTA (every video)
 - Order: story payoff line first, then the CTA as the very last line (~3 s). No "Merry Christmas" sign-off.
 - CTA = a specific comment question about the video's topic + the naughty-list subscribe joke, e.g.

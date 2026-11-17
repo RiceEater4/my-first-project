@@ -8,6 +8,10 @@
 - The first 5-7 seconds are straight and direct: say the thing and show it happening. No setup.
 
 ## Story / script
+- FORMAT (what works): straight-to-camera explainer, not a story. Hook, then talk directly to the viewer ("you")
+  with punchy relatable logic ("you spend 20 minutes on corners... they rip it in 2 seconds"), then the facts/study,
+  then a feel-good reframe ("you're not lazy, you're managing expectations"), a catch, a send-off and the CTA.
+  One character stands in for the viewer and acts out each line. Viral hook words: GENIUS, FURIOUS, etc.
 - Every line has to make sense on its own and follow from the line before. If a fact matters,
   say WHY it matters (e.g. "teenage boys keep their antlers" -> say what that changes).
 - No dangling endings. The last 10 seconds must pay off the hook and land a clear point,

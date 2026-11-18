@@ -24,8 +24,8 @@ T_ = json.load(open(os.path.join(HERE, 'timing.json'))); SEG, END = T_['lines'],
 CAPJ = json.load(open(os.path.join(HERE, 'captions.json')))
 def cs(line, k):
     c_ = [c for c in CAPJ if c['line'] == line]; return c_[min(k, len(c_) - 1)]['t0']
-(L_HOOK, L_DUMB, L_LOOK, L_CHECKED, L_TWO, L_SUB, L_STUDY, L_THEORY, L_SMARTER, L_NOBODY, L_STRICT, L_FOUR,
- L_NICE, L_CTA) = range(14)
+(L_HOOK, L_DUMB, L_CHECKED, L_TWO, L_SUB, L_STUDY, L_THEORY, L_SMARTER, L_NOBODY, L_STRICT, L_FOUR,
+ L_NICE, L_CTA) = range(13)
 GROUND = rv.GROUND
 def ramp(t, t0, d=0.5): return smooth(min(1.0, max(0.0, (t - t0) / d)))
 
@@ -96,21 +96,13 @@ def scene(F, t):
         you(F, 50, mood='angry', bob=jump); top = kid(F, 130, mood='happy', bob=abs(math.sin(t * 4)) * 2)
         for k in range(3): bk.pixel_text(F, '?', int((124 + k * 7) * S), int((top - 14 - (k % 2) * 5) * S), px=7, colr=(255, 255, 255))
         ctag(F, 'DUMB?!', 300, px=12)
-    elif i == L_LOOK:                                            # cereal with a fork; do fish get thirsty?
-        you(F, 40, mood='shock'); top = kid(F, 112, mood='happy', arms='hold')
-        bowl(F, 112, GROUND - 22); fork(F, 120, GROUND - 22, t)
-        if t >= cs(L_LOOK, 2) - 0.05 and t < cs(L_LOOK, 3) - 0.05: bk.label(F, 'A FORK', 760, 520, int(122 * S), int((GROUND - 34) * S), px=6)
-        if t >= cs(L_LOOK, 3) - 0.05:
-            thought(F, 110, 42, 96, 34); fish(F, 76, 59); bk.pixel_text(F, 'THIRSTY?', int(86 * S), int(54 * S), px=6, colr=(30, 90, 200))
-        elif t < cs(L_LOOK, 1) - 0.05: ctag(F, 'LOOK AT THEM', 300, px=7)
     elif i in (L_CHECKED, L_TWO):                                # science checked: about 2 IQ points
-        g = ramp(t, cs(L_CHECKED, 2), 1.0)
+        g = ramp(t, cs(L_CHECKED, 1), 1.0)
         iq_bars(F, 0.10 + 0.72 * g, 0.10 + 0.69 * g, x0=66, x1=126, top=84, h_=62)
         if i == L_CHECKED:
             draw_prof(F, 22)
-            if t < cs(L_CHECKED, 2) - 0.05: ctag(F, 'ACTUALLY DUMBER?', 260, px=7)
-            elif t < cs(L_CHECKED, 3) - 0.05: ctag(F, 'SCIENTISTS TESTED IT', 260, px=6)
-            elif t < cs(L_CHECKED, 4) - 0.05: ctag(F, 'YES...', 260, px=10)
+            if t < cs(L_CHECKED, 2) - 0.05: ctag(F, 'SCIENTISTS TESTED IT', 260, px=6)
+            elif t < cs(L_CHECKED, 3) - 0.05: ctag(F, 'YES...', 260, px=10)
             else: big_num(F, '2 IQ POINTS', 230, px=10, colr=(255, 200, 58))
         else:
             big_num(F, '2', 210, px=22, colr=(255, 200, 58))

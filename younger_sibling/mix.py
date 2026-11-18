@@ -96,10 +96,8 @@ def stamp(v=1.0):
 add(fx, 0.1, glock(84, 0.25))
 D = SEG[v_.L_DUMB][0]; add(fx, D, boom(1.0)); add(fx, D + 0.1, glock(55, 0.35, 1.2))
 for i_ in range(2, len(SEG)): add(fx, SEG[i_][0], whoosh(0.3, 0.2))
-for k in range(5): add(fx, cs(v_.L_LOOK, 1) + k * 0.28, munch(0.5))
-add(fx, cs(v_.L_LOOK, 3), pop(0.4)); add(fx, cs(v_.L_LOOK, 3) + 0.2, bubble(0.3) if 'bubble' in globals() else pop(0.2))
 for k in range(8): add(fx, SEG[v_.L_CHECKED][0] + 0.3 + k * 0.12, glock(72 + k * 2, 0.13, 0.5))
-add(fx, cs(v_.L_CHECKED, 2), bells(0.5)); add(fx, SEG[v_.L_TWO][0], boom(0.5)); add(fx, cs(v_.L_TWO, 2), sad_trombone(0.3))
+add(fx, cs(v_.L_CHECKED, 2), bells(0.5)); add(fx, cs(v_.L_CHECKED, 3), glock(91, 0.3)); add(fx, SEG[v_.L_TWO][0], boom(0.5)); add(fx, cs(v_.L_TWO, 2), sad_trombone(0.3))
 P = cs(v_.L_SUB, 2); add(fx, P, boom(0.9)); add(fx, P, bells(0.8)); add(fx, P + 0.35, click(1.0)); [add(fx, P + 0.38 + k * 0.08, glock(86 + k * 3, 0.25, 1.0)) for k in range(5)]
 for k in range(10): add(fx, cs(v_.L_STUDY, 1) - 0.2 + k * 0.12, click(0.35))
 add(fx, cs(v_.L_STUDY, 2), glock(88, 0.3))

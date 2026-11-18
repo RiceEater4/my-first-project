@@ -41,6 +41,11 @@
   a red pixel SUBSCRIBE button gets pressed (click + sparkle); Santa slides in beside (never overlapping)
   holding a NAUGHTY LIST scroll. Captions as usual, COMMENT and SUBSCRIBE in yellow.
 
+## Script clarity check (before recording)
+- Read every line right after the one before it. Pronouns must point at the right thing: after a joke line about
+  something else (e.g. "asking if fish get thirsty"), name the subject again ("So are younger siblings actually
+  dumber? Scientists tested it...") instead of "they actually are".
+
 ## Narration (ElevenLabs, voice: Jett - Gritty, Spunky Young Hero, 6IwYbsNENZgAB1dtBZDp)
 - Use Jett from now on (was Ethan, uB5dGadiIOtRLnqbQl9M).
 - Use eleven_v4 acting tags: calmer setup lines, then [shouting] / [excited] / [intense] on the hook

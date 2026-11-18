@@ -104,12 +104,13 @@ def scene(F, t):
             thought(F, 110, 42, 96, 34); fish(F, 76, 59); bk.pixel_text(F, 'THIRSTY?', int(86 * S), int(54 * S), px=6, colr=(30, 90, 200))
         elif t < cs(L_LOOK, 1) - 0.05: ctag(F, 'LOOK AT THEM', 300, px=7)
     elif i in (L_CHECKED, L_TWO):                                # science checked: about 2 IQ points
-        g = ramp(t, SEG[L_CHECKED][0] + 0.3, 1.0)
+        g = ramp(t, cs(L_CHECKED, 2), 1.0)
         iq_bars(F, 0.10 + 0.72 * g, 0.10 + 0.69 * g, x0=66, x1=126, top=84, h_=62)
         if i == L_CHECKED:
             draw_prof(F, 22)
-            if t < cs(L_CHECKED, 1) - 0.05: ctag(F, 'SCIENCE CHECKED', 260, px=7)
-            elif t < cs(L_CHECKED, 2) - 0.05: ctag(F, 'THEY ARE...', 260, px=8)
+            if t < cs(L_CHECKED, 2) - 0.05: ctag(F, 'ACTUALLY DUMBER?', 260, px=7)
+            elif t < cs(L_CHECKED, 3) - 0.05: ctag(F, 'SCIENTISTS TESTED IT', 260, px=6)
+            elif t < cs(L_CHECKED, 4) - 0.05: ctag(F, 'YES...', 260, px=10)
             else: big_num(F, '2 IQ POINTS', 230, px=10, colr=(255, 200, 58))
         else:
             big_num(F, '2', 210, px=22, colr=(255, 200, 58))

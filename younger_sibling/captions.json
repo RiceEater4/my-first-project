@@ -1,0 +1,411 @@
+[
+ {
+  "t0": -0.03,
+  "t1": 0.77,
+  "text": "EVER WONDERED WHY",
+  "hl": [],
+  "line": 0
+ },
+ {
+  "t0": 0.77,
+  "t1": 1.65,
+  "text": "YOUR YOUNGER SIBLING",
+  "hl": [
+   "SIBLING",
+   "YOUNGER"
+  ],
+  "line": 0
+ },
+ {
+  "t0": 1.65,
+  "t1": 2.39,
+  "text": "IS SO...",
+  "hl": [],
+  "line": 0
+ },
+ {
+  "t0": 2.39,
+  "t1": 3.45,
+  "text": "DUMB?!",
+  "hl": [
+   "DUMB"
+  ],
+  "line": 1
+ },
+ {
+  "t0": 3.45,
+  "t1": 4.73,
+  "text": "LOOK AT THEM.",
+  "hl": [],
+  "line": 2
+ },
+ {
+  "t0": 4.73,
+  "t1": 5.55,
+  "text": "EATING CEREAL",
+  "hl": [],
+  "line": 2
+ },
+ {
+  "t0": 5.55,
+  "t1": 7.31,
+  "text": "WITH A FORK.",
+  "hl": [
+   "FORK"
+  ],
+  "line": 2
+ },
+ {
+  "t0": 7.31,
+  "t1": 9.11,
+  "text": "ASKING IF FISH",
+  "hl": [
+   "FISH"
+  ],
+  "line": 2
+ },
+ {
+  "t0": 9.11,
+  "t1": 10.51,
+  "text": "GET THIRSTY.",
+  "hl": [],
+  "line": 2
+ },
+ {
+  "t0": 10.51,
+  "t1": 12.21,
+  "text": "WELL, SCIENCE CHECKED.",
+  "hl": [
+   "SCIENCE"
+  ],
+  "line": 3
+ },
+ {
+  "t0": 12.21,
+  "t1": 13.41,
+  "text": "AND THEY ACTUALLY ARE...",
+  "hl": [],
+  "line": 3
+ },
+ {
+  "t0": 13.41,
+  "t1": 15.91,
+  "text": "BY ABOUT 2 IQ POINTS.",
+  "hl": [
+   "2"
+  ],
+  "line": 3
+ },
+ {
+  "t0": 15.91,
+  "t1": 16.57,
+  "text": "2.",
+  "hl": [
+   "2"
+  ],
+  "line": 4
+ },
+ {
+  "t0": 16.57,
+  "t1": 17.76,
+  "text": "THAT'S IT.",
+  "hl": [],
+  "line": 4
+ },
+ {
+  "t0": 17.83,
+  "t1": 19.41,
+  "text": "BARELY ANYTHING.",
+  "hl": [
+   "BARELY"
+  ],
+  "line": 4
+ },
+ {
+  "t0": 19.41,
+  "t1": 19.67,
+  "text": "IF YOU'RE",
+  "hl": [],
+  "line": 5
+ },
+ {
+  "t0": 19.67,
+  "t1": 20.59,
+  "text": "THE SMART ONE...",
+  "hl": [],
+  "line": 5
+ },
+ {
+  "t0": 20.59,
+  "t1": 21.62,
+  "text": "SUBSCRIBE!",
+  "hl": [
+   "SUBSCRIBE"
+  ],
+  "line": 5
+ },
+ {
+  "t0": 21.87,
+  "t1": 22.71,
+  "text": "A STUDY OF OVER",
+  "hl": [],
+  "line": 6
+ },
+ {
+  "t0": 22.71,
+  "t1": 24.73,
+  "text": "240,000 BROTHERS",
+  "hl": [],
+  "line": 6
+ },
+ {
+  "t0": 24.73,
+  "t1": 25.77,
+  "text": "FOUND THE OLDEST",
+  "hl": [
+   "OLDEST"
+  ],
+  "line": 6
+ },
+ {
+  "t0": 25.77,
+  "t1": 26.55,
+  "text": "SCORED JUST",
+  "hl": [],
+  "line": 6
+ },
+ {
+  "t0": 26.55,
+  "t1": 27.75,
+  "text": "A LITTLE HIGHER.",
+  "hl": [],
+  "line": 6
+ },
+ {
+  "t0": 27.75,
+  "t1": 28.79,
+  "text": "AND ONE THEORY?",
+  "hl": [],
+  "line": 7
+ },
+ {
+  "t0": 28.79,
+  "t1": 29.81,
+  "text": "YOU SPENT YEARS",
+  "hl": [],
+  "line": 7
+ },
+ {
+  "t0": 29.81,
+  "t1": 31.05,
+  "text": "EXPLAINING EVERYTHING",
+  "hl": [
+   "EXPLAINING"
+  ],
+  "line": 7
+ },
+ {
+  "t0": 31.05,
+  "t1": 31.73,
+  "text": "TO THEM...",
+  "hl": [],
+  "line": 7
+ },
+ {
+  "t0": 31.73,
+  "t1": 32.67,
+  "text": "AND TEACHING MAKES",
+  "hl": [
+   "TEACHING"
+  ],
+  "line": 7
+ },
+ {
+  "t0": 32.67,
+  "t1": 34.37,
+  "text": "YOUR OWN BRAIN STRONGER.",
+  "hl": [
+   "STRONGER"
+  ],
+  "line": 7
+ },
+ {
+  "t0": 34.37,
+  "t1": 34.87,
+  "text": "SO THEY DIDN'T",
+  "hl": [],
+  "line": 8
+ },
+ {
+  "t0": 34.87,
+  "t1": 35.91,
+  "text": "MAKE YOU DUMB.",
+  "hl": [],
+  "line": 8
+ },
+ {
+  "t0": 35.91,
+  "t1": 37.51,
+  "text": "THEY MADE YOU SMARTER.",
+  "hl": [
+   "SMARTER"
+  ],
+  "line": 8
+ },
+ {
+  "t0": 37.51,
+  "t1": 38.35,
+  "text": "BUT HERE'S THE PART",
+  "hl": [],
+  "line": 9
+ },
+ {
+  "t0": 38.35,
+  "t1": 39.87,
+  "text": "NOBODY TELLS YOU...",
+  "hl": [
+   "NOBODY"
+  ],
+  "line": 9
+ },
+ {
+  "t0": 39.87,
+  "t1": 41.49,
+  "text": "PARENTS GET WAY LESS STRICT",
+  "hl": [
+   "STRICT"
+  ],
+  "line": 10
+ },
+ {
+  "t0": 41.49,
+  "t1": 42.81,
+  "text": "WITH EACH KID.",
+  "hl": [],
+  "line": 10
+ },
+ {
+  "t0": 42.81,
+  "t1": 43.47,
+  "text": "YOU GOT GROUNDED",
+  "hl": [
+   "GROUNDED"
+  ],
+  "line": 10
+ },
+ {
+  "t0": 43.47,
+  "t1": 44.8,
+  "text": "FOR A B.",
+  "hl": [],
+  "line": 10
+ },
+ {
+  "t0": 45.13,
+  "t1": 45.89,
+  "text": "THEY GET A COOKIE",
+  "hl": [
+   "COOKIE"
+  ],
+  "line": 10
+ },
+ {
+  "t0": 45.89,
+  "t1": 47.05,
+  "text": "FOR A C.",
+  "hl": [],
+  "line": 10
+ },
+ {
+  "t0": 47.05,
+  "t1": 47.49,
+  "text": "AND IN ABOUT",
+  "hl": [],
+  "line": 11
+ },
+ {
+  "t0": 47.49,
+  "t1": 49.29,
+  "text": "4 OUT OF 10 FAMILIES,",
+  "hl": [
+   "10",
+   "4"
+  ],
+  "line": 11
+ },
+ {
+  "t0": 49.29,
+  "t1": 50.09,
+  "text": "THE YOUNGER ONE",
+  "hl": [],
+  "line": 11
+ },
+ {
+  "t0": 50.09,
+  "t1": 51.91,
+  "text": "IS ACTUALLY SMARTER.",
+  "hl": [
+   "SMARTER"
+  ],
+  "line": 11
+ },
+ {
+  "t0": 51.91,
+  "t1": 53.15,
+  "text": "SO BE NICE.",
+  "hl": [
+   "NICE"
+  ],
+  "line": 12
+ },
+ {
+  "t0": 53.15,
+  "t1": 53.63,
+  "text": "ONE DAY,",
+  "hl": [],
+  "line": 12
+ },
+ {
+  "t0": 53.63,
+  "t1": 55.01,
+  "text": "THEY MIGHT BE THE GENIUS.",
+  "hl": [
+   "GENIUS"
+  ],
+  "line": 12
+ },
+ {
+  "t0": 55.01,
+  "t1": 56.21,
+  "text": "SEND THIS TO",
+  "hl": [
+   "SEND"
+  ],
+  "line": 13
+ },
+ {
+  "t0": 56.21,
+  "t1": 57.49,
+  "text": "YOUR YOUNGER SIBLING...",
+  "hl": [
+   "SIBLING"
+  ],
+  "line": 13
+ },
+ {
+  "t0": 57.49,
+  "t1": 58.83,
+  "text": "OR SANTA'S PUTTING YOU",
+  "hl": [],
+  "line": 13
+ },
+ {
+  "t0": 58.83,
+  "t1": 60.5,
+  "text": "ON THE NAUGHTY LIST.",
+  "hl": [
+   "NAUGHTY"
+  ],
+  "line": 13
+ }
+]

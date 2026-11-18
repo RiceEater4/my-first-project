@@ -93,19 +93,20 @@ def shiver_snd(dur, v=1.0):
     return v * np.sin(2 * np.pi * 120 * t) * (0.5 + 0.5 * np.sign(np.sin(2 * np.pi * 14 * t))) * 0.3 * np.clip((n - np.arange(n)) / (0.1 * SR), 0, 1)
 add(fx, 0.1, wind(1.5, 0.3) if 'wind' in globals() else hiss(1.5, 0.15)); add(fx, 0.2, shiver_snd(1.2, 0.3))
 G = SEG[v_.L_GENIUS][0]; add(fx, G, boom(0.9)); add(fx, G, bells(0.8)); add(fx, G + 0.05, glock(91, 0.35)); add(fx, G + 0.15, glock(96, 0.35))
-for i_ in range(2, 15): add(fx, SEG[i_][0], whoosh(0.3, 0.2))
-add(fx, cs(v_.L_PICTURE, 1), bells(0.5)); add(fx, cs(v_.L_PICTURE, 5), pop(0.3)); add(fx, cs(v_.L_PICTURE, 6), pop(0.3)); add(fx, cs(v_.L_PICTURE, 7), shiver_snd(0.8, 0.4))
-add(fx, cs(v_.L_SAYS, 2), glock(60, 0.3, 0.8)); add(fx, cs(v_.L_NOT, 1), whoosh(0.3, 0.4)); add(fx, cs(v_.L_NOT, 1), glock(91, 0.3))
-P = cs(v_.L_SUB, 2); add(fx, P, boom(0.9)); add(fx, P, bells(0.8)); add(fx, P + 0.35, click(1.0)); [add(fx, P + 0.38 + k * 0.08, glock(86 + k * 3, 0.25, 1.0)) for k in range(5)]
-add(fx, cs(v_.L_FORMULA, 2), click(0.6)); add(fx, cs(v_.L_FORMULA, 3), pop(0.4)); add(fx, cs(v_.L_FORMULA, 5), glock(79, 0.3))
-add(fx, cs(v_.L_WOMEN, 1), shiver_snd(0.8, 0.35)); add(fx, cs(v_.L_ELSE, 2), sad_trombone(0.35))
+for i_ in range(2, len(SEG)): add(fx, SEG[i_][0], whoosh(0.3, 0.2))
+add(fx, cs(v_.L_ROOM, 1), pop(0.3)); add(fx, cs(v_.L_ROOM, 3), pop(0.3)); add(fx, cs(v_.L_ROOM, 4), pop(0.3)); add(fx, cs(v_.L_ROOM, 5), shiver_snd(0.8, 0.4))
+add(fx, cs(v_.L_DRAMA, 0), glock(60, 0.3, 0.8)); add(fx, cs(v_.L_DRAMA, 2), whoosh(0.3, 0.4)); add(fx, cs(v_.L_DRAMA, 5), boom(0.5))
+P = cs(v_.L_SUB, 1); add(fx, P, boom(0.9)); add(fx, P, bells(0.8)); add(fx, P + 0.35, click(1.0)); [add(fx, P + 0.38 + k * 0.08, glock(86 + k * 3, 0.25, 1.0)) for k in range(5)]
+for k in range(5): add(fx, SEG[v_.L_FORMULA][0] + k * 0.22, step(0.3) if 'step' in globals() else click(0.3))
+add(fx, cs(v_.L_FORMULA, 3), click(0.6)); add(fx, cs(v_.L_FORMULA, 5), pop(0.4)); add(fx, cs(v_.L_FORMULA, 8), boom(0.6))
+add(fx, cs(v_.L_WOMEN, 3), shiver_snd(0.8, 0.35))
 add(fx, SEG[v_.L_NOBODY][0], boom(0.8)); add(fx, SEG[v_.L_NOBODY][0] + 0.1, glock(55, 0.4, 2.0))
-for k in range(8): add(fx, cs(v_.L_STUDY, 3) + k * 0.1, glock(72 + k * 2, 0.15, 0.5))
-add(fx, cs(v_.L_STUDY, 3) + 0.3, bells(0.5))
-for k in range(6): add(fx, cs(v_.L_HEAT, 1) + k * 0.13, click(0.5))
-add(fx, cs(v_.L_HEAT, 4), bells(0.7)); [add(fx, cs(v_.L_HEAT, 4) + k * 0.08, glock(84 + k * 3, 0.2, 1.0)) for k in range(5)]
-add(fx, cs(v_.L_CATCH, 1), pop(0.4)); add(fx, cs(v_.L_CATCH, 2), glock(67, 0.3, 0.8))
-add(fx, cs(v_.L_COZY, 2), bells(0.8)); [add(fx, cs(v_.L_COZY, 3) + k * 0.08, glock(84 + k * 3, 0.22, 1.2)) for k in range(5)]
+for k in range(6): add(fx, SEG[v_.L_STUDY][0] + 0.2 + k * 0.13, click(0.5))
+for k in range(8): add(fx, cs(v_.L_STUDY, 4) + k * 0.1, glock(72 + k * 2, 0.15, 0.5))
+add(fx, cs(v_.L_STUDY, 4) + 0.3, bells(0.5))
+for k in range(5): add(fx, SEG[v_.L_CRANK][0] + k * 0.12, click(0.5))
+add(fx, cs(v_.L_CRANK, 2), glock(84, 0.3)); add(fx, cs(v_.L_CRANK, 4), bells(0.7)); [add(fx, cs(v_.L_CRANK, 4) + k * 0.08, glock(84 + k * 3, 0.2, 1.0)) for k in range(5)]
+add(fx, cs(v_.L_CATCH, 1), pop(0.4)); add(fx, cs(v_.L_CATCH, 3), glock(91, 0.3))
 add(fx, SEG[v_.L_CTA][0] + 0.1, pop(0.4)); add(fx, cs(v_.L_CTA, 2), whoosh(0.4, 0.4)); add(fx, cs(v_.L_CTA, 3), bells(0.7))
 mix = voice * 1.0 + music + fx * 0.30
 mix = mix / (np.max(np.abs(mix)) + 1e-9) * 0.95

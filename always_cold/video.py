@@ -25,8 +25,7 @@ T_ = json.load(open(os.path.join(HERE, 'timing.json'))); SEG, END = T_['lines'],
 CAPJ = json.load(open(os.path.join(HERE, 'captions.json')))
 def cs(line, k):
     c_ = [c for c in CAPJ if c['line'] == line]; return c_[min(k, len(c_) - 1)]['t0']
-(L_HOOK, L_GENIUS, L_PICTURE, L_SAYS, L_NOT, L_SUB, L_FORMULA, L_WOMEN, L_ELSE, L_NOBODY, L_STUDY, L_HEAT,
- L_CATCH, L_COZY, L_CTA) = range(15)
+(L_HOOK, L_GENIUS, L_ROOM, L_DRAMA, L_SUB, L_FORMULA, L_WOMEN, L_NOBODY, L_STUDY, L_CRANK, L_CATCH, L_CTA) = range(12)
 GROUND = rv.GROUND
 def ramp(t, t0, d=0.5): return smooth(min(1.0, max(0.0, (t - t0) / d)))
 
@@ -114,71 +113,70 @@ def scene(F, t):
         jump = 8 * abs(math.sin(a * 7)) * math.exp(-a * 1.3)
         you(F, 90, mood='proud', cap=True, arms='up', bob=jump, t=t, blanket=False)
         sparkles(F, 90, 100, 34, 12, t); ctag(F, 'GENIUS', 300, px=12)
-    elif i == L_PICTURE:                                         # Christmas at the family's: T-shirts vs you in hoodies + blanket
-        tree(F, 30, t=t)
-        if t < cs(L_PICTURE, 1) - 0.05: ctag(F, 'PICTURE THIS', 300, px=7)
-        elif t < cs(L_PICTURE, 3) - 0.05: ctag(F, 'CHRISTMAS', 300, px=8)
-        tees = t >= cs(L_PICTURE, 3) - 0.05
-        if tees:
-            draw_elf(F, 152, 'holly', mood='happy'); bk.label(F, 'T-SHIRT', 830, 440, int(152 * S), int((GROUND - 34) * S), px=5)
-        hood = t >= cs(L_PICTURE, 5) - 0.05; blank = t >= cs(L_PICTURE, 6) - 0.05
-        if t >= cs(L_PICTURE, 4) - 0.05:
-            you(F, 92, mood='sad', shiver=1.0 if t >= cs(L_PICTURE, 7) - 0.05 else 0.3, blanket=blank, t=t)
-            if hood: bk.label(F, '2 HOODIES', 300, 560, int(92 * S), int((GROUND - 30) * S), px=5)
-            if t >= cs(L_PICTURE, 7) - 0.05: ctag(F, 'STILL SHAKING', 300, px=7)
-    elif i in (L_SAYS, L_NOT):                                   # "it's not even cold, stop being dramatic" -> you're not
-        tree(F, 22, t=t); draw_elf(F, 150, 'holly', mood='proud')
-        you(F, 86, mood='angry' if i == L_SAYS else 'proud', shiver=0.7 if i == L_SAYS else 0.3, t=t)
-        if i == L_SAYS and t >= cs(L_SAYS, 1) - 0.05: bubble(F, 146, 52, "NOT EVEN COLD!" if t < cs(L_SAYS, 2) - 0.05 else 'SO DRAMATIC!', px=6)
-        if i == L_NOT:
-            ctag(F, 'DRAMATIC', 300, px=10)
-            if t >= cs(L_NOT, 1) - 0.05:
-                for k in range(-170, 170, 2): F[int(330 + k * 0.1):int(338 + k * 0.1), 540 + k:542 + k] = hexc('#e8303a')
+    elif i == L_ROOM:                                            # look around: T-shirts vs you in hoodies + blanket
+        tree(F, 24, t=t)
+        if t >= cs(L_ROOM, 1) - 0.05:
+            draw_elf(F, 154, 'holly', mood='happy'); bk.label(F, 'T-SHIRT', 830, 440, int(154 * S), int((GROUND - 34) * S), px=5)
+        else: ctag(F, 'LOOK AROUND', 300, px=8)
+        if t >= cs(L_ROOM, 2) - 0.05:
+            you(F, 92, mood='sad', shiver=1.0 if t >= cs(L_ROOM, 5) - 0.05 else 0.3, blanket=t >= cs(L_ROOM, 4) - 0.05, t=t)
+            if t >= cs(L_ROOM, 3) - 0.05: bk.label(F, '2 HOODIES', 300, 560, int(92 * S), int((GROUND - 30) * S), px=5)
+            if t >= cs(L_ROOM, 5) - 0.05: ctag(F, 'STILL SHAKING', 300, px=7)
+    elif i == L_DRAMA:                                           # called dramatic -> ignore -> your body isn't broken, the room is
+        tree(F, 22, t=t); draw_elf(F, 152, 'holly', mood='proud')
+        ign = t >= cs(L_DRAMA, 2) - 0.05
+        you(F, 88, mood='proud' if ign else 'angry', shiver=0.6, t=t)
+        if not ign: bubble(F, 148, 52, 'SO DRAMATIC!', px=6)
+        elif t < cs(L_DRAMA, 3) - 0.05: ctag(F, 'IGNORE', 300, px=10)
+        elif t < cs(L_DRAMA, 5) - 0.05: ctag(F, 'BODY: FINE', 300, px=9)
+        else: ctag(F, 'ROOM: BROKEN', 300, px=9)
     elif i == L_SUB:
         you(F, 60, mood='proud', arms='up', bob=abs(math.sin(t * 6)) * 3, t=t)
-        if t >= cs(L_SUB, 2) - 0.05: sub_button(F, t, cs(L_SUB, 2) - 0.05, cs(L_SUB, 2) + 0.35)
-        else: ctag(F, 'BLANKET THIEF?', 300, px=7)
-    elif i == L_FORMULA:                                         # thermostat formula based on a 40-year-old man in a suit
-        thermostat(F, 58, 104, '21 C', 'OLD FORMULA' if t >= cs(L_FORMULA, 2) - 0.05 else None)
-        if t >= cs(L_FORMULA, 3) - 0.05:
-            suit_man(F, 142); bk.label(F, '40 Y/O MAN', 640, 450, int(142 * S), int((GROUND - 56) * S), px=6)
-        if t >= cs(L_FORMULA, 5) - 0.05: ctag(F, 'IN A SUIT', 300, px=8)
-    elif i == L_WOMEN:                                           # too cold for lots of people, especially women
+        if t >= cs(L_SUB, 1) - 0.05: sub_button(F, t, cs(L_SUB, 1) - 0.05, cs(L_SUB, 1) + 0.35)
+        else: ctag(F, 'BLANKET THIEVES', 300, px=7)
+    elif i == L_FORMULA:                                         # walk to the thermostat: formula built around a 40-y/o man
+        walk = ramp(t, SEG[L_FORMULA][0], 1.0)
+        you(F, lerp(26, 32, walk), mood='happy', shiver=0.4, t=t, blanket=True)
+        thermostat(F, 86, 92, '21 C', 'OLD FORMULA' if t >= cs(L_FORMULA, 3) - 0.05 else None)
+        if t >= cs(L_FORMULA, 5) - 0.05:
+            suit_man(F, 152); bk.label(F, '40 Y/O MAN', 770, 450, int(152 * S), int((GROUND - 56) * S), px=5)
+        if t >= cs(L_FORMULA, 7) - 0.05 and t < cs(L_FORMULA, 8) - 0.05: ctag(F, 'NOT YOU', 280, px=10)
+        elif t >= cs(L_FORMULA, 8) - 0.05: ctag(F, 'HIM', 280, px=12)
+    elif i == L_WOMEN:                                           # women burn less heat -> normal room is freezing
         suit_man(F, 40); you(F, 90, mood='sad', shiver=1.0, t=t, blanket=False); draw_elf(F, 146, 'holly', mood='sad')
-        for k in range(3): put(F, 146 + 20 + (k % 2), GROUND - 30 + k * 5, hexc('#cfe9ff'))
-        if t >= cs(L_WOMEN, 1) - 0.05: ctag(F, 'TOO COLD', 190, px=9)
-        if t >= cs(L_WOMEN, 4) - 0.05:
-            meter(F, 40, 'HIM', 0.9, '#ff9a3a', y_top=62, h_=32, w_=14); meter(F, 146, 'HER', 0.62, '#ff9a3a', y_top=62, h_=32, w_=14)
-    elif i == L_ELSE:                                            # set for someone else
-        thermostat(F, 90, 66, '21 C', 'SET FOR: HIM'); you(F, 44, mood='sad', shiver=1.0, t=t); suit_man(F, 142)
-        if t >= cs(L_ELSE, 2) - 0.05: ctag(F, 'SOMEONE ELSE', 180, px=8)
+        meter(F, 40, 'HIM', 0.9, '#ff9a3a', y_top=62, h_=32, w_=14); meter(F, 146, 'HER', 0.62 * ramp(t, SEG[L_WOMEN][0], 0.6), '#ff9a3a', y_top=62, h_=32, w_=14)
+        if t < cs(L_WOMEN, 2) - 0.05: ctag(F, 'BODY HEAT', 190, px=8)
+        else: ctag(F, 'FREEZING', 190, px=9)
     elif i == L_NOBODY:                                          # re-hook
         you(F, 90, mood='shock', t=t)
         k = ramp(t, SEG[L_NOBODY][0], 0.4); F *= 1 - 0.55 * k
         glow(F, 90, 110, 40, '#ffcc4a', 0.25 * k); ctag(F, 'THE GENIUS PART', 300, px=7)
-    elif i == L_STUDY:                                           # women did better on math/word tests in warmer rooms
-        thermostat(F, 52, 86, '17 C' if t < cs(L_STUDY, 3) - 0.05 else '27 C')
+    elif i == L_STUDY:                                           # turn the heat up; women did better in warmer rooms
+        up_ = ramp(t, SEG[L_STUDY][0] + 0.2, 0.8)
+        thermostat(F, 52, 86, f'{int(17 + 10 * up_)} C', dial=up_ * 2.4)
         bk.pixel_text(F, '+ - = ?', 120, 760, px=8, colr=(225, 235, 255))
-        score_bar(F, 124, 'COLD', 0.4, '#5ea6f2'); score_bar(F, 160, 'WARM', 0.4 + 0.45 * ramp(t, cs(L_STUDY, 3), 0.8), '#5ae07a')
-        if t >= cs(L_STUDY, 2) - 0.05: ctag(F, 'MATH + WORDS', 230, px=7)
-        if t >= cs(L_STUDY, 3) + 0.3: ctag(F, 'BETTER WARM', 310, px=7)
-    elif i == L_HEAT:                                            # crank the heat: thinking better
-        k = ramp(t, cs(L_HEAT, 1), 0.8)
-        thermostat(F, 132, 92, f'{int(21 + 6 * k)} C', dial=k * 2.4)
-        you(F, 56, mood='proud' if k > 0.5 else 'happy', shiver=max(0, 0.6 - k), t=t, warm=k, cap=t >= cs(L_HEAT, 4) - 0.05)
-        if t >= cs(L_HEAT, 2) - 0.05 and t < cs(L_HEAT, 4) - 0.05: ctag(F, 'NOT DRAMATIC', 280, px=8)
-        if t >= cs(L_HEAT, 4) - 0.05: ctag(F, 'BRAIN MODE', 280, px=9); sparkles(F, 56, 96, 26, 10, t, n=8)
-    elif i == L_CATCH:                                           # the catch: everyone else sweating
+        score_bar(F, 124, 'COLD', 0.4, '#5ea6f2'); score_bar(F, 160, 'WARM', 0.4 + 0.45 * ramp(t, cs(L_STUDY, 4), 0.8), '#5ae07a')
+        if t < cs(L_STUDY, 1) - 0.05: ctag(F, 'HEAT UP', 230, px=9)
+        elif t < cs(L_STUDY, 4) - 0.05: ctag(F, 'MATH + WORDS', 230, px=7)
+        else: ctag(F, 'BETTER WARM', 230, px=8)
+    elif i == L_CRANK:                                           # crank it, grab the blanket, own the thermostat, think better
+        k = ramp(t, SEG[L_CRANK][0], 0.6)
+        thermostat(F, 134, 92, f'{int(21 + 6 * k)} C', 'MINE' if t >= cs(L_CRANK, 2) - 0.05 else None, dial=k * 2.4)
+        smart = t >= cs(L_CRANK, 4) - 0.05
+        you(F, 56, mood='proud', shiver=0.0, t=t, warm=k, blanket=t >= cs(L_CRANK, 1) - 0.05, cap=smart, arms='up' if smart else 'down',
+            bob=abs(math.sin(t * 5)) * 2 if smart else 0)
+        if t < cs(L_CRANK, 1) - 0.05: ctag(F, 'CRANK IT', 280, px=10)
+        elif t < cs(L_CRANK, 3) - 0.05: ctag(F, 'OWN IT', 280, px=10)
+        elif not smart: ctag(F, 'NOT DRAMATIC', 280, px=8)
+        else: ctag(F, 'BRAIN MODE', 280, px=9); sparkles(F, 56, 96, 26, 10, t, n=8)
+    elif i == L_CATCH:                                           # the catch: everyone else sweating. Not your problem.
         you(F, 32, mood='proud', t=t, blanket=True); thermostat(F, 90, 86, '27 C')
-        top = draw_elf(F, 148, 'holly', mood='shock')[1]; sweat(F, 148, top + 8, t)
+        top = draw_elf(F, 148, 'holly', mood='shock')[1]
+        if t >= cs(L_CATCH, 1) - 0.05: sweat(F, 148, top + 8, t)
         glow(F, 90, 120, 70, '#ff8a3a', 0.2)
-        if t >= cs(L_CATCH, 1) - 0.05: ctag(F, 'EVERYONE ELSE: SWEATING', 230, px=6)
-    elif i == L_COZY:                                            # grab the blanket, own the thermostat, stay cozy
-        you(F, 70, mood='proud', cap=t >= cs(L_COZY, 3) - 0.05, t=t, warm=1.0, blanket=t >= cs(L_COZY, 0) - 0.05,
-            arms='up' if t >= cs(L_COZY, 3) - 0.05 else 'down', bob=abs(math.sin(t * 5)) * 2 if t >= cs(L_COZY, 3) - 0.05 else 0)
-        if t >= cs(L_COZY, 1) - 0.05: thermostat(F, 140, 96, '27 C', 'MINE')
-        tree(F, 20, t=t)
-        if t >= cs(L_COZY, 2) - 0.05: ctag(F, 'STAY COZY, GENIUS', 290, px=7); sparkles(F, 70, 100, 30, 12, t, n=8)
+        if t < cs(L_CATCH, 1) - 0.05: ctag(F, 'THE CATCH', 230, px=8)
+        elif t < cs(L_CATCH, 3) - 0.05: ctag(F, 'EVERYONE ELSE: SWEATING', 230, px=6)
+        else: ctag(F, 'NOT YOUR PROBLEM', 230, px=7)
     else:                                                        # CTA: tag the blanket thief + naughty list
         you(F, 146, mood='happy', t=t)
         if t < cs(L_CTA, 2) - 0.05:
@@ -210,13 +208,13 @@ def captions(F, t):
         for r_, row in enumerate(rv.HEADPHONES):
             for c_, bb in enumerate(row):
                 if bb == '1': F[y0 + r_ * 7:y0 + r_ * 7 + 7, x0 + c_ * 7:x0 + c_ * 7 + 7] = 1.0
-SHOUTS = [SEG[L_GENIUS][0], cs(L_SUB, 2), SEG[L_NOBODY][0]]
+SHOUTS = [SEG[L_GENIUS][0], cs(L_SUB, 1), SEG[L_NOBODY][0]]
 def frame(t):
     F = rv.BG.copy()
     scene(F, t)
     i = seg_of(t)
     rv.snow(F, t)
-    if i >= 2 and 0 <= t - SEG[i][0] < 0.12 and i not in (L_NOT,):
+    if i >= 2 and 0 <= t - SEG[i][0] < 0.12 and i not in (L_DRAMA,):
         m = rv.HR_BAYER < (1 - (t - SEG[i][0]) / 0.12) * 0.7; F[m] = F[m] * 0.4 + hexc('#f4fbff') * 0.6
     for st in SHOUTS:
         if 0 <= t - st < 0.35:

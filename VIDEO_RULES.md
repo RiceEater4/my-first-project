@@ -12,6 +12,8 @@
   with punchy relatable logic ("you spend 20 minutes on corners... they rip it in 2 seconds"), then the facts/study,
   then a feel-good reframe ("you're not lazy, you're managing expectations"), a catch, a send-off and the CTA.
   One character stands in for the viewer and acts out each line. Viral hook words: GENIUS, FURIOUS, etc.
+- DIRECT after the hook: blunt commands and facts aimed at the viewer ("Look around the room." "Walk up to the
+  thermostat." "Turn the heat up." "Crank it."), like the 'dig a moat around your house' shorts. No "Picture this" setups.
 - NOT a story: no named characters, no plot ("Meet Tinsel... then there's Holly"). Always talk to "you".
   One quick relatable scenario is fine ("Picture this. Christmas morning. Your aunt hands you a gift..."), set up
   right after the hook so the viewer knows what's going on before any new person or object appears.

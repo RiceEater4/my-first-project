@@ -99,14 +99,25 @@ def scene(F, t):
         steam(F, 52, top + 18, t); steam(F, 77, top + 18, t + 0.3)
         glow(F, 64, top + 22, 26, '#ff3a3a', 0.35)
         ctag(F, 'FURIOUS', 300, px=12)
-    elif i == L_AUNT:                                            # the aunt is staring, everyone's watching
-        draw_elf(F, 40, 'tinsel', mood='shock'); draw_elf(F, 142, 'holly', mood='happy')
-        bk.label(F, 'AUNT', 870, 450, int(142 * S), int((GROUND - 56) * S), px=6)
-        if t >= cs(L_AUNT, 2) - 0.05:
-            for k, ex in enumerate((50, 90, 130)): eye_icon(F, ex, 66 + 4 * math.sin(t * 2 + k), t + k)
-        if t >= cs(L_AUNT, 4) - 0.1:
-            k = ramp(t, cs(L_AUNT, 4) - 0.1, 0.3); candle(F, 90, lift=12 * math.sin(math.pi * min(1, k)), flick=math.sin(t * 9))
-            if t >= cs(L_AUNT, 5) - 0.05: ctag(F, 'CAT CANDLE', 190, px=8)
+    elif i == L_AUNT:                                            # Christmas morning: the aunt hands you a gift and stares
+        aunt_in = ramp(t, cs(L_AUNT, 2) - 0.1, 0.5); handed = ramp(t, cs(L_AUNT, 3), 0.6)
+        opened = t >= cs(L_AUNT, 8) - 0.1
+        draw_elf(F, 40, 'tinsel', mood='shock' if opened else ('happy' if handed < 1 else 'happy'), arms='hold' if handed > 0.5 else 'down')
+        if aunt_in > 0:
+            draw_elf(F, lerp(210, 142, aunt_in), 'holly', mood='happy')
+            if aunt_in > 0.95: bk.label(F, 'AUNT', 870, 450, int(142 * S), int((GROUND - 56) * S), px=6)
+        if t < cs(L_AUNT, 2) - 0.05: ctag(F, 'CHRISTMAS MORNING', 300, px=7)
+        if aunt_in > 0.5 and not opened:
+            gx = lerp(122, 80, handed); draw_gift(F, gx, 'neat', bob=6 * math.sin(math.pi * handed))
+        if t >= cs(L_AUNT, 4) - 0.05 and not opened:
+            for k in range(3):
+                y_ = GROUND - 38; put(F, 128 - k * 10 - (t * 20) % 10, y_, hexc('#ffffff'), 0.7)
+            ctag(F, 'STARING', 300, px=8)
+        if t >= cs(L_AUNT, 6) - 0.05:
+            for k, ex in enumerate((50, 90, 130)): eye_icon(F, ex, 76 + 3 * math.sin(t * 2 + k), t + k)
+        if opened:
+            k = ramp(t, cs(L_AUNT, 8) - 0.1, 0.3); candle(F, 84, lift=12 * math.sin(math.pi * min(1, k)), flick=math.sin(t * 9))
+            if t >= cs(L_AUNT, 9) - 0.05: ctag(F, 'CAT CANDLE', 190, px=8)
     elif i in (L_FACE, L_TELL):                                  # the face: "wow I love it"... everyone can tell
         draw_elf(F, 40, 'tinsel', mood='fake', arms='up' if i == L_FACE and t >= cs(L_FACE, 1) else 'down')
         candle(F, 90, flick=math.sin(t * 9))

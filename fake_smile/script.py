@@ -6,7 +6,7 @@ wrongly expected unrequested gifts to be seen as more thoughtful."""
 LINES = [
     ("Ever open a gift so bad you had to fake a smile...", "Ever open a gift so bad you had to fake a smile...", ('FAKE', 'SMILE')),
     ("and it made you FURIOUS?", "[shouting] and it made you FURIOUSSS?!", ('FURIOUS',)),
-    ("Your aunt is staring. Everyone's watching. And it's... a candle shaped like a cat.", "Your aunt is staring. Everyone's watching. And it's... [laughs] a candle shaped like a cat.", ('STARING', 'CAT')),
+    ("Picture this. Christmas morning. Your aunt hands you a gift... and she's staring right at you. Everyone's watching. And it's... a candle shaped like a cat.", "Picture this. Christmas morning. Your aunt hands you a gift... and she's staring right at you. Everyone's watching. And it's... [laughs] a candle shaped like a cat.", ('AUNT', 'STARING', 'CAT')),
     ("So you do the face. Big smile. Wow, I love it.", "So you do the face. Big smile. [sarcastic] Wow... I love it.", ('FACE', 'LOVE')),
     ("But here's the problem. Everyone can tell.", "But here's the problem. [intense] Everyone can tell.", ('EVERYONE', 'TELL')),
     ("If you've ever faked it for a gift... SUBSCRIBE!", "If you've ever faked it for a gift... [shouting] SUBSCRIBE!", ('SUBSCRIBE',)),
@@ -23,7 +23,7 @@ TTS = "\n\n".join(l[1] for l in LINES)
 CAPTION_BREAKS = [
     "Ever open a gift | so bad you had to | fake a smile...",
     "and it made you | FURIOUS?",
-    "Your aunt | is staring. | Everyone's watching. | And it's... | a candle | shaped like a cat.",
+    "Picture this. | Christmas morning. | Your aunt | hands you a gift... | and she's staring | right at you. | Everyone's watching. | And it's... | a candle | shaped like a cat.",
     "So you do the face. | Big smile. | Wow, | I love it.",
     "But here's the problem. | Everyone can tell.",
     "If you've ever faked it | for a gift... | SUBSCRIBE!",

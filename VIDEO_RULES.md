@@ -41,6 +41,12 @@
   a red pixel SUBSCRIBE button gets pressed (click + sparkle); Santa slides in beside (never overlapping)
   holding a NAUGHTY LIST scroll. Captions as usual, COMMENT and SUBSCRIBE in yellow.
 
+## Script order that works (younger-sibling v2 format)
+1. Hook (screamed word).  2. The relatable thing first: a quick, funny example of it happening ("Eating cereal with a fork.
+Asking if fish get thirsty.").  3. Re-ask the hook as a plain question ("So are younger siblings actually dumber?").
+4. "Scientists tested it... and yes / kind of." + the fact with a number.  5. A punchy reaction ("Two. That's it.
+Barely anything.").  6. Screamed SUBSCRIBE.  7. Why / theory, re-hook, twist, payoff, CTA.
+
 ## Script clarity check (before recording)
 - Read every line right after the one before it. Pronouns must point at the right thing: after a joke line about
   something else (e.g. "asking if fish get thirsty"), name the subject again ("So are younger siblings actually

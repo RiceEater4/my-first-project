@@ -6,7 +6,8 @@ Hotz & Pantano (2015, J. Population Economics): parents say they'd be less likel
 LINES = [
     ("Ever wondered why your younger sibling is so...", "Ever wondered why your younger sibling is so...", ('YOUNGER', 'SIBLING')),
     ("DUMB?!", "[shouting] DUMBBB?!", ('DUMB',)),
-    ("Scientists actually tested it... and yes. Older siblings score about 2 IQ points higher.", "Scientists actually tested it... and yes. [excited] Older siblings score about two IQ points higher.", ('TESTED', 'YES', '2')),
+    ("Look at them. Eating cereal with a fork. Asking if fish get thirsty.", "Look at them. Eating cereal... with a fork. [laughs] Asking if fish get thirsty.", ('FORK', 'FISH')),
+    ("So are younger siblings actually dumber? Scientists tested it... and yes. Older siblings score about 2 IQ points higher.", "So are younger siblings actually dumber? Scientists tested it... and yes. [excited] Older siblings score about two IQ points higher.", ('DUMBER', 'YES', '2')),
     ("2. That's it. Barely anything.", "Two. That's it. [laughs] Barely anything.", ('2', 'BARELY')),
     ("If you're the smart one... SUBSCRIBE!", "If you're the smart one... [shouting] SUBSCRIBE!", ('SUBSCRIBE',)),
     ("A study of over 240,000 brothers found the oldest scored just a little higher.", "A study of over two hundred forty thousand brothers found the oldest scored just a little higher.", ('240,000', 'OLDEST')),
@@ -22,7 +23,8 @@ TTS = "\n\n".join(l[1] for l in LINES)
 CAPTION_BREAKS = [
     "Ever wondered why | your younger sibling | is so...",
     "DUMB?!",
-    "Scientists actually | tested it... | and yes. | Older siblings score | about 2 IQ points higher.",
+    "Look at them. | Eating cereal | with a fork. | Asking if fish | get thirsty.",
+    "So are younger siblings | actually dumber? | Scientists tested it... | and yes. | Older siblings score | about 2 IQ points higher.",
     "2. | That's it. | Barely anything.",
     "If you're | the smart one... | SUBSCRIBE!",
     "A study of over | 240,000 brothers | found the oldest | scored just | a little higher.",

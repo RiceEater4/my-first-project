@@ -81,3 +81,10 @@
 ## What has not worked
 - Slow explainer ideas ("What if it never stopped snowing?": ~200 views, ~30% stayed).
 - Tiny subjects, long intros, the rewind hook.
+
+## Channel plan (from vidIQ check, Nov 19)
+- Best performers so far: the "What If Earth Was ___?" series (flat Earth: 78% avg watched, 10 subs; two moons 79%; donut 73%).
+- Now: keep making the GENIUS / FURIOUS relatable shorts (engagement climbing, ~70% on the latest).
+- Next week or so: bring back the Earth/space "what if" series with the new hooks, direct script style and Christmas look
+  (e.g. "What If Earth Was a Snow Globe?"), then compare the numbers at the next check-in.
+- vidIQ check every 1st and 15th (reminder set); renewable credits only, never the add-on ones.

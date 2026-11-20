@@ -11,7 +11,7 @@ import importlib.util
 _s = importlib.util.spec_from_file_location('ysv', os.path.join(ROOT_, 'younger_sibling', 'video.py'))
 ys = importlib.util.module_from_spec(_s); _s.loader.exec_module(ys)
 fm, b1, sv, rv, pv, bk, ch = ys.fm, ys.b1, ys.sv, ys.rv, ys.pv, ys.bk, ys.ch
-import ui, props
+import ui, props, scenery
 
 W, H, S, FPS = 180, 320, 6, 60
 WF, HF = W * S, H * S
@@ -69,20 +69,7 @@ def clock_face(F, cx, cy, r, hours, label, colr=(255, 255, 255)):
         th = TAU * k / 12; props._put(F, cx + (r - 3) * math.sin(th), cy - (r - 3) * math.cos(th), hexc('#3a4664'))
     sv.hand(F, cx, cy, TAU * (hours % 12) / 12, r * 0.5, w=2); sv.hand(F, cx, cy, 0, r * 0.78, '#e8303a'); props._put(F, cx, cy, hexc('#1b1428'))
     props.text_center(F, label, cx, cy + r + 4, px=5, colr=colr)
-def school(F, cx, feet=GROUND + 1):
-    def mk():
-        L = ch.Layers(56, 46); yy, xx = np.mgrid[0:46, 0:56].astype(np.float32)
-        L.add((xx >= 22) & (xx < 34) & (yy >= 0) & (yy < 12), lambda c, m: (c.__setitem__(m, hexc('#c8303a')), c.__setitem__(m & (np.hypot(xx - 28, yy - 7) < 3), hexc('#ffcc4a'))))
-        body = (xx >= 2) & (xx < 54) & (yy >= 12) & (yy < 45)
-        def bf(c, m):
-            c[m] = hexc('#e8c89a'); c[m & (xx > 46)] = hexc('#d0ae80'); c[m & (yy < 15)] = hexc('#a8504a')
-            for wx in (8, 18, 38, 46):
-                for wy in (19, 30): c[(xx >= wx) & (xx < wx + 5) & (yy >= wy) & (yy < wy + 6)] = hexc('#5ea6f2')
-            c[(xx >= 25) & (xx < 31) & (yy >= 33) & (yy < 45)] = hexc('#6a4226')
-        L.add(body, bf)
-        return L.out()
-    c, M = spr('school', mk); shadow(F, cx, feet, 54); props._blit(F, c, M, cx - 28, feet - 45)
-    props.text_center(F, 'SCHOOL', cx, feet - 41, px=3, colr=(80, 40, 30))
+def school(F, cx, feet=GROUND + 1): scenery.school(F, cx, feet, shadow_fn=shadow)
 def sun(F, cx, cy, t, k=1.0):
     if k <= 0: return
     glow(F, cx, cy, 30 * k, '#ffe27a', 0.5 * k); sv.disc(F, cx, cy, 9 * k + 1, '#ffcc4a', ring='#ff9a3a')
@@ -152,7 +139,7 @@ def scene(F, t):
             props.text_center(F, 'UP!', 156, 64, px=6, colr=(120, 240, 150))
     elif i == L_DOCTORS:                                         # doctors: not before 8:30
         draw_prof(F, 56); school(F, 136)
-        if t >= cs(L_DOCTORS, 1) - 0.05: ui.callout(F, 'NOT BEFORE 8:30', 20, 70, 136, GROUND - 46, px=5, accent='#5ae07a')
+        if t >= cs(L_DOCTORS, 1) - 0.05: ui.callout(F, 'NOT BEFORE 8:30', 14, 64, 136, GROUND - 42, px=5, accent='#5ae07a')
         ctag(F, 'DOCTORS SAY', 230, px=8)
     elif i == L_LAZY:                                            # not lazy: different clock
         top = you(F, 50, mood='proud')
@@ -202,8 +189,7 @@ def scene(F, t):
             sl = ramp(t, cs(L_CTA, 2) - 0.05, 0.5)
             draw_santa(F, lerp(-30, 40, sl), bob=abs(math.sin(t * 3)) * 1.2)
             if sl > 0.9:
-                c, M = sv.spr('scroll', ch.scroll); pv.blit_hr(F, c, M, 66, GROUND - 46, 1)
-                bk.pixel_text(F, 'NAUGHTY', int(68 * S) + 2, int((GROUND - 38) * S), px=3, colr=(200, 30, 40))
+                scenery.naughty_list(F, 86, GROUND + 1, shadow_fn=shadow)
                 ctag(F, 'NAUGHTY LIST', 300, px=8)
 
 CAPS = [(c['t0'], c['t1'], rv.caption_sprite(c['text'], set(c['hl']))) for c in CAPJ]

@@ -72,6 +72,8 @@ Barely anything.").  6. Screamed SUBSCRIBE.  7. Why / theory, re-hook, twist, pa
   not single dots. Check every character up close at full size before rendering.
 
 ## Layout
+- Shading on bubbles/props is a smooth blend, not hard bands. Text on objects (signs, lists) must be fully readable:
+  big enough, inside its plate, never clipped (style_study/scenery.py: school(), naughty_list()). Places get real detail.
 - Details + alignment check before rendering: props need real detail (e.g. phone = case, screen gradient, app icons,
   notch, shine); held items anchor to the elf's hand (mom_finds/props.py hand()), floor items get a shadow, groups
   inside bubbles/cards are centred using real text widths, grids use columns centred on the screen.

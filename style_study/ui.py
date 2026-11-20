@@ -73,7 +73,8 @@ def thought_bubble(F, cx, cy, w_, h_, tail_to, t=0.0):
     M = cloud_mask(w_, h_); x0, y0 = int(cx - w_ / 2), int(cy - h_ / 2) + int(round(math.sin(t * 2.2)))
     yy, xx = np.mgrid[0:h_, 0:w_]
     col = np.zeros((h_, w_, 3), np.float32) + 1.0
-    col[yy > h_ * 0.62] = hexc('#d9e8fb'); col[yy > h_ * 0.78] = hexc('#bcd3f2')     # soft bottom shading (3 shades)
+    g = np.clip((yy / h_ - 0.35) / 0.6, 0, 1)[..., None] ** 1.3                          # smooth blend, no hard bands
+    col = (hexc('#ffffff') * (1 - g) + hexc('#c9dcf4') * g).astype(np.float32)
     hl = ((xx - w_ * 0.28) / (w_ * 0.12)) ** 2 + ((yy - h_ * 0.22) / (h_ * 0.07)) ** 2 <= 1
     blit_mask(F, np.pad(M, 1), hexc('#050a18'), x0 - 1 + 2, y0 - 1 + 3, alpha=0.55)  # drop shadow
     blit_mask(F, ring(np.pad(M, 1))[1:-1, 1:-1] | False, NAVY, x0, y0)
@@ -84,7 +85,7 @@ def thought_bubble(F, cx, cy, w_, h_, tail_to, t=0.0):
     for k, r in enumerate((3.2, 2.3, 1.5)):
         f = (k + 1) / 3.6; qx, qy = bx + (tail_to[0] - bx) * f, by + (tail_to[1] - by) * f
         n = int(r * 2 + 3); yy2, xx2 = np.mgrid[0:n, 0:n]; m = (xx2 - n / 2 + 0.5) ** 2 + (yy2 - n / 2 + 0.5) ** 2 <= r * r
-        c2 = np.zeros((n, n, 3), np.float32) + 1.0; c2[yy2 > n * 0.6] = hexc('#bcd3f2')
+        g2 = np.clip(yy2 / n, 0, 1)[..., None] ** 1.3; c2 = (hexc('#ffffff') * (1 - g2) + hexc('#c9dcf4') * g2).astype(np.float32)
         blit_mask(F, m, hexc('#050a18'), qx - n / 2 + 1, qy - n / 2 + 2, alpha=0.5)
         blit_mask(F, ring(m), NAVY, qx - n / 2, qy - n / 2); blit_mask(F, m & ~ring(m), c2, qx - n / 2, qy - n / 2)
     return x0, y0

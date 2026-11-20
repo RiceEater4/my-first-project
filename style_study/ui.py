@@ -27,6 +27,7 @@ def ring(M):
 def callout(F, text, tx, ty, ax, ay, px=5, accent='#ffcc4a'):
     """pixel tag box (with drop shadow) + chunky outlined leader line with an elbow and a target dot.
     tx, ty: tag top-left in GRID px; ax, ay: what it points at (grid px)."""
+    tx, ty, ax, ay = int(round(tx)), int(round(ty)), int(round(ax)), int(round(ay))
     tw = len(text) * 6 * px - px                     # text width in screen px
     bw, bh = int(math.ceil((tw + 4 * S) / S)), int(math.ceil((7 * px + 3 * S) / S))
     # leader path: from tag bottom-centre straight down/up, then diagonal to the anchor

@@ -72,6 +72,8 @@ Barely anything.").  6. Screamed SUBSCRIBE.  7. Why / theory, re-hook, twist, pa
   not single dots. Check every character up close at full size before rendering.
 
 ## Layout
+- Pointer labels and thought bubbles: always use style_study/ui.py (callout = tag box with shadow + chunky outlined
+  elbow line + glowing target dot; thought_bubble = puffy cloud with outline, drop shadow, 3-shade shading, trail).
 - No platform/island by default: characters and objects stand on an invisible floor with a soft pixel shadow under
   each one (like other pixel-art YouTubers). Use a platform only when the scene needs one. Use the whole width for movement.
 - The visual sits in the middle of the screen or a bit higher.

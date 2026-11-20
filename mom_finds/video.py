@@ -12,6 +12,8 @@ _s = importlib.util.spec_from_file_location('ysv', os.path.join(ROOT_, 'younger_
 ys = importlib.util.module_from_spec(_s); _s.loader.exec_module(ys)
 fm, b1, sv, rv, pv, bk, ch = ys.fm, ys.b1, ys.sv, ys.rv, ys.pv, ys.bk, ys.ch
 import ui
+sys.path.insert(0, HERE)
+import props
 
 W, H, S, FPS = 180, 320, 6, 60
 WF, HF = W * S, H * S
@@ -53,17 +55,29 @@ def pile(F, cx, feet=GROUND + 1):
     c, M = spr('pile', mk); shadow(F, cx, feet, 44); pv.blit_hr(F, c, M, cx - 23, feet - 21, 1)
 def timer(F, secs, y=230, colr=(255, 255, 255)):
     m_, s_ = int(secs) // 60, int(secs) % 60; big_num(F, f'{m_:d}:{s_:02d}', y, px=12, colr=colr)
-ICONS = [('PHONE', '#1b1428'), ('KEYS', '#ffcc4a'), ('SOCK', '#c8303a'), ('REMOTE', '#3a4664'), ('SHOE', '#8a5a36'), ('CHARGER', '#f4f6fb')]
+ICONS = ['PHONE', 'KEYS', 'SOCK', 'REMOTE', 'SHOE', 'CHARGER']
 def memory_grid(F, t, t0):
-    for k, (name, col) in enumerate(ICONS):
-        x, y = 34 + (k % 3) * 56, 82 + (k // 3) * 38
-        box = np.zeros((26, 40, 3), np.float32) + hexc('#14234a'); M = np.ones((26, 40), bool)
-        box[:2] = hexc('#2a3f78'); box, M = bk.outline(box, M); pv.blit_hr(F, box, M, x - 20, y - 13, 1)
-        for dx in range(-4, 5):
-            for dy in range(-6, 3): put(F, x + dx, y + dy, hexc(col))
-        bk.pixel_text(F, name, int((x - len(name) * 2.5) * S), int((y + 5) * S), px=3, colr=(225, 235, 255))
-        if t >= t0 + k * 0.25:
-            for j in range(6): put(F, x + 12 + j * 0.7, y - 8 + (j if j < 3 else 6 - j * 1.0) * 1.0, hexc('#5ae07a'))
+    cw, chh = 46, 34                                         # card size (grid px)
+    for k, name in enumerate(ICONS):
+        cx, cy = 90 + (k % 3 - 1) * 54, 80 + (k // 3) * 40    # columns centred on the screen
+        box = np.zeros((chh, cw, 3), np.float32) + hexc('#14234a'); M = np.ones((chh, cw), bool)
+        box[:2] = hexc('#2a3f78'); box[-2:] = hexc('#0b1530')
+        box, M = bk.outline(box, M); props._blit(F, box, M, cx - cw / 2 - 1, cy - chh / 2 - 1)
+        c, Mi = props.icon(name); h_, w_ = Mi.shape
+        props._blit(F, c, Mi, cx - w_ / 2, cy - h_ / 2 - 4)
+        props.text_center(F, name, cx, cy + 8, px=4)
+        if t >= t0 + k * 0.25:                               # check badge in the card corner
+            bx_, by_ = cx + cw / 2 - 7, cy - chh / 2 + 3
+            for dx in range(-3, 4):
+                for dy in range(-3, 4):
+                    if dx * dx + dy * dy <= 10: props._put(F, bx_ + dx, by_ + dy, hexc('#5ae07a'))
+            for j, (dx, dy) in enumerate(((-2, 0), (-1, 1), (0, 2), (1, 1), (2, 0), (3, -1))): props._put(F, bx_ + dx - 0.5, by_ + dy - 0.5, hexc('#0b1530'))
+def bubble_item(F, bx, by, bw, bh, case, text, colr):
+    """phone + label as one group, centred inside the cloud"""
+    tw = props.text_w(text, 6) / S; gw = 14 + 4 + tw; cx, cy = bx + bw / 2, by + bh / 2 - 2
+    x0 = cx - gw / 2
+    props.draw_phone(F, x0 + 7, cy + 11, case=case, big=True)
+    bk.pixel_text(F, text, int(round((x0 + 18) * S)), int(round((cy - 3.5) * S)), px=6, colr=colr)
 def eye_scan(F, t, t0, x0, x1, y):
     f = ramp(t, t0, 1.2)
     for k in range(0, int((x1 - x0) * f), 3): put(F, x0 + k, y + math.sin(k * 0.3) * 2, hexc('#ffe27a'), 0.9)
@@ -84,7 +98,7 @@ def scene(F, t):
         for k in range(3): bk.pixel_text(F, '?', int((40 + k * 7) * S), int((GROUND - 70 - (k % 2) * 5) * S), px=7, colr=(255, 255, 255))
     elif i == L_ALWAYS:
         jump = 6 * abs(math.sin(a * 9)) * math.exp(-a * 1.2)
-        mom(F, 120, mood='proud', arms='up', bob=jump); phone(F, 120 + 9, GROUND - 46 - jump, glint=1.0)
+        mom(F, 120, mood='proud', arms='up', bob=jump); props.phone_in_hand(F, 120, GROUND + 1, 'up', 1, bob=jump, glint=1.0)
         you(F, 40, mood='shock'); sparkles(F, 120, 100, 26, 12, t, n=8)
         ctag(F, 'ALWAYS', 300, px=12)
     elif i == L_LOOK:                                            # 10 minutes searching... mom: 2 seconds
@@ -98,7 +112,7 @@ def scene(F, t):
             mom(F, lerp(210, 156, mom_in), mood='proud' if found else 'happy')
             timer(F, 2 * ramp(t, cs(L_LOOK, 4), 0.4), colr=(90, 224, 122))
             if found:
-                k = ramp(t, cs(L_LOOK, 5) - 0.05, 0.3); phone(F, 112, GROUND - 16 - 14 * math.sin(math.pi * min(1, k)) + 0, glint=1.0)
+                k = ramp(t, cs(L_LOOK, 5) - 0.05, 0.3); props.draw_phone(F, 112, GROUND - 12 - 16 * math.sin(math.pi * min(1, k) * 0.5), glint=1.0)
                 ui.callout(F, 'FOUND IT', 60, 74, 112, GROUND - 32, px=5)
     elif i == L_SCIENCE:                                         # superpower? scientists tested it... kind of yes: location memory
         if t < cs(L_SCIENCE, 3) - 0.05:
@@ -116,16 +130,16 @@ def scene(F, t):
         if t < cs(L_NOTLOT, 1) - 0.05: ctag(F, 'NOT BY A LOT', 230, px=8)
         else: big_num(F, 'MOM 47 - YOU 0', 220, px=9, colr=(255, 200, 58))
     elif i == L_SUB:
-        mom(F, 60, mood='proud', arms='up', bob=abs(math.sin(t * 6)) * 3); phone(F, 69, GROUND - 46, glint=0.6)
+        b_ = abs(math.sin(t * 6)) * 3; mom(F, 60, mood='proud', arms='up', bob=b_); props.phone_in_hand(F, 60, GROUND + 1, 'up', 1, bob=b_, glint=0.6)
         if t >= cs(L_SUB, 2) - 0.05: sub_button(F, t, cs(L_SUB, 2) - 0.05, cs(L_SUB, 2) + 0.35)
         else: ctag(F, 'SUPERPOWER MOM?', 300, px=7)
     elif i in (L_HALF, L_FRONT):                                 # brain search template: imagined black phone, real one is pink
         top = you(F, 44, mood='shock' if i == L_FRONT else 'happy')
-        pinkx = 92; phone(F, pinkx, GROUND + 1, case='#ff6aa8')
+        pinkx = 92; props.phone_on_floor(F, pinkx, GROUND + 1, case='#ff6aa8', shadow_fn=shadow)
         if i == L_HALF and t < cs(L_HALF, 2) - 0.05: ctag(F, 'ONLY HALF', 300, px=9)
         else:
             bx, by = ui.thought_bubble(F, 76, 50, 112, 48, (52, top + 2), t)
-            phone(F, bx + 30, by + 34, case='#1b1428'); bk.pixel_text(F, 'MY PHONE', int((bx + 42) * S), int((by + 20) * S), px=6, colr=(20, 40, 90))
+            bubble_item(F, bx, by, 112, 48, '#1b1428', 'MY PHONE', (20, 40, 90))
             if i == L_HALF and t >= cs(L_HALF, 7) - 0.05: eye_scan(F, t, cs(L_HALF, 7), 56, 170, GROUND - 6)
             if i == L_FRONT or t >= cs(L_HALF, 5) - 0.05: ui.callout(F, "IT'S PINK" if i == L_HALF else 'RIGHT THERE', 116, 104, pinkx, GROUND - 12, px=5, accent='#ff6aa8')
     elif i == L_NOBODY:
@@ -139,7 +153,7 @@ def scene(F, t):
             for k, sx in enumerate((22, 70)):
                 if t >= cs(L_MESSY, 0) + k * 0.5: ui.callout(F, 'EMPTY', sx - 14, 70 + k * 12, sx, GROUND - 2, px=4, accent='#e8303a')
         else:
-            mom(F, 92, mood='proud', arms='hold'); phone(F, 132, GROUND - 18 - 6 * ramp(t, cs(L_MESSY, 3), 0.4), glint=ramp(t, cs(L_MESSY, 3), 0.3))
+            mom(F, 92, mood='proud', arms='hold'); props.draw_phone(F, 132, GROUND - 12 - 10 * ramp(t, cs(L_MESSY, 3), 0.4), glint=ramp(t, cs(L_MESSY, 3), 0.3))
             ui.callout(F, 'MESSY = FOUND', 104, 60, 132, GROUND - 18, px=5)
     elif i == L_PUT:                                             # she probably put it there
         mom(F, 70, mood='proud'); pile(F, 132)
@@ -151,7 +165,7 @@ def scene(F, t):
         top = you(F, 44, mood='proud'); pile(F, 132)
         if t < cs(L_TIPS, 3) - 0.05:
             bx, by = ui.thought_bubble(F, 80, 50, 120, 48, (52, top + 2), t)
-            phone(F, bx + 28, by + 34, case='#ff6aa8'); bk.pixel_text(F, 'PINK PHONE', int((bx + 40) * S), int((by + 20) * S), px=6, colr=(200, 40, 110))
+            bubble_item(F, bx, by, 120, 48, '#ff6aa8', 'PINK PHONE', (200, 40, 110))
         else:
             f = ramp(t, cs(L_TIPS, 3), 1.6); magnifier(F, lerp(114, 150, f), GROUND - 14 + 3 * math.sin(t * 3))
             ctag(F, 'SEARCH SLOWLY', 230, px=8)
@@ -160,7 +174,7 @@ def scene(F, t):
         you(F, 44, mood='angry' if yell else 'happy', arms='up' if yell else 'down')
         if yell:
             big_num(F, 'MOM!', 240, px=20, colr=(255, 90, 90))
-            k = ramp(t, cs(L_YELL, 1) + 0.2, 0.4); mom(F, lerp(210, 134, k), mood='proud'); phone(F, lerp(210, 134, k) + 9, GROUND - 46, glint=k)
+            k = ramp(t, cs(L_YELL, 1) + 0.2, 0.4); mx = round(lerp(210, 134, k)); mom(F, mx, mood='proud', arms='up'); props.phone_in_hand(F, mx, GROUND + 1, 'up', 1, glint=k)
             if t >= cs(L_YELL, 2) - 0.05: ctag(F, 'WORKS EVERY TIME', 430, px=7)
     else:                                                        # CTA
         mom(F, 150, mood='happy')

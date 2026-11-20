@@ -72,6 +72,9 @@ Barely anything.").  6. Screamed SUBSCRIBE.  7. Why / theory, re-hook, twist, pa
   not single dots. Check every character up close at full size before rendering.
 
 ## Layout
+- Details + alignment check before rendering: props need real detail (e.g. phone = case, screen gradient, app icons,
+  notch, shine); held items anchor to the elf's hand (mom_finds/props.py hand()), floor items get a shadow, groups
+  inside bubbles/cards are centred using real text widths, grids use columns centred on the screen.
 - Pointer labels and thought bubbles: always use style_study/ui.py (callout = tag box with shadow + chunky outlined
   elbow line + glowing target dot; thought_bubble = puffy cloud with outline, drop shadow, 3-shade shading, trail).
 - No platform/island by default: characters and objects stand on an invisible floor with a soft pixel shadow under

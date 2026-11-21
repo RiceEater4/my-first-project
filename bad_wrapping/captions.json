@@ -1,0 +1,509 @@
+[
+ {
+  "t0": -0.03,
+  "t1": 0.43,
+  "text": "PEOPLE WHO",
+  "hl": [],
+  "line": 0
+ },
+ {
+  "t0": 0.43,
+  "t1": 1.69,
+  "text": "WRAP PRESENTS BADLY...",
+  "hl": [
+   "BADLY"
+  ],
+  "line": 0
+ },
+ {
+  "t0": 1.69,
+  "t1": 4.27,
+  "text": "ARE GENIUSES!",
+  "hl": [
+   "GENIUSES"
+  ],
+  "line": 1
+ },
+ {
+  "t0": 4.27,
+  "t1": 5.65,
+  "text": "MEET TINSEL.",
+  "hl": [
+   "TINSEL"
+  ],
+  "line": 2
+ },
+ {
+  "t0": 5.65,
+  "t1": 6.31,
+  "text": "TINSEL WRAPS",
+  "hl": [
+   "TINSEL"
+  ],
+  "line": 2
+ },
+ {
+  "t0": 6.31,
+  "t1": 7.15,
+  "text": "LIKE A RACCOON",
+  "hl": [
+   "RACCOON"
+  ],
+  "line": 2
+ },
+ {
+  "t0": 7.15,
+  "t1": 8.77,
+  "text": "IN A HURRY.",
+  "hl": [],
+  "line": 2
+ },
+ {
+  "t0": 8.77,
+  "t1": 10.25,
+  "text": "TAPE EVERYWHERE.",
+  "hl": [
+   "TAPE"
+  ],
+  "line": 3
+ },
+ {
+  "t0": 10.25,
+  "t1": 11.59,
+  "text": "PAPER RIPPED.",
+  "hl": [
+   "RIPPED"
+  ],
+  "line": 3
+ },
+ {
+  "t0": 11.59,
+  "t1": 12.33,
+  "text": "THE BOW?",
+  "hl": [
+   "BOW"
+  ],
+  "line": 3
+ },
+ {
+  "t0": 12.33,
+  "t1": 13.95,
+  "text": "SOMEWHERE IN THERE.",
+  "hl": [],
+  "line": 3
+ },
+ {
+  "t0": 13.95,
+  "t1": 14.41,
+  "text": "AND THEN",
+  "hl": [],
+  "line": 4
+ },
+ {
+  "t0": 14.41,
+  "t1": 15.67,
+  "text": "THERE'S HOLLY.",
+  "hl": [
+   "HOLLY"
+  ],
+  "line": 4
+ },
+ {
+  "t0": 15.67,
+  "t1": 16.61,
+  "text": "HOLLY'S GIFTS LOOK",
+  "hl": [
+   "HOLLY"
+  ],
+  "line": 4
+ },
+ {
+  "t0": 16.61,
+  "t1": 17.17,
+  "text": "LIKE THEY CAME",
+  "hl": [],
+  "line": 4
+ },
+ {
+  "t0": 17.17,
+  "t1": 19.07,
+  "text": "FROM A FANCY STORE.",
+  "hl": [
+   "FANCY"
+  ],
+  "line": 4
+ },
+ {
+  "t0": 19.07,
+  "t1": 19.83,
+  "text": "EVERYONE THINKS",
+  "hl": [],
+  "line": 5
+ },
+ {
+  "t0": 19.83,
+  "t1": 21.68,
+  "text": "HOLLY WINS CHRISTMAS.",
+  "hl": [
+   "WINS"
+  ],
+  "line": 5
+ },
+ {
+  "t0": 21.69,
+  "t1": 22.35,
+  "text": "BUT SCIENTISTS",
+  "hl": [],
+  "line": 6
+ },
+ {
+  "t0": 22.35,
+  "t1": 24.37,
+  "text": "ACTUALLY TESTED THIS.",
+  "hl": [
+   "TESTED"
+  ],
+  "line": 6
+ },
+ {
+  "t0": 24.37,
+  "t1": 25.55,
+  "text": "SAME GIFT.",
+  "hl": [],
+  "line": 6
+ },
+ {
+  "t0": 25.55,
+  "t1": 26.79,
+  "text": "ONE WRAPPED NEAT,",
+  "hl": [
+   "NEAT"
+  ],
+  "line": 6
+ },
+ {
+  "t0": 26.79,
+  "t1": 28.13,
+  "text": "ONE WRAPPED SLOPPY.",
+  "hl": [
+   "SLOPPY"
+  ],
+  "line": 6
+ },
+ {
+  "t0": 28.13,
+  "t1": 29.05,
+  "text": "AND PEOPLE LIKED",
+  "hl": [],
+  "line": 7
+ },
+ {
+  "t0": 29.05,
+  "t1": 30.97,
+  "text": "THE SLOPPY GIFT MORE.",
+  "hl": [
+   "MORE",
+   "SLOPPY"
+  ],
+  "line": 7
+ },
+ {
+  "t0": 30.97,
+  "t1": 32.01,
+  "text": "HERE'S WHY.",
+  "hl": [],
+  "line": 8
+ },
+ {
+  "t0": 32.01,
+  "t1": 32.83,
+  "text": "A PERFECT WRAP",
+  "hl": [
+   "PERFECT"
+  ],
+  "line": 8
+ },
+ {
+  "t0": 32.83,
+  "t1": 33.75,
+  "text": "MAKES YOU EXPECT",
+  "hl": [],
+  "line": 8
+ },
+ {
+  "t0": 33.75,
+  "t1": 35.29,
+  "text": "SOMETHING AMAZING...",
+  "hl": [
+   "AMAZING"
+  ],
+  "line": 8
+ },
+ {
+  "t0": 35.29,
+  "t1": 36.03,
+  "text": "SO WHEN IT'S",
+  "hl": [],
+  "line": 9
+ },
+ {
+  "t0": 36.03,
+  "t1": 37.11,
+  "text": "JUST A MUG,",
+  "hl": [
+   "MUG"
+  ],
+  "line": 9
+ },
+ {
+  "t0": 37.11,
+  "t1": 38.33,
+  "text": "YOU'RE DISAPPOINTED.",
+  "hl": [
+   "DISAPPOINTED"
+  ],
+  "line": 9
+ },
+ {
+  "t0": 38.33,
+  "t1": 39.37,
+  "text": "BUT A MESSY WRAP",
+  "hl": [],
+  "line": 10
+ },
+ {
+  "t0": 39.37,
+  "t1": 41.07,
+  "text": "LOWERS YOUR EXPECTATIONS.",
+  "hl": [
+   "LOWERS"
+  ],
+  "line": 10
+ },
+ {
+  "t0": 41.07,
+  "t1": 41.73,
+  "text": "SO THE GIFT",
+  "hl": [],
+  "line": 10
+ },
+ {
+  "t0": 41.73,
+  "t1": 42.39,
+  "text": "FEELS BETTER",
+  "hl": [
+   "BETTER"
+  ],
+  "line": 10
+ },
+ {
+  "t0": 42.39,
+  "t1": 43.51,
+  "text": "THAN YOU THOUGHT.",
+  "hl": [],
+  "line": 10
+ },
+ {
+  "t0": 43.51,
+  "t1": 44.09,
+  "text": "SO WHAT IF",
+  "hl": [],
+  "line": 11
+ },
+ {
+  "t0": 44.09,
+  "t1": 45.37,
+  "text": "SANTA FOUND OUT?",
+  "hl": [
+   "SANTA"
+  ],
+  "line": 11
+ },
+ {
+  "t0": 45.37,
+  "t1": 46.43,
+  "text": "TINSEL JUST BECAME",
+  "hl": [],
+  "line": 11
+ },
+ {
+  "t0": 46.43,
+  "t1": 47.69,
+  "text": "HEAD WRAPPER.",
+  "hl": [
+   "HEAD"
+  ],
+  "line": 11
+ },
+ {
+  "t0": 47.69,
+  "t1": 48.49,
+  "text": "BUT HERE'S THE PART",
+  "hl": [],
+  "line": 12
+ },
+ {
+  "t0": 48.49,
+  "t1": 49.95,
+  "text": "NOBODY TELLS YOU...",
+  "hl": [
+   "NOBODY"
+  ],
+  "line": 12
+ },
+ {
+  "t0": 49.95,
+  "t1": 50.77,
+  "text": "IT ONLY WORKS",
+  "hl": [],
+  "line": 13
+ },
+ {
+  "t0": 50.77,
+  "t1": 51.39,
+  "text": "WITH YOUR FRIENDS",
+  "hl": [
+   "FRIENDS"
+  ],
+  "line": 13
+ },
+ {
+  "t0": 51.39,
+  "t1": 52.47,
+  "text": "AND FAMILY.",
+  "hl": [
+   "FAMILY"
+  ],
+  "line": 13
+ },
+ {
+  "t0": 52.47,
+  "t1": 53.01,
+  "text": "GIVING A GIFT",
+  "hl": [],
+  "line": 14
+ },
+ {
+  "t0": 53.01,
+  "t1": 54.09,
+  "text": "TO YOUR BOSS?",
+  "hl": [
+   "BOSS"
+  ],
+  "line": 14
+ },
+ {
+  "t0": 54.09,
+  "t1": 55.37,
+  "text": "WRAP IT PERFECT.",
+  "hl": [
+   "PERFECT"
+  ],
+  "line": 14
+ },
+ {
+  "t0": 55.37,
+  "t1": 56.25,
+  "text": "TO THEM,",
+  "hl": [],
+  "line": 14
+ },
+ {
+  "t0": 56.25,
+  "t1": 56.83,
+  "text": "A NEAT WRAP",
+  "hl": [],
+  "line": 14
+ },
+ {
+  "t0": 56.83,
+  "t1": 58.28,
+  "text": "MEANS YOU CARE.",
+  "hl": [
+   "CARE"
+  ],
+  "line": 14
+ },
+ {
+  "t0": 58.29,
+  "t1": 59.05,
+  "text": "SO TINSEL WRAPS",
+  "hl": [],
+  "line": 15
+ },
+ {
+  "t0": 59.05,
+  "t1": 60.21,
+  "text": "FOR THE FAMILY,",
+  "hl": [
+   "FAMILY"
+  ],
+  "line": 15
+ },
+ {
+  "t0": 60.21,
+  "t1": 60.85,
+  "text": "HOLLY WRAPS",
+  "hl": [],
+  "line": 15
+ },
+ {
+  "t0": 60.85,
+  "t1": 61.85,
+  "text": "FOR THE BOSS,",
+  "hl": [
+   "BOSS"
+  ],
+  "line": 15
+ },
+ {
+  "t0": 61.85,
+  "t1": 63.72,
+  "text": "AND EVERYBODY WINS.",
+  "hl": [
+   "EVERYBODY"
+  ],
+  "line": 15
+ },
+ {
+  "t0": 63.73,
+  "t1": 64.77,
+  "text": "TAG THE WORST WRAPPER",
+  "hl": [
+   "TAG"
+  ],
+  "line": 16
+ },
+ {
+  "t0": 64.77,
+  "t1": 65.55,
+  "text": "YOU KNOW...",
+  "hl": [],
+  "line": 16
+ },
+ {
+  "t0": 65.55,
+  "t1": 66.71,
+  "text": "AND SUBSCRIBE,",
+  "hl": [
+   "SUBSCRIBE"
+  ],
+  "line": 16
+ },
+ {
+  "t0": 66.71,
+  "t1": 68.03,
+  "text": "OR SANTA'S PUTTING YOU",
+  "hl": [],
+  "line": 16
+ },
+ {
+  "t0": 68.03,
+  "t1": 69.68,
+  "text": "ON THE NAUGHTY LIST.",
+  "hl": [
+   "NAUGHTY"
+  ],
+  "line": 16
+ }
+]

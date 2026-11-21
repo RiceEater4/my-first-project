@@ -1,0 +1,462 @@
+[
+ {
+  "t0": -0.03,
+  "t1": 0.55,
+  "text": "EVER WONDERED",
+  "hl": [],
+  "line": 0
+ },
+ {
+  "t0": 0.55,
+  "t1": 1.31,
+  "text": "HOW YOUR MOM...",
+  "hl": [
+   "MOM"
+  ],
+  "line": 0
+ },
+ {
+  "t0": 1.31,
+  "t1": 2.39,
+  "text": "ALWAYS FINDS",
+  "hl": [
+   "ALWAYS"
+  ],
+  "line": 1
+ },
+ {
+  "t0": 2.39,
+  "t1": 3.61,
+  "text": "YOUR STUFF?!",
+  "hl": [],
+  "line": 1
+ },
+ {
+  "t0": 3.61,
+  "t1": 4.79,
+  "text": "LOOK AT YOU.",
+  "hl": [],
+  "line": 2
+ },
+ {
+  "t0": 4.79,
+  "t1": 5.71,
+  "text": "10 MINUTES SEARCHING",
+  "hl": [
+   "10"
+  ],
+  "line": 2
+ },
+ {
+  "t0": 5.71,
+  "t1": 6.85,
+  "text": "FOR YOUR PHONE.",
+  "hl": [
+   "PHONE"
+  ],
+  "line": 2
+ },
+ {
+  "t0": 6.85,
+  "t1": 7.57,
+  "text": "SHE WALKS IN",
+  "hl": [],
+  "line": 2
+ },
+ {
+  "t0": 7.57,
+  "t1": 8.15,
+  "text": "AND FINDS IT",
+  "hl": [],
+  "line": 2
+ },
+ {
+  "t0": 8.15,
+  "t1": 9.65,
+  "text": "IN 2 SECONDS.",
+  "hl": [
+   "2"
+  ],
+  "line": 2
+ },
+ {
+  "t0": 9.65,
+  "t1": 10.49,
+  "text": "SO DO MOMS",
+  "hl": [],
+  "line": 3
+ },
+ {
+  "t0": 10.49,
+  "t1": 11.33,
+  "text": "ACTUALLY HAVE",
+  "hl": [],
+  "line": 3
+ },
+ {
+  "t0": 11.33,
+  "t1": 12.44,
+  "text": "A SUPERPOWER?",
+  "hl": [
+   "SUPERPOWER"
+  ],
+  "line": 3
+ },
+ {
+  "t0": 12.49,
+  "t1": 14.01,
+  "text": "SCIENTISTS TESTED IT...",
+  "hl": [],
+  "line": 3
+ },
+ {
+  "t0": 14.01,
+  "t1": 16.09,
+  "text": "AND KIND OF, YES.",
+  "hl": [
+   "YES"
+  ],
+  "line": 3
+ },
+ {
+  "t0": 16.09,
+  "t1": 17.23,
+  "text": "WOMEN ARE OFTEN BETTER",
+  "hl": [],
+  "line": 3
+ },
+ {
+  "t0": 17.23,
+  "t1": 17.81,
+  "text": "AT REMEMBERING",
+  "hl": [
+   "REMEMBERING"
+  ],
+  "line": 3
+ },
+ {
+  "t0": 17.81,
+  "t1": 19.44,
+  "text": "WHERE THINGS ARE.",
+  "hl": [],
+  "line": 3
+ },
+ {
+  "t0": 19.45,
+  "t1": 20.73,
+  "text": "NOT BY A LOT.",
+  "hl": [
+   "LOT"
+  ],
+  "line": 4
+ },
+ {
+  "t0": 20.73,
+  "t1": 22.03,
+  "text": "BUT ENOUGH TO BEAT YOU",
+  "hl": [],
+  "line": 4
+ },
+ {
+  "t0": 22.03,
+  "t1": 23.69,
+  "text": "EVERY SINGLE TIME.",
+  "hl": [
+   "EVERY"
+  ],
+  "line": 4
+ },
+ {
+  "t0": 23.69,
+  "t1": 24.23,
+  "text": "IF YOUR MOM",
+  "hl": [],
+  "line": 5
+ },
+ {
+  "t0": 24.23,
+  "t1": 25.81,
+  "text": "HAS THIS SUPERPOWER...",
+  "hl": [],
+  "line": 5
+ },
+ {
+  "t0": 25.81,
+  "t1": 26.74,
+  "text": "SUBSCRIBE!",
+  "hl": [
+   "SUBSCRIBE"
+  ],
+  "line": 5
+ },
+ {
+  "t0": 26.85,
+  "t1": 27.47,
+  "text": "BUT THAT'S ONLY",
+  "hl": [],
+  "line": 6
+ },
+ {
+  "t0": 27.47,
+  "t1": 28.03,
+  "text": "HALF OF IT.",
+  "hl": [
+   "HALF"
+  ],
+  "line": 6
+ },
+ {
+  "t0": 28.03,
+  "t1": 29.35,
+  "text": "YOUR BRAIN SEARCHES",
+  "hl": [],
+  "line": 6
+ },
+ {
+  "t0": 29.35,
+  "t1": 30.11,
+  "text": "WITH A PICTURE",
+  "hl": [
+   "PICTURE"
+  ],
+  "line": 6
+ },
+ {
+  "t0": 30.11,
+  "t1": 31.07,
+  "text": "OF THE THING.",
+  "hl": [],
+  "line": 6
+ },
+ {
+  "t0": 31.07,
+  "t1": 31.95,
+  "text": "IF IT LOOKS DIFFERENT",
+  "hl": [],
+  "line": 6
+ },
+ {
+  "t0": 31.95,
+  "t1": 33.03,
+  "text": "THAN YOU IMAGINED,",
+  "hl": [],
+  "line": 6
+ },
+ {
+  "t0": 33.03,
+  "t1": 33.75,
+  "text": "YOUR EYES SKIP",
+  "hl": [
+   "SKIP"
+  ],
+  "line": 6
+ },
+ {
+  "t0": 33.75,
+  "t1": 34.73,
+  "text": "RIGHT OVER IT.",
+  "hl": [],
+  "line": 6
+ },
+ {
+  "t0": 34.73,
+  "t1": 35.31,
+  "text": "SO IT CAN BE",
+  "hl": [],
+  "line": 7
+ },
+ {
+  "t0": 35.31,
+  "t1": 36.49,
+  "text": "RIGHT IN FRONT OF YOU,",
+  "hl": [
+   "FRONT"
+  ],
+  "line": 7
+ },
+ {
+  "t0": 36.49,
+  "t1": 37.35,
+  "text": "AND YOU LITERALLY",
+  "hl": [],
+  "line": 7
+ },
+ {
+  "t0": 37.35,
+  "t1": 38.63,
+  "text": "DON'T SEE IT.",
+  "hl": [
+   "DON'T"
+  ],
+  "line": 7
+ },
+ {
+  "t0": 38.63,
+  "t1": 39.47,
+  "text": "AND HERE'S THE PART",
+  "hl": [],
+  "line": 8
+ },
+ {
+  "t0": 39.47,
+  "t1": 40.97,
+  "text": "NOBODY TELLS YOU...",
+  "hl": [
+   "NOBODY"
+  ],
+  "line": 8
+ },
+ {
+  "t0": 40.97,
+  "t1": 41.73,
+  "text": "YOU KEEP CHECKING",
+  "hl": [],
+  "line": 9
+ },
+ {
+  "t0": 41.73,
+  "t1": 43.69,
+  "text": "THE SAME EMPTY SPOTS.",
+  "hl": [
+   "EMPTY"
+  ],
+  "line": 9
+ },
+ {
+  "t0": 43.69,
+  "t1": 44.21,
+  "text": "MOM CHECKS",
+  "hl": [],
+  "line": 9
+ },
+ {
+  "t0": 44.21,
+  "t1": 45.01,
+  "text": "THE MESSY ONES.",
+  "hl": [
+   "MESSY"
+  ],
+  "line": 9
+ },
+ {
+  "t0": 45.01,
+  "t1": 45.37,
+  "text": "OH,",
+  "hl": [],
+  "line": 10
+ },
+ {
+  "t0": 45.37,
+  "t1": 46.79,
+  "text": "AND SHE'S PROBABLY",
+  "hl": [],
+  "line": 10
+ },
+ {
+  "t0": 46.79,
+  "t1": 48.23,
+  "text": "THE ONE WHO PUT IT THERE.",
+  "hl": [
+   "PUT"
+  ],
+  "line": 10
+ },
+ {
+  "t0": 48.23,
+  "t1": 49.17,
+  "text": "SO NEXT TIME,",
+  "hl": [],
+  "line": 11
+ },
+ {
+  "t0": 49.17,
+  "t1": 50.11,
+  "text": "PICTURE EXACTLY",
+  "hl": [
+   "EXACTLY"
+  ],
+  "line": 11
+ },
+ {
+  "t0": 50.11,
+  "t1": 51.29,
+  "text": "WHAT YOU'RE LOOKING FOR,",
+  "hl": [],
+  "line": 11
+ },
+ {
+  "t0": 51.29,
+  "t1": 51.75,
+  "text": "AND SEARCH",
+  "hl": [],
+  "line": 11
+ },
+ {
+  "t0": 51.75,
+  "t1": 53.67,
+  "text": "THE MESSY SPOTS SLOWLY.",
+  "hl": [
+   "SLOWLY"
+  ],
+  "line": 11
+ },
+ {
+  "t0": 53.67,
+  "t1": 54.79,
+  "text": "OR JUST YELL",
+  "hl": [],
+  "line": 12
+ },
+ {
+  "t0": 54.79,
+  "t1": 55.69,
+  "text": "MOM.",
+  "hl": [
+   "MOM"
+  ],
+  "line": 12
+ },
+ {
+  "t0": 55.69,
+  "t1": 57.71,
+  "text": "IT WORKS EVERY TIME.",
+  "hl": [
+   "EVERY"
+  ],
+  "line": 12
+ },
+ {
+  "t0": 57.71,
+  "t1": 58.29,
+  "text": "SEND THIS TO",
+  "hl": [
+   "SEND"
+  ],
+  "line": 13
+ },
+ {
+  "t0": 58.29,
+  "t1": 59.01,
+  "text": "YOUR MOM...",
+  "hl": [
+   "MOM"
+  ],
+  "line": 13
+ },
+ {
+  "t0": 59.01,
+  "t1": 60.29,
+  "text": "OR SANTA'S PUTTING YOU",
+  "hl": [],
+  "line": 13
+ },
+ {
+  "t0": 60.29,
+  "t1": 61.88,
+  "text": "ON THE NAUGHTY LIST.",
+  "hl": [
+   "NAUGHTY"
+  ],
+  "line": 13
+ }
+]

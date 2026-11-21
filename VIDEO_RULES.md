@@ -23,6 +23,9 @@
   not just repeat a line ("Rudolph? Definitely a girl." -> "...and? so what?").
 - Length: about 1 minute. Minimum 58 seconds, and it should run over 58 seconds,
   so there is room to explain everything properly.
+- SPEED-UP: the narration is sped up 1.15x (pitch kept, ffmpeg atempo) BEFORE word timing, so the
+  whole video plays fast like current Shorts. The final video must still be about 1 minute (58 s+)
+  AFTER the speed-up, so scripts need about 15% more words (aim ~170-180 words, ~70 s raw).
 
 ## Mid-video subscribe (every video)
 - Viewers drop around 40 s, so the subscribe ask goes in the MIDDLE, around 20-25 s, right after the first big payoff.

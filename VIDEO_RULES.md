@@ -55,6 +55,8 @@ Barely anything.").  6. Screamed SUBSCRIBE.  7. Why / theory, re-hook, twist, pa
 - Read every line right after the one before it. Pronouns must point at the right thing: after a joke line about
   something else (e.g. "asking if fish get thirsty"), name the subject again ("So are younger siblings actually
   dumber? Scientists tested it...") instead of "they actually are".
+- Every joke/punchline needs its SETUP said and shown first. Never jump straight to the punchline
+  (e.g. say + show "You say, 'Dad, I'm hungry.'" in YOUR speech bubble BEFORE Dad's "Hi hungry, I'm Dad.").
 
 ## Narration (ElevenLabs, voice: Jett - Gritty, Spunky Young Hero, 6IwYbsNENZgAB1dtBZDp)
 - Use Jett from now on (was Ethan, uB5dGadiIOtRLnqbQl9M).

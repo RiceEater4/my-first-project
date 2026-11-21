@@ -65,16 +65,23 @@ def scene(F, t):
         jump = 6 * abs(math.sin(a * 9)) * math.exp(-a * 1.2)
         you(F, 44, mood='angry', bob=jump); dad(F, 130, bob=abs(math.sin(t * 5)) * 2)
         ctag(F, 'WORST JOKES', 300, px=10)
-    elif i == L_JOKE:                                            # "Hi hungry, I'm Dad" -> groan -> he laughs -> every time
-        groan = t >= cs(L_JOKE, 2) - 0.05; laughs = t >= cs(L_JOKE, 3) - 0.05; every = t >= cs(L_JOKE, 4) - 0.05
-        you(F, 44, mood='sad' if groan else 'happy'); dad(F, 132, bob=abs(math.sin(t * 7)) * 2 if laughs else 0)
-        if not groan: bubble(F, 122, 52, "HI HUNGRY, I'M DAD!", px=6)
+    elif i == L_JOKE:                                            # "Dad, I'm hungry" -> "Hi hungry, I'm Dad" -> groan -> he laughs
+        ask = t >= cs(L_JOKE, 1) - 0.05; goes = t >= cs(L_JOKE, 2) - 0.05; joke = t >= cs(L_JOKE, 3) - 0.05
+        groan = t >= cs(L_JOKE, 5) - 0.05; laughs = t >= cs(L_JOKE, 6) - 0.05; every = t >= cs(L_JOKE, 7) - 0.05
+        you(F, 44, mood='sad' if (groan or not joke) else 'happy')
+        dad(F, 132, bob=abs(math.sin(t * 7)) * 2 if laughs else (abs(math.sin(t * 10)) * 1.5 if goes and not joke else 0))
+        if not ask:                                              # tummy rumble
+            if (t * 4) % 2 < 1.4: bk.pixel_text(F, 'GRRR', int(26 * S), int((GROUND - 64) * S), px=6, colr=(255, 200, 120))
+        elif not joke:
+            bubble(F, 44, 52, "DAD, I'M HUNGRY!", px=6)
+            if goes and (t * 5) % 2 < 1.4: bk.pixel_text(F, '!', int(130 * S), int((GROUND - 72) * S), px=9, colr=(255, 226, 122))
+        elif not groan: bubble(F, 122, 52, "HI HUNGRY, I'M DAD!", px=6)
         else:
-            if not every: drum_hit(F, t, cs(L_JOKE, 2) - 0.05)
+            if not every: drum_hit(F, t, cs(L_JOKE, 5) - 0.05)
             bk.pixel_text(F, 'UGH', int(34 * S), int((GROUND - 72) * S), px=7, colr=(200, 215, 255))
         if laughs: laugh(F, 140, GROUND - 70, t)
         if every:
-            n = int(1 + 846 * ramp(t, cs(L_JOKE, 4), max(0.4, SEG[L_JOKE][1] - cs(L_JOKE, 4))))
+            n = int(1 + 846 * ramp(t, cs(L_JOKE, 7), max(0.4, SEG[L_JOKE][1] - cs(L_JOKE, 7))))
             big_num(F, f'JOKES TOLD: {n}', 200, px=9, colr=(255, 200, 58)); ctag(F, 'EVERY SINGLE TIME', 330, px=6)
     elif i in (L_PURPOSE, L_TROLL, L_SUB):                       # just bad? researcher: on purpose, the groan IS the joke
         if i == L_PURPOSE and t < cs(L_PURPOSE, 2) - 0.05:

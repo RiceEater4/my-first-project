@@ -5,7 +5,7 @@ kids' egos without crossing a line may help them handle embarrassment (an argume
 LINES = [
     ("Ever wondered why your dad tells the...", "Ever wondered why your dad tells the...", ('DAD',)),
     ("WORST jokes?!", "[shouting] WORST jokes?!", ('WORST',)),
-    ("Hi hungry, I'm Dad. You groan. He laughs. Every. Single. Time.", "\"Hi hungry, I'm Dad.\" You groan. [laughs] He laughs. Every. Single. Time.", ('DAD', 'GROAN', 'EVERY')),
+    ("You say, Dad, I'm hungry. And he goes... Hi hungry, I'm Dad. You groan. He laughs. Every. Single. Time.", "You say, \"Dad, I'm hungry.\" And he goes... \"Hi hungry, I'm Dad.\" You groan. [laughs] He laughs. Every. Single. Time.", ('HUNGRY', 'DAD', 'GROAN', 'EVERY')),
     ("So are dads just bad at jokes? A researcher looked into it... and nope. It's on purpose. The groan IS the joke. He calls it weaponized anti-humor.", "So are dads just bad at jokes? A researcher looked into it... and nope. [excited] It's on purpose. The groan IS the joke. He calls it weaponized anti-humor.", ('BAD', 'PURPOSE', 'GROAN', 'ANTI-HUMOR')),
     ("Your dad isn't failing. He's trolling you.", "[laughs] Your dad isn't failing. He's trolling you.", ('FAILING', 'TROLLING')),
     ("If your dad does this... SUBSCRIBE! 'Cause the reason why is actually kind of sweet.", "If your dad does this... [shouting] SUBSCRIBE! [excited] 'Cause the reason why is actually kind of sweet.", ('SUBSCRIBE', 'SWEET')),
@@ -19,7 +19,7 @@ TTS = "\n\n".join(l[1] for l in LINES)
 CAPTION_BREAKS = [
     "Ever wondered why | your dad tells the...",
     "WORST jokes?!",
-    "Hi hungry, | I'm Dad. | You groan. | He laughs. | Every. Single. | Time.",
+    "You say, | Dad, I'm hungry. | And he goes... | Hi hungry, | I'm Dad. | You groan. | He laughs. | Every. Single. | Time.",
     "So are dads | just bad at jokes? | A researcher | looked into it... | and nope. | It's on purpose. | The groan IS the joke. | He calls it | weaponized anti-humor.",
     "Your dad isn't failing. | He's trolling you.",
     "If your dad | does this... | SUBSCRIBE! | 'Cause the reason why | is actually kind of sweet.",

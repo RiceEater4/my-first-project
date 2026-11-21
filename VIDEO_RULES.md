@@ -29,6 +29,10 @@
 - It is SCREAMED like the hook: a short identity line, then [shouting] "SUBSCRIBE!" with the same screen shake,
   boom and a big SUBSCRIBE button pop + click on screen. e.g. "If you wrap like a raccoon too... [shouting] SUBSCRIBE!"
 - Keep it quick (~2-3 s), then straight back into the explanation.
+- It must NOT feel like an ending (viewers were leaving right after it, thinking the video was over):
+  * open loop before it ("and the next part is even crazier...") and/or right after it ("...SUBSCRIBE! But wait, it gets worse.")
+  * NO separate end-card-looking scene: the current scene keeps playing, a SMALLER subscribe button pops into a corner,
+    gets clicked and slides away; no pause after the scream, straight into the next fact (~1.5 s total).
 
 ## Ending + CTA (every video)
 - Order: payoff line first, then the CTA as the very last line (~3 s). No "Merry Christmas" sign-off.

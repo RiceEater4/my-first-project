@@ -82,6 +82,27 @@ def zzz(F, x, y, t):
     for k in range(3):
         ph = (t * 0.7 + k / 3) % 1; bk.pixel_text(F, 'Z', int((x + ph * 12) * S), int((y - ph * 22) * S), px=4 + k, colr=(225, 235, 255))
 
+def corner_sub(F, t, t0, press):
+    """small subscribe button that slides into the top-right corner, gets clicked, then slides away;
+    the scene underneath keeps playing so it never looks like an end card"""
+    bw, bh = 400, 104; Y = 150
+    k_in, k_out = ramp(t, t0, 0.2), ramp(t, press + 1.0, 0.25)
+    X = int(WF - 40 - bw + (1 - k_in) * (bw + 60) + k_out * (bw + 60))
+    if X >= WF: return
+    pressed = t >= press; sq = 4 if press - 0.08 <= t < press + 0.08 else 0
+    x0, x1, y0, y1 = max(0, X + sq), min(WF, X + bw - sq), Y + sq, Y + bh - sq
+    F[y0 + 6:y1 + 6, max(0, x0 + 6):min(WF, x1 + 6)] *= 0.45                               # drop shadow
+    F[y0:y1, x0:x1] = hexc('#5a6070') if pressed else hexc('#e8202e')
+    for q in range(4):
+        F[y0 + q, x0:x1] = F[y1 - 1 - q, x0:x1] = NAVY
+        if X + sq + q < WF: F[y0:y1, max(0, X + sq + q)] = NAVY
+        if 0 <= X + bw - sq - 1 - q < WF: F[y0:y1, X + bw - sq - 1 - q] = NAVY
+    txt = 'SUBSCRIBED' if pressed else 'SUBSCRIBE'; tw = len(txt) * 6 * 6 - 6
+    bk.pixel_text(F, txt, X + (bw - tw) // 2, Y + (bh - 42) // 2, px=6, colr=(255, 255, 255))
+    if t >= t0 + 0.15: sv.draw_cursor(F, int(min(WF - 60, X + bw - 90 + (1 - ramp(t, t0 + 0.15, 0.25)) * 80)), Y + bh - 30, px=5)
+    if pressed:
+        for k in range(8): rv.sparkle(F, (X + bw / 2) / S + 36 * math.cos(TAU * k / 8), (Y + bh / 2) / S + 14 * math.sin(TAU * k / 8), 1 - ramp(t, press, 0.7))
+
 def seg_of(t):
     i = 0
     for k, (a, b) in enumerate(SEG):
@@ -123,10 +144,10 @@ def scene(F, t):
             clock_face(F, 48, 100, 26, 7, 'REAL: 7 AM'); clock_face(F, 132, 100, 26, 5, 'FEELS: 5 AM', (255, 200, 58))
             if t >= cs(L_SEVEN, 1) - 0.05: zzz(F, 150, 70, t)
             bk.pixel_text(F, '=', int(86 * S), int(94 * S), px=8, colr=(255, 255, 255))
-    elif i == L_SUB:
-        you(F, 60, mood='proud', arms='up', one_shoe=True, bob=abs(math.sin(t * 6)) * 3)
-        if t >= cs(L_SUB, 2) - 0.05: sub_button(F, t, cs(L_SUB, 2) - 0.05, cs(L_SUB, 2) + 0.35)
-        else: ctag(F, 'LATE TO 1ST PERIOD?', 300, px=6)
+    elif i == L_SUB:                                             # scene keeps going (7 AM = 5 AM) + small corner subscribe
+        clock_face(F, 48, 100, 26, 7, 'REAL: 7 AM'); clock_face(F, 132, 100, 26, 5, 'FEELS: 5 AM', (255, 200, 58))
+        bk.pixel_text(F, '=', int(86 * S), int(94 * S), px=8, colr=(255, 255, 255)); zzz(F, 150, 84, t)
+        if t >= cs(L_SUB, 2) - 0.05: corner_sub(F, t, cs(L_SUB, 2) - 0.05, cs(L_SUB, 2) + 0.3)
     elif i == L_SEATTLE:                                         # Seattle: school later -> +34 min sleep, grades up
         school(F, 50)
         moved = ramp(t, cs(L_SEATTLE, 1), 0.8)
@@ -209,7 +230,7 @@ def frame(t):
     scene(F, t)
     i = seg_of(t)
     rv.snow(F, t)
-    if i >= 2 and 0 <= t - SEG[i][0] < 0.12 and i not in (L_SEVEN,):
+    if i >= 2 and 0 <= t - SEG[i][0] < 0.12 and i not in (L_SEVEN, L_SUB):
         m = rv.HR_BAYER < (1 - (t - SEG[i][0]) / 0.12) * 0.7; F[m] = F[m] * 0.4 + hexc('#f4fbff') * 0.6
     for st in SHOUTS:
         if 0 <= t - st < 0.35:

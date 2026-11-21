@@ -75,7 +75,7 @@ def scene(F, t):
         if laughs: laugh(F, 140, GROUND - 70, t)
         if every:
             n = int(1 + 846 * ramp(t, cs(L_JOKE, 4), max(0.4, SEG[L_JOKE][1] - cs(L_JOKE, 4))))
-            big_num(F, f'JOKE #{n}', 200, px=10, colr=(255, 200, 58)); ctag(F, 'EVERY SINGLE TIME', 330, px=6)
+            big_num(F, f'JOKES TOLD: {n}', 200, px=9, colr=(255, 200, 58)); ctag(F, 'EVERY SINGLE TIME', 330, px=6)
     elif i in (L_PURPOSE, L_TROLL, L_SUB):                       # just bad? researcher: on purpose, the groan IS the joke
         if i == L_PURPOSE and t < cs(L_PURPOSE, 2) - 0.05:
             dad(F, 90); ctag(F, 'JUST BAD AT JOKES?', 300, px=7)

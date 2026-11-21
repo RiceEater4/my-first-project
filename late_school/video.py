@@ -105,8 +105,8 @@ def scene(F, t):
             if n: big_num(F, 'SNOOZE' + ' X' + str(n), 230, px=9, colr=(255, 200, 58))
             else: ctag(F, 'LOOK AT YOU', 300, px=8)
         else:
-            f = ramp(t, run, 1.6); school(F, 150)
-            x = lerp(-20, 88, f); you(F, x, mood='shock', one_shoe=True, bob=abs(math.sin(t * 14)) * 3 * (1 - f ** 4))
+            f = ramp(t, run, 1.6); school(F, 140)
+            x = lerp(-20, 78, f); you(F, x, mood='shock', one_shoe=True, bob=abs(math.sin(t * 14)) * 3 * (1 - f ** 4))
             for k in range(6): put(F, x - 22 - k * 4, GROUND - 2 - (k % 2) * 2, hexc('#eaf3ff'), 0.8 - k * 0.12)
             if t >= cs(L_SNOOZE, 5) - 0.05: ui.callout(F, 'ONE SHOE', max(4, int(x) - 50), 76, x - 6, GROUND - 1, px=5, accent='#ffcc4a')
     elif i in (L_SCIENCE, L_SEVEN):                              # actually smart? scientists: body clock shifts later

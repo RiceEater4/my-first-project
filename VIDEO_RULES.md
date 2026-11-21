@@ -31,15 +31,15 @@
 - Keep it quick (~2-3 s), then straight back into the explanation.
 
 ## Ending + CTA (every video)
-- Order: story payoff line first, then the CTA as the very last line (~3 s). No "Merry Christmas" sign-off.
-- CTA = a specific comment question about the video's topic + the naughty-list subscribe joke, e.g.
-  "Comment which superpower you'd want... and subscribe, or Santa's putting you on the naughty list."
-  Swap the question per topic ("Comment if you'd let a penguin near Santa...", "Comment boy or girl Rudolph...").
-  The naughty-list subscribe line stays the same every time (signature ending).
+- Order: payoff line first, then the CTA as the very last line (~3 s). No "Merry Christmas" sign-off.
+- CTA = a "send this to / tag / comment" line aimed at a specific person + the naughty-list joke, e.g.
+  "Send this to your mom... or Santa's putting you on the naughty list."
+  "Tag the worst wrapper you know... or Santa's putting you on the naughty list."
+  The naughty-list line stays the same every time (signature ending). Subscribe is already screamed mid-video.
 - Voice: comment part said normally, naughty-list part [mischievous] / smirking.
 - Visuals: the main character turns to camera; a pixel comment bubble pops up showing the answer options;
   a red pixel SUBSCRIBE button gets pressed (click + sparkle); Santa slides in beside (never overlapping)
-  holding a NAUGHTY LIST scroll. Captions as usual, COMMENT and SUBSCRIBE in yellow.
+  holding the NAUGHTY LIST (scenery.naughty_list). Captions as usual, key words in yellow.
 
 ## Script order that works (younger-sibling v2 format)
 1. Hook (screamed word).  2. The relatable thing first: a quick, funny example of it happening ("Eating cereal with a fork.
@@ -78,7 +78,7 @@ Barely anything.").  6. Screamed SUBSCRIBE.  7. Why / theory, re-hook, twist, pa
   notch, shine); held items anchor to the elf's hand (mom_finds/props.py hand()), floor items get a shadow, groups
   inside bubbles/cards are centred using real text widths, grids use columns centred on the screen.
 - Pointer labels and thought bubbles: always use style_study/ui.py (callout = tag box with shadow + chunky outlined
-  elbow line + glowing target dot; thought_bubble = puffy cloud with outline, drop shadow, 3-shade shading, trail).
+  elbow line + glowing target dot; thought_bubble = puffy cloud with outline, drop shadow, smooth blended shading, trail).
 - No platform/island by default: characters and objects stand on an invisible floor with a soft pixel shadow under
   each one (like other pixel-art YouTubers). Use a platform only when the scene needs one. Use the whole width for movement.
 - The visual sits in the middle of the screen or a bit higher.
@@ -86,10 +86,12 @@ Barely anything.").  6. Screamed SUBSCRIBE.  7. Why / theory, re-hook, twist, pa
 - Captions: one line, bold, no box, yellow key word.
 
 ## Style
-- Blueprint pixel art: navy grid background, small chunky sprites with navy outlines and dithering,
-  floating dioramas, pixel labels / tags / counters.
-- Christmas theme and public-domain Christmas music in every video. No voice (so far).
-- Every video ships with a title and description in copyable blocks.
+- Blueprint pixel art: navy grid background with falling snow, clean layered sprites with navy outlines,
+  invisible floor + shadows, pixel labels / tags / counters / big numbers.
+- Christmas LOOK always (elves, Santa, snow, public-domain Christmas music bed) even when the topic isn't Christmas.
+- Cast: YOU = green elf (style_study/characters.elf), mom / aunt / teacher / perfect person = red elf (Holly colours),
+  younger sibling = short blue elf, professor = scientist, Santa = dad / boss / naughty list.
+- Every video ships with a title ("What If ...? <emoji> #shorts") and description in copyable code blocks.
 
 ## What has not worked
 - Slow explainer ideas ("What if it never stopped snowing?": ~200 views, ~30% stayed).
@@ -101,3 +103,21 @@ Barely anything.").  6. Screamed SUBSCRIBE.  7. Why / theory, re-hook, twist, pa
 - Next week or so: bring back the Earth/space "what if" series with the new hooks, direct script style and Christmas look
   (e.g. "What If Earth Was a Snow Globe?"), then compare the numbers at the next check-in.
 - vidIQ check every 1st and 15th (reminder set); renewable credits only, never the add-on ones.
+
+## Workflow (how each video gets made)
+1. Pick an idea (relatable + guilty habit or family/friend roast + real science twist + someone to send it to).
+2. Fact-check with web search; word claims carefully ("kind of, yes", "might", "one theory") and cite sources in chat.
+3. Write the script in the younger-sibling v2 order and SHOW IT FIRST. Only record after the user says go.
+4. Record with Jett (ElevenLabs connector, eleven_v4, generations_count 1). To change lines later, re-record ONLY the
+   changed lines and splice them in (matching volume) instead of re-recording everything.
+5. Word-time with whisper (scratch words.py) -> captions.py (exact words, digits in captions) -> timing.json.
+6. Build video.py from the latest folder (late_school/ is the newest template), check stills of every scene for
+   overlaps, alignment, readable text and detail, then mix.py (music ~13 dB under voice, SFX) -> loudnorm about -13 LUFS.
+7. Render, check a 0.5 fps contact sheet, commit + push, send the mp4 + post.txt (title/description).
+- When the user says "don't make a video", only give the script / ideas / preview images.
+
+## Accounts + credits
+- ElevenLabs (connected through Claude): free plan, ~10,000 credits/month, a full ~60 s video costs ~1,000, a single
+  spliced line ~100-450. Jett is a library voice: it works through the connector, NOT through a free API key.
+- vidIQ: only free / renewable credits, never add-on credits; never use thumbnail or music tools. Check analytics on the
+  1st and 15th (scheduled reminder in this chat).

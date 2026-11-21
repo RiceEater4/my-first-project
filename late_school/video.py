@@ -148,6 +148,7 @@ def scene(F, t):
         clock_face(F, 48, 100, 26, 7, 'REAL: 7 AM'); clock_face(F, 132, 100, 26, 5, 'FEELS: 5 AM', (255, 200, 58))
         bk.pixel_text(F, '=', int(86 * S), int(94 * S), px=8, colr=(255, 255, 255)); zzz(F, 150, 84, t)
         if t >= cs(L_SUB, 2) - 0.05: corner_sub(F, t, cs(L_SUB, 2) - 0.05, cs(L_SUB, 2) + 0.3)
+        if t >= cs(L_SUB, 3) - 0.05: ctag(F, 'IT GETS CRAZIER', 960, px=7)
     elif i == L_SEATTLE:                                         # Seattle: school later -> +34 min sleep, grades up
         school(F, 50)
         moved = ramp(t, cs(L_SEATTLE, 1), 0.8)

@@ -1,6 +1,10 @@
 # Video rules (notes from feedback)
 
 ## Hook (first 5-7 seconds)
+- NEW (Nov 22): the hook is ONE sentence, a ROAST / insult aimed at the viewer, very expressive, with the key word
+  screamed ("Ever wondered why you're so (BEEP)ING FAAAAT?!"). Swears are BLEEPED (a loud beep, never the real word).
+  No slang in the narration ("nah", "bro", "mid", "GOAT"...). Trend sounds can be screamed (e.g. "HUSS! HUSS! HUSS!").
+  The flip right after takes the insult back ("It's not because you're lazy...").
 - No rewind / "let me explain" cold open.
 - Open with a bold, direct statement or command, the way the reference shorts do
   ("Your house needs crocodiles.", "Stack three bones.", "One tree. 813 soldiers.").

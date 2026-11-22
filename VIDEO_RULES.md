@@ -48,11 +48,22 @@
   a red pixel SUBSCRIBE button gets pressed (click + sparkle); Santa slides in beside (never overlapping)
   holding the NAUGHTY LIST (scenery.naughty_list). Captions as usual, key words in yellow.
 
-## Script order that works (younger-sibling v2 format)
-1. Hook (screamed word).  2. The relatable thing first: a quick, funny example of it happening ("Eating cereal with a fork.
-Asking if fish get thirsty.").  3. Re-ask the hook as a plain question ("So are younger siblings actually dumber?").
-4. "Scientists tested it... and yes / kind of." + the fact with a number.  5. A punchy reaction ("Two. That's it.
-Barely anything.").  6. Screamed SUBSCRIBE.  7. Why / theory, re-hook, twist, payoff, CTA.
+## Script order: FLIP formula (NEW, Nov 22 - copied from the viral "curse of knowledge" short)
+Ours used to confirm the viewer ("scientists tested it... and yes") and the surprise came at 10-15 s. The viral
+ones FLIP the viewer's belief in the very next sentence, point it back at YOU, and NAME the thing.
+1. Hook + screamed word ("Ever talked to someone so slow it made you... FURIOUSSSS?!").
+2. FLIP right away (~3 s): "It's not because ___. It's ___." Best when it blames the viewer: "It's a bug in YOUR brain."
+3. NAME IT with the real science name: "It's called... the curse of knowledge."
+4. HOW IT WORKS in short punchy fragments about "you": "When you learn something, your brain wires it in...
+   Your confusion? Gone."
+5. A brutal one-line punchline: "Your brain doesn't see a beginner. It sees... an idiot."
+6. Screamed SUBSCRIBE right there (~12-18 s), no pause, straight into the facts.
+7. THE FACTS: one real experiment + a crazy number (year, place, what they did, the result).
+8. What the number means for YOU + "here's the part nobody tells you..." twist.
+9. What to do about it + CTA (send to X... or Santa's naughty list).
+No joke setups, no "so are X actually Y?" question, no "scientists tested it... and yes".
+(Old younger-sibling v2 order: hook -> funny example -> plain question -> "scientists tested it, yes" -> reaction
+-> subscribe -> why -> twist -> CTA. Only use it if the user asks.)
 
 ## Script clarity check (before recording)
 - Read every line right after the one before it. Pronouns must point at the right thing: after a joke line about

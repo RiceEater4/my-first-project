@@ -59,9 +59,10 @@ ones FLIP the viewer's belief in the very next sentence, point it back at YOU, a
 5. A brutal one-line punchline: "Your brain doesn't see a beginner. It sees... an idiot."
 6. Screamed SUBSCRIBE right there (~12-18 s). Do NOT copy the viral video's bare "FOLLOW NOW" (it is abrupt,
    gives no reason, feels like an ad). Ours = 3 parts in one breath, no pause:
-   a) an identity line that admits the punchline ("If you've ever called someone an idiot in your head...")
+   SHORT - about 8 words total, ~2-3 s:
+   a) a 3-4 word identity line ("Called someone an idiot?")
    b) [shouting] "SUBSCRIBE!"
-   c) an open loop that teases the facts with a number ("'Cause scientists proved it... and the number is insane.")
+   c) a 3-4 word open loop ("The proof's insane.")
    On screen: small corner button over the running scene (never a full-screen end card).
 7. THE FACTS: one real experiment + a crazy number (year, place, what they did, the result).
 8. What the number means for YOU + "here's the part nobody tells you..." twist.

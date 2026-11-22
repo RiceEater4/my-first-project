@@ -101,15 +101,16 @@ def groan_snd(v=1.0):
     return v * np.sin(2 * np.pi * np.cumsum(220 - 90 * t / 0.7) / SR) * np.sin(np.pi * t / 0.7) * 0.5
 D = SEG[v_.L_WORST][0]; add(fx, D, boom(1.0)); add(fx, D + 0.1, glock(55, 0.35, 1.2))
 for i_ in range(2, len(SEG)): add(fx, SEG[i_][0], whoosh(0.3, 0.2))
+add(fx, cs(v_.L_FLIP, 1) + 0.25, thud(0.6)); add(fx, cs(v_.L_FLIP, 3), pop(0.4))
+add(fx, cs(v_.L_FLIP, 5), boom(0.6)); add(fx, cs(v_.L_FLIP, 5), bells(0.6))
+add(fx, cs(v_.L_HOW, 1), glock(84, 0.25)); add(fx, cs(v_.L_HOW, 3) + 0.1, groan_snd(0.35))
 add(fx, cs(v_.L_JOKE, 0), growl(0.25)); add(fx, cs(v_.L_JOKE, 3), pop(0.35))
 add(fx, cs(v_.L_JOKE, 5) - 0.05, rimshot(0.8)); add(fx, cs(v_.L_JOKE, 5) + 0.2, groan_snd(0.4))
-for k in range(int(1.5 / 0.1)): add(fx, cs(v_.L_JOKE, 7) + k * 0.1, click(0.3))
-add(fx, cs(v_.L_PURPOSE, 2), pop(0.4)); add(fx, cs(v_.L_PURPOSE, 4), boom(0.5)); add(fx, cs(v_.L_PURPOSE, 8), bells(0.5))
-for k in range(6): add(fx, cs(v_.L_PURPOSE, 6) + k * 0.12, glock(72 + k * 3, 0.15, 0.5))
+add(fx, cs(v_.L_PUNCH, 1), pop(0.4)); [add(fx, cs(v_.L_PUNCH, 3) + k * 0.12, glock(72 + k * 3, 0.15, 0.5)) for k in range(6)]
 add(fx, cs(v_.L_TROLL, 1), rimshot(0.5))
 P = cs(v_.L_SUB, 2); add(fx, P, boom(0.9)); add(fx, P, bells(0.8)); add(fx, P + 0.3, click(1.0)); [add(fx, P + 0.33 + k * 0.08, glock(86 + k * 3, 0.25, 1.0)) for k in range(5)]
 add(fx, cs(v_.L_SUB, 3), glock(91, 0.3)); add(fx, cs(v_.L_SUB, 3) + 0.12, glock(96, 0.3))
-add(fx, cs(v_.L_WHY, 2), pop(0.3)); add(fx, cs(v_.L_WHY, 6), whoosh(0.8, 0.4)); add(fx, cs(v_.L_WHY, 6), bells(0.6))
+add(fx, cs(v_.L_WHY, 1), pop(0.3)); add(fx, cs(v_.L_WHY, 6), pop(0.3)); add(fx, cs(v_.L_WHY, 10), whoosh(0.8, 0.4)); add(fx, cs(v_.L_WHY, 10), bells(0.6))
 for k in range(8): add(fx, SEG[v_.L_EYEROLL][0] + k * 0.15, click(0.35))
 add(fx, cs(v_.L_EYEROLL, 1), bells(0.6)); [add(fx, cs(v_.L_EYEROLL, 1) + k * 0.08, glock(84 + k * 3, 0.2, 1.0)) for k in range(5)]
 add(fx, SEG[v_.L_NOBODY][0], boom(0.8)); add(fx, SEG[v_.L_NOBODY][0] + 0.1, glock(55, 0.4, 2.0))

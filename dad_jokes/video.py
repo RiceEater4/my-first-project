@@ -1,4 +1,4 @@
-"""'What If Dad Jokes Were Bad On Purpose?' - direct explainer (younger-sibling v2 order), Jett narration.
+"""'What If Dad Jokes Were Bad On Purpose?' - FLIP formula (v2), Jett narration sped up 1.1x.
 YOU = green elf, DAD = Santa, your future kid = short blue elf. Open-loop corner subscribe, clean callouts/bubbles.
 usage: python3 video.py out.mp4 audio.wav  |  python3 video.py --stills DIR t1 t2 ...
 """
@@ -24,7 +24,7 @@ T_ = json.load(open(os.path.join(HERE, 'timing.json'))); SEG, END = T_['lines'],
 CAPJ = json.load(open(os.path.join(HERE, 'captions.json')))
 def cs(line, k):
     c_ = [c for c in CAPJ if c['line'] == line]; return c_[min(k, len(c_) - 1)]['t0']
-(L_HOOK, L_WORST, L_JOKE, L_PURPOSE, L_TROLL, L_SUB, L_WHY, L_EYEROLL, L_NOBODY, L_FUTURE, L_CTA) = range(11)
+(L_HOOK, L_WORST, L_FLIP, L_HOW, L_JOKE, L_PUNCH, L_TROLL, L_SUB, L_WHY, L_EYEROLL, L_NOBODY, L_FUTURE, L_CTA) = range(13)
 GROUND = rv.GROUND
 def ramp(t, t0, d=0.5): return smooth(min(1.0, max(0.0, (t - t0) / d)))
 def you(F, cx, mood='happy', **kw): return lv.you(F, cx, mood=mood, **kw)
@@ -65,11 +65,35 @@ def scene(F, t):
         jump = 6 * abs(math.sin(a * 9)) * math.exp(-a * 1.2)
         you(F, 44, mood='angry', bob=jump); dad(F, 130, bob=abs(math.sin(t * 5)) * 2)
         ctag(F, 'WORST JOKES', 300, px=10)
-    elif i == L_JOKE:                                            # "Dad, I'm hungry" -> "Hi hungry, I'm Dad" -> groan -> he laughs
+    elif i == L_FLIP:                                            # not unfunny -> on purpose -> it's called ANTI-HUMOR
+        if t < cs(L_FLIP, 2) - 0.05:
+            dad(F, 90); ctag(F, 'UNFUNNY?', 280, px=10)
+            if t >= cs(L_FLIP, 1) + 0.25:
+                for k in range(-170, 170, 2): F[int(304 + k * 0.1):int(312 + k * 0.1), 540 + k:542 + k] = hexc('#e8303a')
+        elif t < cs(L_FLIP, 4) - 0.05:
+            dad(F, 90, bob=abs(math.sin(t * 6)) * 2); ctag(F, 'ON PURPOSE', 280, px=10)
+            sparkles(F, 90, 100, 34, 30, t)
+        else:
+            dad(F, 90); k = ramp(t, cs(L_FLIP, 4), 0.4); F *= 1 - 0.5 * k
+            glow(F, 90, 70, 60, '#ffcc4a', 0.3 * k); ctag(F, "IT'S CALLED", 250, px=8)
+            if t >= cs(L_FLIP, 5) - 0.05: big_num(F, 'ANTI-HUMOR', 380, px=14, colr=(255, 200, 58))
+    elif i == L_HOW:                                             # normal joke = laugh / dad joke = groan
+        dad_joke = t >= cs(L_HOW, 2) - 0.05
+        you(F, 64, mood='sad' if dad_joke else 'happy', bob=0 if dad_joke else abs(math.sin(t * 8)) * 2)
+        if not dad_joke:
+            ctag(F, 'NORMAL JOKE', 280, px=9)
+            if t >= cs(L_HOW, 1) - 0.05:
+                meter(F, 140, 'LAUGH', 0.15 + 0.8 * ramp(t, cs(L_HOW, 1), 0.6), '#5ae07a', y_top=70, h_=60, w_=18); laugh(F, 40, GROUND - 72, t)
+        else:
+            ctag(F, 'DAD JOKE', 280, px=10)
+            if t >= cs(L_HOW, 3) - 0.05:
+                groan_meter(F, 0.15 + 0.8 * ramp(t, cs(L_HOW, 3), 0.6), x=140, top=70, h_=60)
+                bk.pixel_text(F, 'UGH', int(50 * S), int((GROUND - 72) * S), px=7, colr=(200, 215, 255))
+    elif i == L_JOKE:                                            # "Dad, I'm hungry" -> "Hi hungry, I'm Dad" -> you groan
         ask = t >= cs(L_JOKE, 1) - 0.05; goes = t >= cs(L_JOKE, 2) - 0.05; joke = t >= cs(L_JOKE, 3) - 0.05
-        groan = t >= cs(L_JOKE, 5) - 0.05; laughs = t >= cs(L_JOKE, 6) - 0.05; every = t >= cs(L_JOKE, 7) - 0.05
+        groan = t >= cs(L_JOKE, 5) - 0.05
         you(F, 44, mood='sad' if (groan or not joke) else 'happy')
-        dad(F, 132, bob=abs(math.sin(t * 7)) * 2 if laughs else (abs(math.sin(t * 10)) * 1.5 if goes and not joke else 0))
+        dad(F, 132, bob=abs(math.sin(t * 10)) * 1.5 if goes and not joke else 0)
         if not ask:                                              # tummy rumble
             if (t * 4) % 2 < 1.4: bk.pixel_text(F, 'GRRR', int(26 * S), int((GROUND - 64) * S), px=6, colr=(255, 200, 120))
         elif not joke:
@@ -77,48 +101,52 @@ def scene(F, t):
             if goes and (t * 5) % 2 < 1.4: bk.pixel_text(F, '!', int(130 * S), int((GROUND - 72) * S), px=9, colr=(255, 226, 122))
         elif not groan: bubble(F, 122, 52, "HI HUNGRY, I'M DAD!", px=6)
         else:
-            if not every: drum_hit(F, t, cs(L_JOKE, 5) - 0.05)
+            drum_hit(F, t, cs(L_JOKE, 5) - 0.05)
             bk.pixel_text(F, 'UGH', int(34 * S), int((GROUND - 72) * S), px=7, colr=(200, 215, 255))
-        if laughs: laugh(F, 140, GROUND - 70, t)
-        if every:
-            n = int(1 + 846 * ramp(t, cs(L_JOKE, 7), max(0.4, SEG[L_JOKE][1] - cs(L_JOKE, 7))))
-            big_num(F, f'JOKES TOLD: {n}', 200, px=9, colr=(255, 200, 58)); ctag(F, 'EVERY SINGLE TIME', 330, px=6)
-    elif i in (L_PURPOSE, L_TROLL, L_SUB):                       # just bad? researcher: on purpose, the groan IS the joke
-        if i == L_PURPOSE and t < cs(L_PURPOSE, 2) - 0.05:
-            dad(F, 90); ctag(F, 'JUST BAD AT JOKES?', 300, px=7)
-        elif i == L_PURPOSE and t < cs(L_PURPOSE, 4) - 0.05:
-            draw_prof(F, 52); dad(F, 128); ctag(F, 'A RESEARCHER', 300, px=8)
+    elif i == L_PUNCH:                                           # the groan IS the punchline; worse joke = better
+        you(F, 40, mood='sad'); dad(F, 104, bob=abs(math.sin(t * 6)) * 2)
+        if t < cs(L_PUNCH, 2) - 0.05:
+            ui.callout(F, 'GROAN', 10, 70, 40, GROUND - 46, px=6, accent='#ff5a64')
+            if t >= cs(L_PUNCH, 1) - 0.05: ctag(F, 'GROAN = PUNCHLINE', 280, px=7)
+            groan_meter(F, 0.95, x=156, top=70, h_=60)
         else:
-            you(F, 40, mood='angry' if i != L_SUB else 'sad'); dad(F, 104, bob=abs(math.sin(t * 6)) * 2)
-            g = ramp(t, cs(L_PURPOSE, 6) if i == L_PURPOSE else SEG[L_PURPOSE][0], 0.8) if i == L_PURPOSE else 1.0
-            groan_meter(F, 0.15 + 0.8 * g, x=156, top=70, h_=60)
-            if i == L_PURPOSE:
-                if t < cs(L_PURPOSE, 6) - 0.05: ctag(F, 'NOPE. ON PURPOSE', 260, px=7)
-                elif t < cs(L_PURPOSE, 7) - 0.05: ctag(F, 'GROAN = THE JOKE', 260, px=7)
-                else: ctag(F, 'WEAPONIZED ANTI-HUMOR', 260, px=6)
-            elif i == L_TROLL:
-                if t < cs(L_TROLL, 1) - 0.05:
-                    ctag(F, 'FAILING', 260, px=10)
-                    for k in range(-150, 150, 2): F[int(294 + k * 0.1):int(302 + k * 0.1), 540 + k:542 + k] = hexc('#e8303a')
-                else:
-                    ctag(F, 'TROLLING YOU', 260, px=9); laugh(F, 112, GROUND - 70, t)
+            meter(F, 134, 'JOKE', 0.9 - 0.75 * ramp(t, cs(L_PUNCH, 2), 0.8), '#ff5a64', y_top=70, h_=60, w_=16)
+            if t >= cs(L_PUNCH, 3) - 0.05:
+                meter(F, 162, 'WIN', 0.15 + 0.8 * ramp(t, cs(L_PUNCH, 3), 0.6), '#5ae07a', y_top=70, h_=60, w_=16)
+                laugh(F, 82, GROUND - 74, t)
+            ctag(F, 'WORSE = BETTER', 280, px=8)
+    elif i in (L_TROLL, L_SUB):                                  # trolling you -> short subscribe
+        you(F, 40, mood='angry' if i == L_TROLL else 'sad'); dad(F, 104, bob=abs(math.sin(t * 6)) * 2)
+        groan_meter(F, 0.95, x=156, top=70, h_=60)
+        if i == L_TROLL:
+            if t < cs(L_TROLL, 1) - 0.05:
+                ctag(F, 'FAILING', 260, px=10)
+                for k in range(-150, 150, 2): F[int(294 + k * 0.1):int(302 + k * 0.1), 540 + k:542 + k] = hexc('#e8303a')
             else:
-                laugh(F, 112, GROUND - 70, t)
-                if t >= cs(L_SUB, 2) - 0.05: corner_sub(F, t, cs(L_SUB, 2) - 0.05, cs(L_SUB, 2) + 0.3)
-                if t >= cs(L_SUB, 3) - 0.05:
-                    ctag(F, 'KIND OF SWEET', 960, px=7)
-                    for k in range(3):
-                        ph = (t * 0.8 + k / 3) % 1; heart(F, 96 + k * 8, 96 - ph * 24, 1 - ph)
-    elif i == L_WHY:                                             # teasing = a little safe embarrassment -> handle cringe
-        you(F, 52, mood='sad' if t < cs(L_WHY, 6) - 0.05 else 'proud'); dad(F, 132, bob=abs(math.sin(t * 5)) * 1.5)
-        if t < cs(L_WHY, 2) - 0.05: ctag(F, 'TEASING', 280, px=10)
-        elif t < cs(L_WHY, 5) - 0.05:
-            meter(F, 92, 'CRINGE', 0.3, '#ffcc4a', y_top=66, h_=50, w_=16)
-            ui.callout(F, 'SAFE ZONE', 104, 64, 100, 108, px=5, accent='#5ae07a')
-            ctag(F, 'A LITTLE EMBARRASSMENT', 960, px=6)
+                ctag(F, 'TROLLING YOU', 260, px=9); laugh(F, 112, GROUND - 70, t)
         else:
-            k = ramp(t, cs(L_WHY, 6), 0.8); shield(F, 52, 118, 30, t, k)
-            ctag(F, 'CRINGE SHIELD', 280, px=9)
+            laugh(F, 112, GROUND - 70, t)
+            if t >= cs(L_SUB, 2) - 0.05: corner_sub(F, t, cs(L_SUB, 2) - 0.05, cs(L_SUB, 2) + 0.3)
+            if t >= cs(L_SUB, 3) - 0.05:
+                ctag(F, "THE REASON'S SWEET", 960, px=6)
+                for k in range(3):
+                    ph = (t * 0.8 + k / 3) % 1; heart(F, 96 + k * 8, 96 - ph * 24, 1 - ph)
+    elif i == L_WHY:                                             # researcher in Denmark -> teasing = safe embarrassment -> handle cringe
+        if t < cs(L_WHY, 4) - 0.05:
+            draw_prof(F, 52); dad(F, 128)
+            ctag(F, 'A RESEARCHER', 260, px=8)
+            if t >= cs(L_WHY, 1) - 0.05: ui.callout(F, 'DENMARK', 8, 60, 46, GROUND - 50, px=5, accent='#e8303a')
+            if t >= cs(L_WHY, 3) - 0.05: ctag(F, 'HIS IDEA?', 960, px=8)
+        else:
+            you(F, 52, mood='sad' if t < cs(L_WHY, 10) - 0.05 else 'proud'); dad(F, 132, bob=abs(math.sin(t * 5)) * 1.5)
+            if t < cs(L_WHY, 6) - 0.05: ctag(F, 'TEASING', 280, px=10)
+            elif t < cs(L_WHY, 9) - 0.05:
+                meter(F, 92, 'CRINGE', 0.3, '#ffcc4a', y_top=66, h_=50, w_=16)
+                ui.callout(F, 'SAFE ZONE', 104, 64, 100, 108, px=5, accent='#5ae07a')
+                ctag(F, 'A LITTLE EMBARRASSMENT', 960, px=6)
+            else:
+                k = ramp(t, cs(L_WHY, 10), 0.8); shield(F, 52, 118, 30, t, k)
+                ctag(F, 'CRINGE SHIELD', 280, px=9)
     elif i == L_EYEROLL:                                         # every eye roll = training
         you(F, 60, mood='proud', arms='up', bob=abs(math.sin(t * 5)) * 2); shield(F, 60, 118, 30, t, 1.0)
         n = int(1 + 8 * ramp(t, SEG[L_EYEROLL][0], 1.2)); big_num(F, f'EYE ROLLS: {n}', 220, px=8, colr=(200, 215, 255))

@@ -37,60 +37,110 @@ def strike(F, y=294):
 def ball(F, cx, cy):
     disc(F, cx, cy, 4.2, '#ff8a2a', ring='#b8520e', ringw=1)
     for k in range(-4, 5): put(F, cx + k * 0.9, cy, hexc('#6a2a08')); put(F, cx, cy + k * 0.9, hexc('#6a2a08'))
-def dribble(F, cx, t, rate=1.6, side=1):
-    """ball bouncing between the elf's hand and the floor; returns True on the frame window of a floor hit"""
-    ph = (t * rate) % 1; h_ = abs(math.cos(math.pi * ph))
-    bx, by = cx + side * 15, GROUND - 4 - 20 * h_
-    shadow(F, bx, GROUND + 1, 9 * (0.6 + 0.4 * (1 - h_))); ball(F, bx, by)
-def puff(F, x, y, t, t0, side=1):
+def dribble_phase(t, rate):
+    """ball height 1 = in the hand, 0 = on the floor"""
+    return abs(math.cos(math.pi * ((t * rate) % 1)))
+_BAL = {}
+def baller_sprite(mood, side):
+    """YOU (green elf) with the dribbling arm removed from the sprite, so a live arm can be drawn on top"""
+    key = (mood, side)
+    if key not in _BAL:
+        args = dict(b1.HOLLY); args.update(outfit='#2f9a52', outfit_d='#1f7a3e', hat='#2f9a52', mood=mood)
+        c, M = ch.elf(**args); c, M = c.copy(), M.copy()
+        sep = {27: 25, **{y: 25 for y in range(28, 34)}, **{y: 26 for y in range(34, 39)}, **{y: 27 for y in range(39, 42)}, 42: 28}
+        for y, x in sep.items(): M[y, x + 1:] = False                     # right arm + hand pixels (left of them is body outline)
+        if side < 0: c, M = c[:, ::-1].copy(), M[:, ::-1].copy()
+        _BAL[key] = (c, M)
+    return _BAL[key]
+def thick(F, x1, y1, x2, y2, r, colr):
+    n = int(max(abs(x2 - x1), abs(y2 - y1)) * 2) + 2
+    for f in np.linspace(0, 1, n):
+        X, Y = lerp(x1, x2, f), lerp(y1, y2, f)
+        for dy in np.arange(-r, r + 0.01, 0.5):
+            for dx in np.arange(-r, r + 0.01, 0.5):
+                if dx * dx + dy * dy <= r * r: put(F, X + dx, Y + dy, hexc(colr))
+def baller(F, cx, t, mood='proud', rate=1.6, side=1):
+    """YOU dribbling: a live arm pumps the ball from the waist to the floor; the body bounces a little each dribble"""
+    h = dribble_phase(t, rate); hop = 0.8 * (1 - h)
+    c, M = baller_sprite(mood, side); y0 = GROUND + 1 - 53 - hop
+    shadow(F, cx, GROUND + 1, 30); pv.blit_hr(F, c, M, cx - 19, y0, 1)
+    sx, sy = cx + side * 8.5, y0 + 29                                      # shoulder
+    hand_y = y0 + 33 + 6 * (1 - smooth(h)); hx = cx + side * 13             # hand pumps down to push the ball
+    ex, ey = cx + side * 13.5, (sy + hand_y) / 2 + 0.5                      # elbow pushed out
+    thick(F, sx, sy, ex, ey, 2.0, '#0b1530'); thick(F, ex, ey, hx, hand_y - 1.5, 2.0, '#0b1530')
+    thick(F, sx, sy, ex, ey, 1.3, '#2f9a52'); thick(F, ex, ey, hx, hand_y - 1.5, 1.3, '#1f7a3e')
+    disc(F, hx, hand_y, 2.1, '#f6c9a8', ring='#0b1530', ringw=0.7)
+    bx = hx + side * 0.5
+    by = lerp(GROUND - 4.2, hand_y + 6.3, h)                               # top of the ball touches the hand
+    shadow(F, bx, GROUND + 1, 9 * (0.6 + 0.4 * (1 - h)))
+    ball(F, bx, by)
+def mouth(cx): return cx + 2, GROUND + 1 - 53 + 23
+def puff(F, cx, t, t0, side=1):
+    """small breath clouds that leave the elf's MOUTH and drift sideways in the cold air"""
     a = t - t0
-    if not 0 <= a < 0.7: return
+    if not 0 <= a < 0.8: return
+    mx, my = mouth(cx)
     for k in range(3):
-        r = 1.5 + a * 7 + k; cx_, cy_ = x + side * (a * 16 + k * 3), y - a * 6 - k
+        r = 0.8 + a * 3.2 + k * 0.4; cx_, cy_ = mx + side * (2 + a * 14 + k * 2.2), my - a * 4 - k * 0.6
         yy, xx = np.mgrid[int(cy_ - r) - 1:int(cy_ + r) + 2, int(cx_ - r) - 1:int(cx_ + r) + 2]
-        for Y, X in zip(*np.nonzero(np.hypot(xx - cx_, yy - cy_) <= r)):
-            put(F, xx[Y, X], yy[Y, X], hexc('#f4f8ff'), 0.55 * (1 - a / 0.7))
-def streetlight(F, x):
-    glow(F, x + 8, 80, 46, '#ffd86a', 0.22)
-    yy, xx = np.mgrid[0:H, 0:W]; cone = (yy > 82) & (yy < GROUND + 2) & (np.abs(xx - (x + 8)) < (yy - 80) * 0.45)
-    m = cone & (BAY[yy % 4, xx % 4] < 0.25); A = np.repeat(np.repeat(m.astype(np.float32), S, 0), S, 1)[..., None] * 0.35
-    F[:] = F * (1 - A) + hexc('#ffe9a0') * A
-    for yv in range(74, GROUND + 1): put(F, x, yv, hexc('#3a4664')); put(F, x + 1, yv, hexc('#2a3450'))
-    for xv in range(x, x + 10): put(F, xv, 74, hexc('#3a4664'))
-    for xv in range(x + 5, x + 12): put(F, xv, 76, hexc('#ffe27a')); put(F, xv, 77, hexc('#fff6c0'))
+        inside = np.hypot(xx - cx_, yy - cy_) <= r
+        for X_, Y_ in zip(xx[inside], yy[inside]): put(F, X_, Y_, hexc('#f4f8ff'), 0.5 * (1 - a / 0.8))
+_LIGHT = {}
+def streetlight(F, lamp_x):
+    """lamp hangs from an arm right above lamp_x; smooth light cone + a pool of light on the ground under it"""
+    px_ = lamp_x - 12; ly = 72
+    if lamp_x not in _LIGHT:
+        yy, xx = np.mgrid[0:HF, 0:WF].astype(np.float32) / S
+        d = (yy - (ly + 3)) / max(1, GROUND + 1 - ly - 3)
+        cone = (d > 0) & (d <= 1.02) & (np.abs(xx - lamp_x) <= 2.5 + d * 16)
+        a = np.where(cone, 0.16 * (1 - 0.5 * d) * np.clip((2.5 + d * 16 - np.abs(xx - lamp_x)) / 4, 0, 1), 0)
+        pool = ((xx - lamp_x) / 20) ** 2 + ((yy - (GROUND + 1)) / 3) ** 2 <= 1
+        a = a + np.where(pool, 0.18, 0); _LIGHT[lamp_x] = a[..., None].astype(np.float32)
+    A = _LIGHT[lamp_x]; F[:] = F * (1 - A) + hexc('#ffe9a0') * A
+    glow(F, lamp_x, ly + 3, 14, '#ffd86a', 0.35)
+    for yv in range(ly - 4, GROUND + 1): put(F, px_, yv, hexc('#3a4664')); put(F, px_ + 1, yv, hexc('#2a3450'))
+    for xv in range(px_, lamp_x + 1): put(F, xv, ly - 4, hexc('#3a4664'))
+    for yv in range(ly - 4, ly): put(F, lamp_x, yv, hexc('#3a4664'))
+    for xv in range(lamp_x - 4, lamp_x + 5): put(F, xv, ly, hexc('#2a3450'))                      # lamp shade
+    for xv in range(lamp_x - 3, lamp_x + 4): put(F, xv, ly + 1, hexc('#2a3450')); put(F, xv, ly + 2, hexc('#fff6c0'))
 _c = {}
 def big_house():
     if 'bh' not in _c:
-        c, M = ch.house(lit=True); _c['bh'] = (np.repeat(np.repeat(c, 2, 0), 2, 1), np.repeat(np.repeat(M, 2, 0), 2, 1))
+        c, M = ch.house(lit=True); c2, M2 = np.repeat(np.repeat(c, 2, 0), 2, 1), np.repeat(np.repeat(M, 2, 0), 2, 1)
+        win = M2 & np.all(np.abs(c2 - hexc('#ffd84a')) < 0.02, -1)
+        ys_, xs_ = np.nonzero(win); left = xs_ < c2.shape[1] / 2
+        boxes = [(xs_[sel].min(), xs_[sel].max(), ys_[sel].min(), ys_[sel].max()) for sel in (left, ~left)]
+        chim = M2 & np.all(np.abs(c2 - hexc('#ffffff')) < 0.02, -1) & (np.arange(c2.shape[0])[:, None] < 10) & (np.arange(c2.shape[1])[None, :] > c2.shape[1] * 0.6)
+        cy_, cx_ = np.nonzero(chim)
+        _c['bh'] = (c2, M2, win, boxes, (cx_.mean(), cy_.min()))
     return _c['bh']
 PARTY = ['#ff4fa0', '#5ae07a', '#5ea6f2', '#ffcc4a', '#c86aff']
 def note(F, x, y, a, colr):
     disc(F, x, y, 1.6, colr); [put(F, x + 1.4, y - k, hexc(colr), a) for k in range(6)]; put(F, x + 2.4, y - 5, hexc(colr), a)
 def party_house(F, cx, t, flash=False):
-    c, M = big_house(); h_, w_ = M.shape; x0, y0 = cx - w_ / 2, GROUND + 1 - h_
-    glow(F, cx, y0 + 50, 60, PARTY[int(t * 4) % 5], 0.18)
+    c, M, win, boxes, (chx, chy) = big_house(); h_, w_ = M.shape
+    x0, y0 = int(round(cx - w_ / 2)), int(round(GROUND + 1 - h_))
+    glow(F, cx, y0 + h_ * 0.6, 52, PARTY[int(t * 4) % 5], 0.16)
     shadow(F, cx, GROUND + 1, w_ * 0.9); props._blit(F, c, M, x0, y0)
-    for k, wx in enumerate((9, 26)):                                       # disco windows + dancing silhouettes
+    for k, (bx0, bx1, by0, by1) in enumerate(boxes):                      # disco light fills EXACTLY the glass pixels
         col = hexc('#ffffff') if flash else hexc(PARTY[(int(t * 5) + k * 2) % 5])
-        X0, Y0 = int(x0 + wx * 2), int(y0 + 21 * 2)
-        for yy in range(Y0 + 1, Y0 + 13):
-            for xx in range(X0 + 1, X0 + 13):
-                if abs(xx - (X0 + 6.5)) > 0.8 and abs(yy - (Y0 + 6.5)) > 0.8: put(F, xx, yy, col, 0.75)
-        hx = X0 + 6.5 + 2.5 * math.sin(t * 9 + k * 2); hy = Y0 + 8 + abs(math.sin(t * 9 + k)) * -2
-        for dy in range(-2, 5):
-            for dx in range(-1, 2): put(F, hx + dx, hy + dy, hexc('#1b1428'), 0.9)
-        disc(F, hx, hy - 3.5, 1.6, '#1b1428')
-    for k in range(4):                                                     # music notes floating out of the chimney side
-        ph = (t * 0.6 + k / 4) % 1
-        note(F, cx - 30 + k * 18 + 4 * math.sin(t * 3 + k), y0 + 8 - ph * 30, 1 - ph, PARTY[k])
+        wcx, wcy = (bx0 + bx1) / 2, (by0 + by1) / 2
+        hx = wcx + 2.2 * math.sin(t * 9 + k * 2); hy = wcy + 1.5 - abs(math.sin(t * 9 + k)) * 1.5
+        for yy in range(by0, by1 + 1):
+            for xx in range(bx0, bx1 + 1):
+                if not win[yy, xx]: continue
+                dancer = (abs(xx - hx) <= 1.2 and hy - 1 <= yy <= by1) or math.hypot(xx - hx, yy - (hy - 2.6)) <= 1.6
+                put(F, x0 + xx, y0 + yy, hexc('#1b1428') if dancer else col, 0.92 if dancer else 0.8)
+    for k in range(4):                                                     # music notes float up out of the chimney
+        ph = (t * 0.55 + k / 4) % 1
+        note(F, x0 + chx + 8 * math.sin(t * 2.5 + k * 1.7) * ph, y0 + chy - 4 - ph * 20, 1 - ph, PARTY[k])
 def night(F, k=1.0):
     F *= 1 - 0.35 * k
-    lv.moon(F, 150, 30)
+    lv.moon(F, 164, 22)
 def town_scene(F, t, cx_you=40, mood='happy', huss_t=None):
-    night(F); party_house(F, 128, t); streetlight(F, 14)
-    you(F, cx_you, mood=mood, bob=abs(math.sin(t * 3.2 * math.pi)) * 1.2)
-    dribble(F, cx_you, t)
-    if huss_t is not None: puff(F, cx_you + 6, GROUND - 40, t, huss_t)
+    night(F); party_house(F, 128, t); streetlight(F, cx_you)
+    baller(F, cx_you, t, mood=mood)
+    if huss_t is not None: puff(F, cx_you, t, huss_t)
 def counter(F, label, n, y, px=8, colr=(255, 255, 255)): big_num(F, f'{label}{n:,}', y, px=px, colr=colr)
 def violin(F, x, y):
     """bigger violin tucked under the chin: two-lobed body, f-holes, neck + scroll, and a bow across it"""
@@ -138,33 +188,33 @@ def scene(F, t):
         if t - t0 < 0.9: big_num(F, txt, 200 + 40 * k, px=px, colr=(255, 226, 122))
     elif i == L_FLIP:                                            # not a loser -> what the best did -> DELIBERATE PRACTICE
         if not after(t, L_FLIP, 2):
-            night(F); streetlight(F, 60); you(F, 74, mood='sad'); dribble(F, 74, t, rate=1.0)
+            night(F); streetlight(F, 74); baller(F, 74, t, mood='sad', rate=1.0)
             ctag(F, 'LOSER?', 270, px=10)
             if after(t, L_FLIP, 1) and t >= cs(L_FLIP, 1) + 0.35: strike(F, 300)
         elif not after(t, L_FLIP, 5):
-            night(F); streetlight(F, 60); you(F, 74, mood='proud', bob=abs(math.sin(t * 6)) * 2); dribble(F, 74, t)
+            night(F); streetlight(F, 74); baller(F, 74, t, mood='proud')
             b1.sparkles(F, 80, 110, 34, 30, t); ctag(F, 'WHAT THE BEST DID', 270, px=7)
         else:
-            night(F); you(F, 90, mood='proud'); dribble(F, 90, t)
+            night(F); baller(F, 90, t, mood='proud')
             k = ramp(t, cs(L_FLIP, 5), 0.4); F *= 1 - 0.45 * k; glow(F, 90, 60, 60, '#ffcc4a', 0.3 * k)
             ctag(F, "IT'S CALLED", 220, px=7)
             if after(t, L_FLIP, 6):
                 big_num(F, 'DELIBERATE', 320, px=12, colr=(255, 200, 58)); big_num(F, 'PRACTICE', 420, px=12, colr=(255, 200, 58))
     elif i == L_HOW:                                             # not for fun; the stuff you're BAD at; alone; reps; brain rewires
-        night(F); streetlight(F, 30)
+        night(F); streetlight(F, 60)
         if not after(t, L_HOW, 1):
-            you(F, 60, mood='happy'); dribble(F, 60, t); ctag(F, 'FOR FUN', 270, px=10)
+            baller(F, 60, t, mood='happy'); ctag(F, 'FOR FUN', 270, px=10)
             if t >= cs(L_HOW, 0) + 0.5: strike(F, 300)
         elif not after(t, L_HOW, 3):
-            you(F, 60, mood='angry'); dribble(F, 60, t, rate=2.2)
-            ui.callout(F, 'WEAK SPOT', 100, 70, 76, GROUND - 22, px=5, accent='#ff5a64')
+            baller(F, 60, t, mood='angry', rate=2.2)
+            ui.callout(F, 'WEAK SPOT', 92, 66, 74, GROUND - 14, px=6, accent='#ff5a64')
         elif not after(t, L_HOW, 5):
-            you(F, 60, mood='proud'); dribble(F, 60, t, rate=2.2)
+            baller(F, 60, t, mood='proud', rate=2.2)
             if not after(t, L_HOW, 4): ctag(F, 'ALONE', 270, px=10)
             else: counter(F, 'REPS: ', int(1 + 999 * ramp(t, cs(L_HOW, 4), 1.4)), 240, px=9, colr=(255, 226, 122))
         else:
-            you(F, 60, mood='proud'); dribble(F, 60, t, rate=2.2)
-            k = ramp(t, cs(L_HOW, 5), 0.5); brain(F, 60, 62, t, k)
+            baller(F, 60, t, mood='proud', rate=2.2)
+            k = ramp(t, cs(L_HOW, 5), 0.5); brain(F, 60, GROUND + 1 - 53 - 10, t, k)
             meter(F, 140, 'SKILL', 0.15 + 0.8 * ramp(t, cs(L_HOW, 6), 1.0), '#5ae07a', y_top=70, h_=60, w_=18)
             if after(t, L_HOW, 6): ctag(F, 'REWIRED', 230, px=9)
     elif i == L_REEL:                                            # they make memories; you make a highlight reel
@@ -172,15 +222,15 @@ def scene(F, t):
         if not after(t, L_REEL, 1):
             party_house(F, 90, t, flash=(t * 3) % 1 < 0.12); ctag(F, 'MEMORIES', 240, px=10)
         else:
-            streetlight(F, 30); you(F, 90, mood='proud', arms='up', bob=abs(math.sin(t * 6)) * 3)
+            streetlight(F, 90); you(F, 90, mood='proud', arms='up', bob=abs(math.sin(t * 6)) * 3)
             b1.sparkles(F, 90, 110, 36, 32, t); ctag(F, 'HIGHLIGHT REEL', 240, px=8)
             for k in range(3):
                 ph = (t * 0.8 + k / 3) % 1; rv.sparkle(F, 60 + k * 30, 70 - ph * 20, 1 - ph)
     elif i == L_SUB:                                             # grinding alone? SUBSCRIBE! HUSS HUSS - corner button
-        night(F); streetlight(F, 30); you(F, 70, mood='proud'); dribble(F, 70, t, rate=2.0)
+        night(F); streetlight(F, 70); baller(F, 70, t, mood='proud', rate=2.0)
         if after(t, L_SUB, 1): lv.corner_sub(F, t, cs(L_SUB, 1) - 0.05, cs(L_SUB, 1) + 0.3)
         if after(t, L_SUB, 2) and not after(t, L_SUB, 3):
-            puff(F, 76, GROUND - 40, t, cs(L_SUB, 2)); big_num(F, 'HUSS! HUSS!', 520, px=10, colr=(255, 226, 122))
+            puff(F, 70, t, cs(L_SUB, 2)); big_num(F, 'HUSS! HUSS!', 520, px=10, colr=(255, 226, 122))
         if after(t, L_SUB, 3): ctag(F, 'THE PROOF', 520, px=9)
     elif i == L_STUDY:                                           # 1993 Berlin violinists: best ~10,000 h vs teachers ~half
         if not after(t, L_STUDY, 1):
@@ -193,12 +243,12 @@ def scene(F, t):
             best = after(t, L_STUDY, 9)
             elf(F, 50, 'holly', arms='hold', bob=abs(math.sin(t * 5)) * 1.5); violin(F, 60, GROUND - 25)
             n1 = int(10000 * ramp(t, cs(L_STUDY, 6), max(0.5, cs(L_STUDY, 9) - cs(L_STUDY, 6) - 0.2)))
-            props.text_center(F, f'{n1:,} H', 50, 60, px=6, colr=(90, 224, 122)); props.text_center(F, 'THE BEST', 50, 50, px=5, colr=(255, 226, 122))
+            props.text_center(F, f'{n1:,} H', 50, 86, px=6, colr=(90, 224, 122)); props.text_center(F, 'THE BEST', 50, 76, px=5, colr=(255, 226, 122))
             if best:
                 elf(F, 130, 'tinsel', arms='hold', mood='sad', outfit='#7a4ac8', outfit_d='#5a2ea0', hat='#7a4ac8'); violin(F, 140, GROUND - 25)
                 n2 = int(5000 * ramp(t, cs(L_STUDY, 9), 0.9))
-                props.text_center(F, f'{n2:,} H', 130, 60, px=6, colr=(255, 120, 120))
-                if after(t, L_STUDY, 11): props.text_center(F, 'TEACHER', 130, 50, px=5, colr=(200, 215, 255))
+                props.text_center(F, f'{n2:,} H', 130, 86, px=6, colr=(255, 120, 120))
+                if after(t, L_STUDY, 11): props.text_center(F, 'TEACHER', 130, 76, px=5, colr=(200, 215, 255))
                 if after(t, L_STUDY, 9) and t >= cs(L_STUDY, 9) + 0.4: ctag(F, '2X MORE PRACTICE', 960, px=7)
     elif i == L_ALONE:                                           # what helped the most? PRACTICING ALONE
         if not after(t, L_ALONE, 3):
@@ -208,7 +258,7 @@ def scene(F, t):
             elf(F, 90, 'holly', arms='hold', bob=abs(math.sin(t * 5)) * 1.5); violin(F, 100, GROUND - 25)
             big_num(F, 'PRACTICING', 250, px=11, colr=(255, 255, 255)); big_num(F, 'ALONE', 340, px=13, colr=(255, 200, 58))
     elif i == L_NIGHTS:                                          # every night you stayed in -> hours they never get back
-        night(F); party_house(F, 128, t); streetlight(F, 14); you(F, 40, mood='proud'); dribble(F, 40, t, rate=2.0)
+        night(F); party_house(F, 128, t); streetlight(F, 40); baller(F, 40, t, mood='proud', rate=2.0)
         if not after(t, L_NIGHTS, 3):
             counter(F, 'NIGHTS: ', int(1 + 364 * ramp(t, SEG[L_NIGHTS][0], 2.2)), 220, px=9, colr=(200, 215, 255))
         else:
@@ -227,20 +277,20 @@ def scene(F, t):
     elif i == L_GO:                                              # next time they go out: pick the thing you suck at. go. huss.
         night(F)
         if not after(t, L_GO, 2):
-            party_house(F, 128, t); streetlight(F, 14); you(F, 40, mood='happy'); dribble(F, 40, t, rate=1.2)
+            party_house(F, 128, t); streetlight(F, 40); baller(F, 40, t, mood='happy', rate=1.2)
             ctag(F, 'NEXT PARTY...', 240, px=8)
         elif not after(t, L_GO, 4):
-            streetlight(F, 30); you(F, 70, mood='angry'); dribble(F, 70, t, rate=2.0)
-            ui.callout(F, 'YOUR WEAK SPOT', 100, 70, 86, GROUND - 22, px=5, accent='#ff5a64')
+            streetlight(F, 70); baller(F, 70, t, mood='angry', rate=2.0)
+            ui.callout(F, 'WEAK SPOT', 100, 66, 84, GROUND - 14, px=6, accent='#ff5a64')
         else:
-            streetlight(F, 30); you(F, 70, mood='proud', bob=abs(math.sin(t * 6)) * 2); dribble(F, 70, t, rate=2.4)
+            streetlight(F, 70); baller(F, 70, t, mood='proud', rate=2.4)
             if not after(t, L_GO, 5): big_num(F, 'GO.', 260, px=16, colr=(255, 200, 58))
             else:
                 k = sum(1 for j in range(3) if t >= cs(L_GO, 5) + j * 0.55)
-                puff(F, 76, GROUND - 40, t, cs(L_GO, 5) + (k - 1) * 0.55)
-                props.text_center(F, ' '.join(['HUSS.'] * k), 90, 44, px=6, colr=(200, 215, 255))
+                puff(F, 70, t, cs(L_GO, 5) + (k - 1) * 0.55)
+                props.text_center(F, ' '.join(['HUSS.'] * k), 90, 52, px=7, colr=(200, 215, 255))
     else:                                                        # CTA: send this to the friend who never comes out + naughty list
-        you(F, 150, mood='happy'); dribble(F, 150, t, rate=1.4, side=-1)
+        baller(F, 150, t, mood='happy', rate=1.4, side=-1)
         if not after(t, L_CTA, 3):
             pop = ramp(t, SEG[L_CTA][0] + 0.1, 0.25); bw, bh = int(820 * pop), int(200 * pop)
             if bw > 20:

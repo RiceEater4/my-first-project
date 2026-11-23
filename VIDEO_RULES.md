@@ -102,6 +102,11 @@ No joke setups, no "so are X actually Y?" question, no "scientists tested it... 
   not single dots. Check every character up close at full size before rendering.
 
 ## Layout
+- ANIMATE actions, never a static pose next to a moving prop: e.g. dribbling = a live arm (sprite arm removed,
+  arm redrawn every frame) pumping the ball, ball top touching the hand, small body bounce, SFX on every floor hit.
+- Light effects line up with their source: cone + glow start AT the lamp, light pool on the ground under it,
+  and the character stands inside it. Window lights recolor exactly the glass pixels; breath comes from the mouth;
+  smoke/notes come out of the chimney. Text never overlaps the moon, notes or other tags.
 - Shading on bubbles/props is a smooth blend, not hard bands. Text on objects (signs, lists) must be fully readable:
   big enough, inside its plate, never clipped (style_study/scenery.py: school(), naughty_list()). Places get real detail.
 - Details + alignment check before rendering: props need real detail (e.g. phone = case, screen gradient, app icons,

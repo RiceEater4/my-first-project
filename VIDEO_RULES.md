@@ -149,6 +149,7 @@ No joke setups, no "so are X actually Y?" question, no "scientists tested it... 
 6. Build video.py from the latest folder (late_school/ is the newest template), check stills of every scene for
    overlaps, alignment, readable text and detail, then mix.py (music ~13 dB under voice, SFX) -> loudnorm about -13 LUFS.
 7. Render, check a 0.5 fps contact sheet, commit + push, send the mp4 + post.txt (title/description).
+   Description hashtags ALWAYS start with: #shorts #fyp #foryou #foryoupage, then the topic tags.
 - When the user says "don't make a video", only give the script / ideas / preview images.
 
 ## Accounts + credits

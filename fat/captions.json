@@ -1,0 +1,440 @@
+[
+ {
+  "t0": -0.03,
+  "t1": 0.75,
+  "text": "EVER WONDERED WHY",
+  "hl": [],
+  "line": 0
+ },
+ {
+  "t0": 0.75,
+  "t1": 1.4,
+  "text": "YOU'RE SO...",
+  "hl": [],
+  "line": 0
+ },
+ {
+  "t0": 1.42,
+  "t1": 3.17,
+  "text": "#$%@ING FAAAAT?!",
+  "hl": [
+   "FAAAAT"
+  ],
+  "line": 0
+ },
+ {
+  "t0": 3.17,
+  "t1": 3.87,
+  "text": "IT'S NOT BECAUSE",
+  "hl": [],
+  "line": 1
+ },
+ {
+  "t0": 3.87,
+  "t1": 4.81,
+  "text": "YOU'RE LAZY.",
+  "hl": [
+   "LAZY"
+  ],
+  "line": 1
+ },
+ {
+  "t0": 4.81,
+  "t1": 5.89,
+  "text": "YOUR BODY IS LITERALLY",
+  "hl": [],
+  "line": 1
+ },
+ {
+  "t0": 5.89,
+  "t1": 7.05,
+  "text": "FIGHTING YOU.",
+  "hl": [
+   "FIGHTING"
+  ],
+  "line": 1
+ },
+ {
+  "t0": 7.05,
+  "t1": 7.55,
+  "text": "IT'S CALLED...",
+  "hl": [],
+  "line": 1
+ },
+ {
+  "t0": 7.55,
+  "t1": 9.62,
+  "text": "METABOLIC ADAPTATION.",
+  "hl": [
+   "ADAPTATION",
+   "METABOLIC"
+  ],
+  "line": 1
+ },
+ {
+  "t0": 9.65,
+  "t1": 10.73,
+  "text": "WHEN YOU LOSE WEIGHT,",
+  "hl": [],
+  "line": 2
+ },
+ {
+  "t0": 10.73,
+  "t1": 11.55,
+  "text": "YOUR FAT MAKES LESS",
+  "hl": [],
+  "line": 2
+ },
+ {
+  "t0": 11.55,
+  "t1": 12.05,
+  "text": "OF A HORMONE",
+  "hl": [],
+  "line": 2
+ },
+ {
+  "t0": 12.05,
+  "t1": 13.21,
+  "text": "CALLED LEPTIN.",
+  "hl": [
+   "LEPTIN"
+  ],
+  "line": 2
+ },
+ {
+  "t0": 13.21,
+  "t1": 14.39,
+  "text": "YOUR BRAIN SEES THAT...",
+  "hl": [],
+  "line": 2
+ },
+ {
+  "t0": 14.39,
+  "t1": 15.37,
+  "text": "AND PANICS.",
+  "hl": [
+   "PANICS"
+  ],
+  "line": 2
+ },
+ {
+  "t0": 15.37,
+  "t1": 16.67,
+  "text": "HUNGER GOES UP.",
+  "hl": [
+   "UP"
+  ],
+  "line": 2
+ },
+ {
+  "t0": 16.67,
+  "t1": 18.13,
+  "text": "ENERGY GOES DOWN.",
+  "hl": [
+   "DOWN"
+  ],
+  "line": 2
+ },
+ {
+  "t0": 18.13,
+  "t1": 19.21,
+  "text": "YOU'RE NOT WEAK.",
+  "hl": [
+   "WEAK"
+  ],
+  "line": 3
+ },
+ {
+  "t0": 19.21,
+  "t1": 19.97,
+  "text": "YOUR BODY THINKS",
+  "hl": [],
+  "line": 3
+ },
+ {
+  "t0": 19.97,
+  "t1": 20.63,
+  "text": "YOU'RE STARVING.",
+  "hl": [
+   "STARVING"
+  ],
+  "line": 3
+ },
+ {
+  "t0": 20.63,
+  "t1": 22.27,
+  "text": "TRIED EVERY DIET?",
+  "hl": [
+   "DIET"
+  ],
+  "line": 4
+ },
+ {
+  "t0": 22.27,
+  "t1": 23.15,
+  "text": "SUBSCRIBE!",
+  "hl": [
+   "SUBSCRIBE"
+  ],
+  "line": 4
+ },
+ {
+  "t0": 23.15,
+  "t1": 24.77,
+  "text": "THE STUDY'S INSANE.",
+  "hl": [
+   "INSANE"
+  ],
+  "line": 4
+ },
+ {
+  "t0": 24.77,
+  "t1": 26.01,
+  "text": "SCIENTISTS TRACKED CONTESTANTS",
+  "hl": [],
+  "line": 5
+ },
+ {
+  "t0": 26.01,
+  "t1": 27.35,
+  "text": "FROM A WEIGHT-LOSS TV SHOW",
+  "hl": [
+   "TV"
+  ],
+  "line": 5
+ },
+ {
+  "t0": 27.35,
+  "t1": 28.23,
+  "text": "FOR SIX YEARS.",
+  "hl": [],
+  "line": 5
+ },
+ {
+  "t0": 28.23,
+  "t1": 28.97,
+  "text": "THEY'D LOST",
+  "hl": [],
+  "line": 5
+ },
+ {
+  "t0": 28.97,
+  "t1": 30.15,
+  "text": "A TON OF WEIGHT.",
+  "hl": [
+   "TON"
+  ],
+  "line": 5
+ },
+ {
+  "t0": 30.15,
+  "t1": 31.39,
+  "text": "BUT SIX YEARS LATER...",
+  "hl": [],
+  "line": 5
+ },
+ {
+  "t0": 31.39,
+  "t1": 32.21,
+  "text": "THEIR BODIES WERE BURNING",
+  "hl": [],
+  "line": 5
+ },
+ {
+  "t0": 32.21,
+  "t1": 33.85,
+  "text": "ABOUT 500 FEWER CALORIES",
+  "hl": [
+   "500",
+   "FEWER"
+  ],
+  "line": 5
+ },
+ {
+  "t0": 33.85,
+  "t1": 34.31,
+  "text": "A DAY",
+  "hl": [],
+  "line": 5
+ },
+ {
+  "t0": 34.31,
+  "t1": 35.33,
+  "text": "THAN THEY SHOULD.",
+  "hl": [],
+  "line": 5
+ },
+ {
+  "t0": 35.33,
+  "t1": 36.15,
+  "text": "THAT'S A WHOLE MEAL",
+  "hl": [
+   "MEAL"
+  ],
+  "line": 6
+ },
+ {
+  "t0": 36.15,
+  "t1": 37.85,
+  "text": "YOUR BODY REFUSES TO BURN...",
+  "hl": [],
+  "line": 6
+ },
+ {
+  "t0": 37.85,
+  "t1": 39.37,
+  "text": "EVERY SINGLE DAY.",
+  "hl": [
+   "EVERY"
+  ],
+  "line": 6
+ },
+ {
+  "t0": 39.37,
+  "t1": 40.05,
+  "text": "BUT HERE'S THE PART",
+  "hl": [],
+  "line": 7
+ },
+ {
+  "t0": 40.05,
+  "t1": 41.33,
+  "text": "NOBODY TELLS YOU...",
+  "hl": [
+   "NOBODY"
+  ],
+  "line": 7
+ },
+ {
+  "t0": 41.33,
+  "t1": 42.43,
+  "text": "YOU CAN'T OUTRUN IT.",
+  "hl": [
+   "OUTRUN"
+  ],
+  "line": 7
+ },
+ {
+  "t0": 42.43,
+  "t1": 43.59,
+  "text": "HUNTER-GATHERERS",
+  "hl": [],
+  "line": 7
+ },
+ {
+  "t0": 43.59,
+  "t1": 44.97,
+  "text": "WHO WALK MILES EVERY DAY",
+  "hl": [],
+  "line": 7
+ },
+ {
+  "t0": 44.97,
+  "t1": 45.51,
+  "text": "BURN ABOUT",
+  "hl": [],
+  "line": 7
+ },
+ {
+  "t0": 45.51,
+  "t1": 46.35,
+  "text": "THE SAME CALORIES",
+  "hl": [
+   "SAME"
+  ],
+  "line": 7
+ },
+ {
+  "t0": 46.35,
+  "t1": 46.77,
+  "text": "AS PEOPLE",
+  "hl": [],
+  "line": 7
+ },
+ {
+  "t0": 46.77,
+  "t1": 48.07,
+  "text": "SITTING AT A DESK.",
+  "hl": [
+   "DESK"
+  ],
+  "line": 7
+ },
+ {
+  "t0": 48.07,
+  "t1": 49.61,
+  "text": "SO FORGET CRAZY DIETS.",
+  "hl": [
+   "CRAZY"
+  ],
+  "line": 8
+ },
+ {
+  "t0": 49.61,
+  "t1": 50.31,
+  "text": "SMALL CHANGES",
+  "hl": [
+   "SMALL"
+  ],
+  "line": 8
+ },
+ {
+  "t0": 50.31,
+  "t1": 51.53,
+  "text": "YOU CAN KEEP FOREVER...",
+  "hl": [
+   "FOREVER"
+  ],
+  "line": 8
+ },
+ {
+  "t0": 51.53,
+  "t1": 52.99,
+  "text": "WIN EVERY TIME.",
+  "hl": [
+   "WIN"
+  ],
+  "line": 8
+ },
+ {
+  "t0": 52.99,
+  "t1": 53.47,
+  "text": "SEND THIS TO",
+  "hl": [
+   "SEND"
+  ],
+  "line": 9
+ },
+ {
+  "t0": 53.47,
+  "t1": 53.79,
+  "text": "YOUR FRIEND",
+  "hl": [],
+  "line": 9
+ },
+ {
+  "t0": 53.79,
+  "t1": 54.93,
+  "text": "WHO'S ALWAYS ON A DIET...",
+  "hl": [
+   "DIET"
+  ],
+  "line": 9
+ },
+ {
+  "t0": 54.93,
+  "t1": 56.33,
+  "text": "OR SANTA'S PUTTING YOU",
+  "hl": [],
+  "line": 9
+ },
+ {
+  "t0": 56.33,
+  "t1": 57.84,
+  "text": "ON THE NAUGHTY LIST.",
+  "hl": [
+   "NAUGHTY"
+  ],
+  "line": 9
+ }
+]

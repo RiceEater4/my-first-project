@@ -32,7 +32,8 @@
   AFTER the speed-up, so scripts need about 15% more words (aim ~170-180 words, ~70 s raw).
 
 ## Mid-video subscribe (every video)
-- Viewers drop around 40 s, so the subscribe ask goes in the MIDDLE, around 20-25 s, right after the first big payoff.
+- UPDATED Nov 23: average view duration is ~17 s (68% engaged), so the subscribe ask goes at ~10-14 s, BEFORE 15 s,
+  right after the brutal one-liner (hook -> flip -> name it -> one-liner -> SUBSCRIBE). The "how it works" part moves AFTER it.
 - It is SCREAMED like the hook: a short identity line, then [shouting] "SUBSCRIBE!" with the same screen shake,
   boom and a big SUBSCRIBE button pop + click on screen. e.g. "If you wrap like a raccoon too... [shouting] SUBSCRIBE!"
 - Keep it quick (~2-3 s), then straight back into the explanation.
@@ -74,6 +75,15 @@ ones FLIP the viewer's belief in the very next sentence, point it back at YOU, a
 No joke setups, no "so are X actually Y?" question, no "scientists tested it... and yes".
 (Old younger-sibling v2 order: hook -> funny example -> plain question -> "scientists tested it, yes" -> reaction
 -> subscribe -> why -> twist -> CTA. Only use it if the user asks.)
+
+## Keep them past 17 s (retention, Nov 23)
+- Open loop every ~8 s: tease the next payoff before giving the current one ("...and the number is insane", "wait for the twist").
+- Give the big number EARLY in the facts line and cut setup words: "A TV weight-loss show. Six years later? -500 calories a day."
+  Fact lines max ~12 words each, no long "scientists tracked X from Y for Z" sentences.
+- Pattern interrupt every 2-3 s: every caption chunk changes something on screen (new prop, zoom/punch-in, color flash,
+  character reaction, SFX). Never hold the same shot for more than ~3 s.
+- Keep roasting the viewer through the middle ("you"), not just explaining.
+- Characters ACT (react, move, do the thing), not stand still next to meters.
 
 ## Script clarity check (before recording)
 - Read every line right after the one before it. Pronouns must point at the right thing: after a joke line about

@@ -65,7 +65,8 @@ ones FLIP the viewer's belief in the very next sentence, point it back at YOU, a
 5. A brutal one-line punchline: "Your brain doesn't see a beginner. It sees... an idiot."
 6. Screamed SUBSCRIBE right there (~12-18 s). Do NOT copy the viral video's bare "FOLLOW NOW" (it is abrupt,
    gives no reason, feels like an ad). Ours = 3 parts in one breath, no pause:
-   SHORT - about 8 words total, ~2-3 s:
+   ONE flowing sentence (never 3 choppy ones), e.g. "If you're still hunting, SUBSCRIBE, because what scientists
+   did to pigeons is insane!" The tease must make sense on its own (no "the X part"). Was: SHORT - about 8 words total, ~2-3 s:
    a) a 3-4 word identity line ("Called someone an idiot?")
    b) [shouting] "SUBSCRIBE!"
    c) a 3-4 word open loop ("The proof's insane.")

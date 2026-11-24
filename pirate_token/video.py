@@ -165,16 +165,15 @@ def scene(F, t):
             if after(t, L_HOOK, 2): token(F, 150, 70, t, r=8); props.text_center(F, '?', 150, 84, px=7, colr=(255, 226, 122))
         else:
             bum = t >= sc['bum'] - 0.05
-            you(F, 90, mood='sad', bob=0); chest(F, 140, open_=1.0)
-            if t >= cs(L_HOOK, 3) + 0.1: big_num(F, 'JOBLESS', 220, px=13, colr=(255, 70, 80))
-            else: ui.callout(F, 'YOU', 14, 74, 72, GROUND - 40, px=6, accent='#ff5a64')
+            you(F, 60, mood='sad', bob=0); chest(F, 120, open_=1.0)
+            big_num(F, 'JOBLESS', 220, px=13, colr=(255, 70, 80))
             if bum: big_num(F, 'BUM', 340, px=16, colr=(255, 70, 80))
     elif i == L_FLIP:                                            # not your skill -> trained you -> like a PIGEON
         if not after(t, L_FLIP, 1):
-            you(F, 90, mood='sad'); ctag(F, 'SKILL ISSUE?', 260, px=9)
+            you(F, 56, mood='sad'); ctag(F, 'SKILL ISSUE?', 260, px=9)
             if t >= cs(L_FLIP, 0) + 0.6: strike(F, 292)
         elif not after(t, L_FLIP, 2):
-            you(F, 70, mood='shock'); ctag(F, 'TRAINED', 260, px=11)
+            you(F, 56, mood='shock'); ctag(F, 'TRAINED', 260, px=11)
             for k in range(3):
                 ph = (t * 1.5 + k / 3) % 1; props.text_center(F, 'CLICK', 120 + k * 8, 100 - ph * 30, px=4, colr=(200, 215, 255))
         else:
@@ -212,8 +211,8 @@ def scene(F, t):
             ctag(F, 'ONE MORE CHEST' if not after(t, L_YOU, 2) else 'ONE MORE DROP', 240, px=8)
     elif i == L_MAYBE:                                           # the crazy part: biggest rush from MAYBE, not winning
         if not after(t, L_MAYBE, 2):
-            you(F, 90, mood='shock'); k = ramp(t, SEG[L_MAYBE][0], 0.4); F *= 1 - 0.5 * k
-            glow(F, 90, 110, 46, '#ffcc4a', 0.25 * k); ctag(F, 'THE CRAZY PART', 300, px=7)
+            you(F, 46, mood='shock'); k = ramp(t, SEG[L_MAYBE][0], 0.4); F *= 1 - 0.5 * k
+            glow(F, 46, 110, 46, '#ffcc4a', 0.25 * k); ctag(F, 'THE CRAZY PART', 300, px=7)
         else:
             you(F, 46, mood='happy' if not after(t, L_MAYBE, 5) else 'sad')
             top = GROUND + 1 - 53; hv.brain(F, 46, top - 10, t, 1.0)
@@ -264,16 +263,24 @@ def captions(F, t):
         for r_, row in enumerate(rv.HEADPHONES):
             for c_, bb in enumerate(row):
                 if bb == '1': F[y0 + r_ * 7:y0 + r_ * 7 + 7, x0 + c_ * 7:x0 + c_ * 7 + 7] = 1.0
+def scene_img(t):
+    F = rv.BG.copy(); scene(F, t); rv.snow(F, t); return F
+XF = 0.22                                                                   # crossfade length (s)
+def cut_times():
+    if '_cuts' not in _C:
+        ts = {c['t0'] for c in CAPJ} | {a for a, b in SEG} | set(screams().values())
+        _C['_cuts'] = sorted(x for x in ts if x > 0.1)
+    return _C['_cuts']
 def frame(t):
-    F = rv.BG.copy()
-    scene(F, t)
-    i = seg_of(t)
-    rv.snow(F, t)
-    if i >= 1 and 0 <= t - SEG[i][0] < 0.12 and i not in (L_SUB,):
-        m = rv.HR_BAYER < (1 - (t - SEG[i][0]) / 0.12) * 0.7; F[m] = F[m] * 0.4 + hexc('#f4fbff') * 0.6
-    for st in screams().values():
+    F = scene_img(t)
+    for b in cut_times():                                                   # smooth every change: blend from the frame just before it
+        if b - 0.05 <= t < b - 0.05 + XF:
+            a = smooth((t - (b - 0.05)) / XF)
+            F = scene_img(b - 0.07) * (1 - a) + F * a
+            break
+    for st in screams().values():                                           # screams still punch: short shake, eased out
         if 0 <= t - st < 0.35:
-            A = 14 * math.exp(-(t - st) / 0.1); dx, dy = int(A * math.sin(t * 90)), int(A * math.cos(t * 70))
+            A = 12 * math.exp(-(t - st) / 0.1); dx, dy = int(A * math.sin(t * 90)), int(A * math.cos(t * 70))
             F = np.roll(np.roll(F, dx, 1), dy, 0)
     captions(F, t)
     return (np.clip(F, 0, 1) * 255 + 0.5).astype(np.uint8)

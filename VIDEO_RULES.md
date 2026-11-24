@@ -115,6 +115,9 @@ No joke setups, no "so are X actually Y?" question, no "scientists tested it... 
   not single dots. Check every character up close at full size before rendering.
 
 ## Layout
+- SMOOTH (Nov 24): every scene/text change crossfades (~0.22 s, eased), no hard cuts and no white flashes.
+  Characters keep the SAME position across chunks of one scene (no jumping = no ghosting); only new props/text fade in.
+  Nothing appears for a split second (if a tag would show < 0.4 s, drop it).
 - ANIMATE actions, never a static pose next to a moving prop: e.g. dribbling = a live arm (sprite arm removed,
   arm redrawn every frame) pumping the ball, ball top touching the hand, small body bounce, SFX on every floor hit.
 - Light effects line up with their source: cone + glow start AT the lamp, light pool on the ground under it,

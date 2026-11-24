@@ -7,7 +7,7 @@ Fiorillo, Tobler & Schultz 2003 (Science): sustained dopamine activity peaks whe
 Vice (Nov 2026): Fortnite Pirate Token ~1.2M V-Bucks / ~$8,700 of free Item Shop, most players won't find it.
 Visuals are our own elves, snow chests and a gold token - no Fortnite characters, map or art."""
 LINES = [
-    ("Ever wondered why you STILL haven't found the Pirate Token, you JOBLESS BUUUM?!", "", ('STILL', 'PIRATE', 'TOKEN', 'JOBLESS', 'BUUUM')),
+    ("Ever wondered why you STILL haven't found the Pirate Token, you JOBLESS BUM?!", "", ('STILL', 'PIRATE', 'TOKEN', 'JOBLESS', 'BUM')),
     ("It's not your skill. Fortnite trained you... like a PIGEON!", "", ('SKILL', 'TRAINED', 'PIGEON')),
     ("It's called a variable reward.", "", ('VARIABLE', 'REWARD')),
     ("You're not playing... you're PECKING!", "", ('PLAYING', 'PECKING')),
@@ -20,7 +20,7 @@ LINES = [
 ]
 TTS = ""
 CAPTION_BREAKS = [
-    "Ever wondered why | you STILL haven't found | the Pirate Token, | you JOBLESS BUUUM?!",
+    "Ever wondered why | you STILL haven't found | the Pirate Token, | you JOBLESS BUM?!",
     "It's not your skill. | Fortnite trained you... | like a PIGEON!",
     "It's called | a variable reward.",
     "You're not playing... | you're PECKING!",

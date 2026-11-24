@@ -1,0 +1,339 @@
+[
+ {
+  "t0": -0.03,
+  "t1": 0.69,
+  "text": "EVER WONDERED WHY",
+  "hl": [],
+  "line": 0
+ },
+ {
+  "t0": 0.69,
+  "t1": 1.85,
+  "text": "YOU STILL HAVEN'T FOUND",
+  "hl": [
+   "STILL"
+  ],
+  "line": 0
+ },
+ {
+  "t0": 1.85,
+  "t1": 2.75,
+  "text": "THE PIRATE TOKEN,",
+  "hl": [
+   "PIRATE",
+   "TOKEN"
+  ],
+  "line": 0
+ },
+ {
+  "t0": 2.75,
+  "t1": 4.47,
+  "text": "YOU JOBLESS BUUUM?!",
+  "hl": [
+   "BUUUM",
+   "JOBLESS"
+  ],
+  "line": 0
+ },
+ {
+  "t0": 4.47,
+  "t1": 5.69,
+  "text": "IT'S NOT YOUR SKILL.",
+  "hl": [
+   "SKILL"
+  ],
+  "line": 1
+ },
+ {
+  "t0": 5.69,
+  "t1": 6.85,
+  "text": "FORTNITE TRAINED YOU...",
+  "hl": [
+   "TRAINED"
+  ],
+  "line": 1
+ },
+ {
+  "t0": 6.85,
+  "t1": 7.97,
+  "text": "LIKE A PIGEON!",
+  "hl": [
+   "PIGEON"
+  ],
+  "line": 1
+ },
+ {
+  "t0": 7.97,
+  "t1": 8.39,
+  "text": "IT'S CALLED",
+  "hl": [],
+  "line": 2
+ },
+ {
+  "t0": 8.39,
+  "t1": 9.99,
+  "text": "A VARIABLE REWARD.",
+  "hl": [
+   "REWARD",
+   "VARIABLE"
+  ],
+  "line": 2
+ },
+ {
+  "t0": 9.99,
+  "t1": 10.97,
+  "text": "YOU'RE NOT PLAYING...",
+  "hl": [
+   "PLAYING"
+  ],
+  "line": 3
+ },
+ {
+  "t0": 10.97,
+  "t1": 12.05,
+  "text": "YOU'RE PECKING!",
+  "hl": [
+   "PECKING"
+  ],
+  "line": 3
+ },
+ {
+  "t0": 12.05,
+  "t1": 13.27,
+  "text": "IF YOU'RE STILL HUNTING...",
+  "hl": [],
+  "line": 4
+ },
+ {
+  "t0": 13.27,
+  "t1": 13.65,
+  "text": "SUBSCRIBE!",
+  "hl": [
+   "SUBSCRIBE"
+  ],
+  "line": 4
+ },
+ {
+  "t0": 13.65,
+  "t1": 14.75,
+  "text": "'CAUSE A SCIENTIST",
+  "hl": [],
+  "line": 4
+ },
+ {
+  "t0": 14.75,
+  "t1": 16.11,
+  "text": "FED PIGEONS AT RANDOM,",
+  "hl": [
+   "RANDOM"
+  ],
+  "line": 4
+ },
+ {
+  "t0": 16.11,
+  "t1": 16.61,
+  "text": "AND THEY PECKED",
+  "hl": [],
+  "line": 4
+ },
+ {
+  "t0": 16.61,
+  "t1": 17.81,
+  "text": "THOUSANDS OF TIMES...",
+  "hl": [
+   "THOUSANDS"
+  ],
+  "line": 4
+ },
+ {
+  "t0": 17.81,
+  "t1": 18.77,
+  "text": "FOR NOTHING!",
+  "hl": [
+   "NOTHING"
+  ],
+  "line": 4
+ },
+ {
+  "t0": 18.77,
+  "t1": 19.67,
+  "text": "THAT'S YOU.",
+  "hl": [
+   "YOU"
+  ],
+  "line": 5
+ },
+ {
+  "t0": 19.67,
+  "t1": 20.59,
+  "text": "ONE MORE CHEST.",
+  "hl": [
+   "CHEST"
+  ],
+  "line": 5
+ },
+ {
+  "t0": 20.59,
+  "t1": 21.73,
+  "text": "ONE MORE DROP.",
+  "hl": [
+   "DROP"
+  ],
+  "line": 5
+ },
+ {
+  "t0": 21.73,
+  "t1": 22.09,
+  "text": "AND HERE'S",
+  "hl": [],
+  "line": 6
+ },
+ {
+  "t0": 22.09,
+  "t1": 23.09,
+  "text": "THE CRAZY PART...",
+  "hl": [
+   "CRAZY"
+  ],
+  "line": 6
+ },
+ {
+  "t0": 23.09,
+  "t1": 23.75,
+  "text": "YOUR BRAIN GETS",
+  "hl": [],
+  "line": 6
+ },
+ {
+  "t0": 23.75,
+  "t1": 24.57,
+  "text": "THE BIGGEST RUSH",
+  "hl": [
+   "RUSH"
+  ],
+  "line": 6
+ },
+ {
+  "t0": 24.57,
+  "t1": 25.59,
+  "text": "FROM MAYBE.",
+  "hl": [
+   "MAYBE"
+  ],
+  "line": 6
+ },
+ {
+  "t0": 25.59,
+  "t1": 26.15,
+  "text": "NOT FROM WINNING.",
+  "hl": [
+   "WINNING"
+  ],
+  "line": 6
+ },
+ {
+  "t0": 26.15,
+  "t1": 27.31,
+  "text": "THAT TOKEN?",
+  "hl": [
+   "TOKEN"
+  ],
+  "line": 7
+ },
+ {
+  "t0": 27.31,
+  "t1": 27.69,
+  "text": "WORTH ABOUT",
+  "hl": [],
+  "line": 7
+ },
+ {
+  "t0": 27.69,
+  "t1": 29.19,
+  "text": "8,700 DOLLARS",
+  "hl": [
+   "8700"
+  ],
+  "line": 7
+ },
+ {
+  "t0": 29.19,
+  "t1": 30.17,
+  "text": "IN SKINS.",
+  "hl": [],
+  "line": 7
+ },
+ {
+  "t0": 30.17,
+  "t1": 30.73,
+  "text": "AND MOST OF YOU",
+  "hl": [],
+  "line": 7
+ },
+ {
+  "t0": 30.73,
+  "t1": 32.13,
+  "text": "WILL NEVER FIND IT.",
+  "hl": [
+   "NEVER"
+  ],
+  "line": 7
+ },
+ {
+  "t0": 32.13,
+  "t1": 32.77,
+  "text": "THAT'S EXACTLY",
+  "hl": [],
+  "line": 8
+ },
+ {
+  "t0": 32.77,
+  "t1": 34.11,
+  "text": "WHY YOU CAN'T STOP.",
+  "hl": [
+   "STOP"
+  ],
+  "line": 8
+ },
+ {
+  "t0": 34.11,
+  "t1": 34.57,
+  "text": "SEND THIS TO",
+  "hl": [
+   "SEND"
+  ],
+  "line": 9
+ },
+ {
+  "t0": 34.57,
+  "t1": 34.89,
+  "text": "THE FRIEND",
+  "hl": [],
+  "line": 9
+ },
+ {
+  "t0": 34.89,
+  "t1": 36.21,
+  "text": "STILL GRINDING FOR IT...",
+  "hl": [
+   "GRINDING"
+  ],
+  "line": 9
+ },
+ {
+  "t0": 36.21,
+  "t1": 37.29,
+  "text": "OR SANTA'S PUTTING YOU",
+  "hl": [],
+  "line": 9
+ },
+ {
+  "t0": 37.29,
+  "t1": 38.76,
+  "text": "ON THE NAUGHTY LIST.",
+  "hl": [
+   "NAUGHTY"
+  ],
+  "line": 9
+ }
+]

@@ -1,5 +1,8 @@
 # Video rules (notes from feedback)
 
+**ALWAYS READ THESE VIDEO RULES (this whole file) BEFORE MAKING OR EDITING ANY VIDEO. No exceptions.**
+
+
 ## Hook (first 5-7 seconds)
 - NEW (Nov 22): the hook is ONE sentence, a ROAST / insult aimed at the viewer, very expressive, with the key word
   screamed. UPDATED Nov 24: NO swears and NO bleeps; roast with insults instead ("you JOBLESS BUM").
@@ -134,6 +137,9 @@ No joke setups, no "so are X actually Y?" question, no "scientists tested it... 
   (crisp 9-px pixels), text/meters/buttons drawn after at normal size (pirate_token/video.py zoom_world + deferred UI).
   World x must stay within 30..150 grid (elf centres 49..131) so nothing is cut off.
 - NEVER draw a ground strip/band/snow floor - re-read this rule before every render.
+- FILL THE SCREEN (Nov 24): characters/props big enough that the visual covers most of the area above the captions;
+  no big empty blank spots. Spread things across the width, keep text tags close above the action, and check every
+  still for empty areas before rendering.
 - No platform/island by default: characters and objects stand on an invisible floor with a soft pixel shadow under
   each one (like other pixel-art YouTubers). Use a platform only when the scene needs one. Use the whole width for movement.
 - The visual sits in the middle of the screen or a bit higher.

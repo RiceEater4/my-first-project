@@ -130,6 +130,10 @@ No joke setups, no "so are X actually Y?" question, no "scientists tested it... 
   inside bubbles/cards are centred using real text widths, grids use columns centred on the screen.
 - Pointer labels and thought bubbles: always use style_study/ui.py (callout = tag box with shadow + chunky outlined
   elbow line + glowing target dot; thought_bubble = puffy cloud with outline, drop shadow, smooth blended shading, trail).
+- BIG CHARACTERS (Nov 24): the world layer (characters + props + shadows) is zoomed 1.5x around the ground centre
+  (crisp 9-px pixels), text/meters/buttons drawn after at normal size (pirate_token/video.py zoom_world + deferred UI).
+  World x must stay within 30..150 grid (elf centres 49..131) so nothing is cut off.
+- NEVER draw a ground strip/band/snow floor - re-read this rule before every render.
 - No platform/island by default: characters and objects stand on an invisible floor with a soft pixel shadow under
   each one (like other pixel-art YouTubers). Use a platform only when the scene needs one. Use the whole width for movement.
 - The visual sits in the middle of the screen or a bit higher.

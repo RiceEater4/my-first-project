@@ -40,24 +40,25 @@ you = hv.you
 # centre, so 6-px pixels become crisp 9-px pixels. Text / meters / buttons are DEFERRED and drawn afterwards at
 # normal size (shifted up a bit so they sit above the bigger characters). No platform: invisible floor + shadows.
 Z, AX, AY = 1.5, 540, (GROUND + 1) * S
-_YX = np.clip(np.floor(AY + (np.arange(HF) - AY) / Z), 0, HF - 1).astype(int)
+DROP = 300                                                                    # whole scene + captions moved down to fill the screen
+_YX = np.clip(np.floor(AY + (np.arange(HF) - AY - DROP) / Z), 0, HF - 1).astype(int)
 _XX = np.clip(np.floor(AX + (np.arange(WF) - AX) / Z), 0, WF - 1).astype(int)
 def zoom_world(F):
     m = np.any(np.abs(F - rv.BG) > 1e-4, -1)
     Fz, mz = F[_YX][:, _XX], m[_YX][:, _XX]
     out = rv.BG.copy(); out[mz] = Fz[mz]; return out
 def wx(x): return 90 + (x - 90) * Z                                            # world grid coords -> zoomed grid coords
-def wy(y): return (GROUND + 1) + (y - (GROUND + 1)) * Z
-def ty(y): return y - 120 if y < 700 else y                                   # screen-y of top text, lifted above big characters
+def wy(y): return (GROUND + 1) + (y - (GROUND + 1)) * Z + DROP / S
+def ty(y): return y + 200 if y < 700 else y + DROP                              # screen-y of text: top tags above the characters, low tags under the feet
 UI = []
 def ctag(F, text, y, px=6): UI.append(lambda F: sv.ctag(F, text, ty(y), px=px))
 def big_num(F, text, y, px=12, colr=(255, 255, 255)): UI.append(lambda F: sv.big_num(F, text, ty(y), px=px, colr=colr))
-def meter(F, x, label, val, colr, **kw): UI.append(lambda F: b1.meter(F, x, label, val, colr, **{**kw, 'y_top': kw.get('y_top', 62) - 20}))
+def meter(F, x, label, val, colr, **kw): UI.append(lambda F: b1.meter(F, x, label, val, colr, **{**kw, 'y_top': kw.get('y_top', 62) + 60}))
 def strike(F, y=294): UI.append(lambda F: hv.strike(F, ty(y)))
 def ttext(F, text, x, y, px=5, colr=(225, 235, 255), world=False):
     X, Y = (wx(x), wy(y)) if world else (x, y)
     UI.append(lambda F: props.text_center(F, text, X, Y, px=px, colr=colr))
-def callout(F, text, tx_, ty_, ax, ay, **kw): UI.append(lambda F: ui.callout(F, text, tx_, ty_ - 20, wx(ax), wy(ay), **kw))
+def callout(F, text, tx_, ty_, ax, ay, **kw): UI.append(lambda F: ui.callout(F, text, tx_, ty_ + 34, wx(ax), wy(ay), **kw))
 def corner_sub(F, t, t0, press): UI.append(lambda F: lv.corner_sub(F, t, t0, press))
 def dim(F, k): UI.append(lambda F: F.__imul__(1 - k))
 SCREAMS = {}
@@ -265,7 +266,7 @@ def scene(F, t):
             def cta_box(F, pop=pop):
                 bw, bh = int(820 * pop), int(200 * pop)
                 if bw <= 20: return
-                X, Y = (WF - bw) // 2, 160
+                X, Y = (WF - bw) // 2, 480
                 F[Y:Y + bh, X:X + bw] = 1.0
                 for q in range(5): F[Y + q, X:X + bw] = F[Y + bh - 1 - q, X:X + bw] = NAVY; F[Y:Y + bh, X + q] = F[Y:Y + bh, X + bw - 1 - q] = NAVY
                 if pop > 0.95:
@@ -278,14 +279,15 @@ def scene(F, t):
             draw_santa(F, lerp(-30, 48, sl), bob=abs(math.sin(t * 3)) * 1.2)
             if sl > 0.9: scenery.naughty_list(F, 86, GROUND + 1, shadow_fn=shadow); ctag(F, 'NAUGHTY LIST', 300, px=8)
 
+CAP_Y = rv.CAP_Y + DROP
 CAPS = [(c['t0'], c['t1'], rv.caption_sprite(c['text'], set(c['hl']))) for c in CAPJ]
 def captions(F, t):
     for a, b, spr_ in CAPS:
         if a <= t < b:
             dy = int(6 * (1 - min(1.0, (t - a) / 0.06))); h_ = spr_.shape[0]; A = spr_[..., 3:4]
-            F[rv.CAP_Y + dy:rv.CAP_Y + dy + h_] = F[rv.CAP_Y + dy:rv.CAP_Y + dy + h_] * (1 - A) + spr_[..., :3] * A
+            F[CAP_Y + dy:CAP_Y + dy + h_] = F[CAP_Y + dy:CAP_Y + dy + h_] * (1 - A) + spr_[..., :3] * A
     if t < SEG[1][0] + 0.4:
-        y0 = rv.CAP_Y + 140; x0 = WF // 2 - 35
+        y0 = CAP_Y + 140; x0 = WF // 2 - 35
         for r_, row in enumerate(rv.HEADPHONES):
             for c_, bb in enumerate(row):
                 if bb == '1': F[y0 + r_ * 7:y0 + r_ * 7 + 7, x0 + c_ * 7:x0 + c_ * 7 + 7] = 1.0

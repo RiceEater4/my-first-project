@@ -140,6 +140,8 @@ No joke setups, no "so are X actually Y?" question, no "scientists tested it... 
 - FILL THE SCREEN (Nov 24): characters/props big enough that the visual covers most of the area above the captions;
   no big empty blank spots. Spread things across the width, keep text tags close above the action, and check every
   still for empty areas before rendering.
+  How (pirate_token/video.py): world zoomed 1.5x AND the whole scene + captions moved down 300 px (DROP), text tags
+  sit right above the characters (ty = y + 200), so the action fills the middle of the phone screen.
 - No platform/island by default: characters and objects stand on an invisible floor with a soft pixel shadow under
   each one (like other pixel-art YouTubers). Use a platform only when the scene needs one. Use the whole width for movement.
 - The visual sits in the middle of the screen or a bit higher.

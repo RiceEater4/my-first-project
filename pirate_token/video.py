@@ -40,7 +40,7 @@ you = hv.you
 # centre, so 6-px pixels become crisp 9-px pixels. Text / meters / buttons are DEFERRED and drawn afterwards at
 # normal size (shifted up a bit so they sit above the bigger characters). No platform: invisible floor + shadows.
 Z, AX, AY = 1.5, 540, (GROUND + 1) * S
-DROP = 300                                                                    # whole scene + captions moved down to fill the screen
+DROP = 100                                                                    # whole scene + captions moved down to fill the screen
 _YX = np.clip(np.floor(AY + (np.arange(HF) - AY - DROP) / Z), 0, HF - 1).astype(int)
 _XX = np.clip(np.floor(AX + (np.arange(WF) - AX) / Z), 0, WF - 1).astype(int)
 def zoom_world(F):
@@ -49,16 +49,16 @@ def zoom_world(F):
     out = rv.BG.copy(); out[mz] = Fz[mz]; return out
 def wx(x): return 90 + (x - 90) * Z                                            # world grid coords -> zoomed grid coords
 def wy(y): return (GROUND + 1) + (y - (GROUND + 1)) * Z + DROP / S
-def ty(y): return y + 200 if y < 700 else y + DROP                              # screen-y of text: top tags above the characters, low tags under the feet
+def ty(y): return y if y < 700 else 200                                       # low tags go to the top so they never touch the subtitles
 UI = []
 def ctag(F, text, y, px=6): UI.append(lambda F: sv.ctag(F, text, ty(y), px=px))
 def big_num(F, text, y, px=12, colr=(255, 255, 255)): UI.append(lambda F: sv.big_num(F, text, ty(y), px=px, colr=colr))
-def meter(F, x, label, val, colr, **kw): UI.append(lambda F: b1.meter(F, x, label, val, colr, **{**kw, 'y_top': kw.get('y_top', 62) + 60}))
+def meter(F, x, label, val, colr, **kw): UI.append(lambda F: b1.meter(F, x, label, val, colr, **{**kw, 'y_top': kw.get('y_top', 62) + 27}))
 def strike(F, y=294): UI.append(lambda F: hv.strike(F, ty(y)))
 def ttext(F, text, x, y, px=5, colr=(225, 235, 255), world=False):
     X, Y = (wx(x), wy(y)) if world else (x, y)
     UI.append(lambda F: props.text_center(F, text, X, Y, px=px, colr=colr))
-def callout(F, text, tx_, ty_, ax, ay, **kw): UI.append(lambda F: ui.callout(F, text, tx_, ty_ + 34, wx(ax), wy(ay), **kw))
+def callout(F, text, tx_, ty_, ax, ay, **kw): UI.append(lambda F: ui.callout(F, text, tx_, ty_ + 1, wx(ax), wy(ay), **kw))
 def corner_sub(F, t, t0, press): UI.append(lambda F: lv.corner_sub(F, t, t0, press))
 def dim(F, k): UI.append(lambda F: F.__imul__(1 - k))
 SCREAMS = {}
@@ -266,7 +266,7 @@ def scene(F, t):
             def cta_box(F, pop=pop):
                 bw, bh = int(820 * pop), int(200 * pop)
                 if bw <= 20: return
-                X, Y = (WF - bw) // 2, 480
+                X, Y = (WF - bw) // 2, 280
                 F[Y:Y + bh, X:X + bw] = 1.0
                 for q in range(5): F[Y + q, X:X + bw] = F[Y + bh - 1 - q, X:X + bw] = NAVY; F[Y:Y + bh, X + q] = F[Y:Y + bh, X + bw - 1 - q] = NAVY
                 if pop > 0.95:
@@ -279,7 +279,7 @@ def scene(F, t):
             draw_santa(F, lerp(-30, 48, sl), bob=abs(math.sin(t * 3)) * 1.2)
             if sl > 0.9: scenery.naughty_list(F, 86, GROUND + 1, shadow_fn=shadow); ctag(F, 'NAUGHTY LIST', 300, px=8)
 
-CAP_Y = rv.CAP_Y + DROP
+CAP_Y = rv.CAP_Y                                                              # subtitles stay at their original spot - never move them
 CAPS = [(c['t0'], c['t1'], rv.caption_sprite(c['text'], set(c['hl']))) for c in CAPJ]
 def captions(F, t):
     for a, b, spr_ in CAPS:

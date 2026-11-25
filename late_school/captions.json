@@ -1,0 +1,397 @@
+[
+ {
+  "t0": -0.03,
+  "t1": 0.59,
+  "text": "PEOPLE WHO ARE",
+  "hl": [],
+  "line": 0
+ },
+ {
+  "t0": 0.59,
+  "t1": 1.91,
+  "text": "ALWAYS LATE TO SCHOOL...",
+  "hl": [
+   "LATE"
+  ],
+  "line": 0
+ },
+ {
+  "t0": 1.91,
+  "t1": 4.15,
+  "text": "ARE GENIUSES!",
+  "hl": [
+   "GENIUSES"
+  ],
+  "line": 1
+ },
+ {
+  "t0": 4.15,
+  "t1": 5.45,
+  "text": "LOOK AT YOU.",
+  "hl": [],
+  "line": 2
+ },
+ {
+  "t0": 5.45,
+  "t1": 6.41,
+  "text": "SNOOZE.",
+  "hl": [
+   "SNOOZE"
+  ],
+  "line": 2
+ },
+ {
+  "t0": 6.41,
+  "t1": 7.41,
+  "text": "SNOOZE.",
+  "hl": [
+   "SNOOZE"
+  ],
+  "line": 2
+ },
+ {
+  "t0": 7.41,
+  "t1": 8.41,
+  "text": "SNOOZE.",
+  "hl": [
+   "SNOOZE"
+  ],
+  "line": 2
+ },
+ {
+  "t0": 8.41,
+  "t1": 9.77,
+  "text": "RUNNING IN",
+  "hl": [],
+  "line": 2
+ },
+ {
+  "t0": 9.77,
+  "t1": 11.5,
+  "text": "WITH ONE SHOE ON.",
+  "hl": [
+   "SHOE"
+  ],
+  "line": 2
+ },
+ {
+  "t0": 11.51,
+  "t1": 12.61,
+  "text": "SO IS BEING LATE",
+  "hl": [],
+  "line": 3
+ },
+ {
+  "t0": 12.61,
+  "t1": 14.09,
+  "text": "ACTUALLY SMART?",
+  "hl": [
+   "SMART"
+  ],
+  "line": 3
+ },
+ {
+  "t0": 14.09,
+  "t1": 15.83,
+  "text": "SCIENTISTS TESTED IT...",
+  "hl": [],
+  "line": 3
+ },
+ {
+  "t0": 15.83,
+  "t1": 17.98,
+  "text": "AND KIND OF, YES.",
+  "hl": [
+   "YES"
+  ],
+  "line": 3
+ },
+ {
+  "t0": 18.05,
+  "t1": 19.39,
+  "text": "WHEN YOU HIT PUBERTY,",
+  "hl": [],
+  "line": 3
+ },
+ {
+  "t0": 19.39,
+  "t1": 20.41,
+  "text": "YOUR BODY CLOCK SHIFTS",
+  "hl": [],
+  "line": 3
+ },
+ {
+  "t0": 20.41,
+  "t1": 22.27,
+  "text": "UP TO 2 HOURS LATER.",
+  "hl": [
+   "2"
+  ],
+  "line": 3
+ },
+ {
+  "t0": 22.27,
+  "t1": 23.29,
+  "text": "SO 7 AM...",
+  "hl": [
+   "7"
+  ],
+  "line": 4
+ },
+ {
+  "t0": 23.29,
+  "t1": 25.49,
+  "text": "CAN FEEL LIKE 5 AM.",
+  "hl": [
+   "5"
+  ],
+  "line": 4
+ },
+ {
+  "t0": 25.49,
+  "t1": 26.43,
+  "text": "IF YOU'VE EVER BEEN",
+  "hl": [],
+  "line": 5
+ },
+ {
+  "t0": 26.43,
+  "t1": 27.57,
+  "text": "LATE TO FIRST PERIOD...",
+  "hl": [],
+  "line": 5
+ },
+ {
+  "t0": 27.57,
+  "t1": 28.27,
+  "text": "SUBSCRIBE!",
+  "hl": [
+   "SUBSCRIBE"
+  ],
+  "line": 5
+ },
+ {
+  "t0": 28.27,
+  "t1": 29.95,
+  "text": "'CAUSE THE NEXT PART",
+  "hl": [],
+  "line": 5
+ },
+ {
+  "t0": 29.95,
+  "t1": 31.74,
+  "text": "IS EVEN CRAZIER.",
+  "hl": [
+   "CRAZIER"
+  ],
+  "line": 5
+ },
+ {
+  "t0": 31.95,
+  "t1": 32.49,
+  "text": "WHEN SEATTLE",
+  "hl": [],
+  "line": 6
+ },
+ {
+  "t0": 32.49,
+  "t1": 33.49,
+  "text": "PUSHED SCHOOL BACK",
+  "hl": [],
+  "line": 6
+ },
+ {
+  "t0": 33.49,
+  "t1": 34.77,
+  "text": "ALMOST AN HOUR,",
+  "hl": [],
+  "line": 6
+ },
+ {
+  "t0": 34.77,
+  "t1": 36.39,
+  "text": "STUDENTS GOT 34 MORE",
+  "hl": [
+   "34"
+  ],
+  "line": 6
+ },
+ {
+  "t0": 36.39,
+  "t1": 37.43,
+  "text": "MINUTES OF SLEEP...",
+  "hl": [],
+  "line": 6
+ },
+ {
+  "t0": 37.43,
+  "t1": 39.31,
+  "text": "AND THEIR GRADES WENT UP.",
+  "hl": [
+   "GRADES"
+  ],
+  "line": 6
+ },
+ {
+  "t0": 39.31,
+  "t1": 40.17,
+  "text": "DOCTORS EVEN SAY",
+  "hl": [
+   "DOCTORS"
+  ],
+  "line": 7
+ },
+ {
+  "t0": 40.17,
+  "t1": 41.23,
+  "text": "SCHOOL SHOULDN'T START",
+  "hl": [],
+  "line": 7
+ },
+ {
+  "t0": 41.23,
+  "t1": 42.57,
+  "text": "BEFORE 8:30.",
+  "hl": [],
+  "line": 7
+ },
+ {
+  "t0": 42.57,
+  "t1": 44.25,
+  "text": "SO YOU'RE NOT LAZY.",
+  "hl": [
+   "LAZY"
+  ],
+  "line": 8
+ },
+ {
+  "t0": 44.25,
+  "t1": 45.47,
+  "text": "YOUR BODY IS LITERALLY",
+  "hl": [],
+  "line": 8
+ },
+ {
+  "t0": 45.47,
+  "t1": 47.07,
+  "text": "ON A DIFFERENT CLOCK.",
+  "hl": [
+   "CLOCK"
+  ],
+  "line": 8
+ },
+ {
+  "t0": 47.07,
+  "t1": 47.99,
+  "text": "BUT HERE'S THE PART",
+  "hl": [],
+  "line": 9
+ },
+ {
+  "t0": 47.99,
+  "t1": 49.76,
+  "text": "NOBODY TELLS YOU...",
+  "hl": [
+   "NOBODY"
+  ],
+  "line": 9
+ },
+ {
+  "t0": 50.01,
+  "t1": 50.63,
+  "text": "YOUR TEACHER",
+  "hl": [
+   "TEACHER"
+  ],
+  "line": 10
+ },
+ {
+  "t0": 50.63,
+  "t1": 51.41,
+  "text": "DOESN'T CARE",
+  "hl": [],
+  "line": 10
+ },
+ {
+  "t0": 51.41,
+  "t1": 52.71,
+  "text": "ABOUT YOUR BODY CLOCK.",
+  "hl": [],
+  "line": 10
+ },
+ {
+  "t0": 52.71,
+  "t1": 53.89,
+  "text": "SO PUT THE PHONE DOWN",
+  "hl": [
+   "PHONE"
+  ],
+  "line": 11
+ },
+ {
+  "t0": 53.89,
+  "t1": 55.05,
+  "text": "AN HOUR BEFORE BED...",
+  "hl": [],
+  "line": 11
+ },
+ {
+  "t0": 55.05,
+  "t1": 56.05,
+  "text": "AND GET SUNLIGHT",
+  "hl": [
+   "SUNLIGHT"
+  ],
+  "line": 11
+ },
+ {
+  "t0": 56.05,
+  "t1": 57.65,
+  "text": "THE SECOND YOU WAKE UP.",
+  "hl": [],
+  "line": 11
+ },
+ {
+  "t0": 57.65,
+  "t1": 59.47,
+  "text": "IT PULLS YOUR CLOCK EARLIER.",
+  "hl": [
+   "EARLIER"
+  ],
+  "line": 11
+ },
+ {
+  "t0": 59.47,
+  "t1": 60.47,
+  "text": "SEND THIS TO THE FRIEND",
+  "hl": [
+   "SEND"
+  ],
+  "line": 12
+ },
+ {
+  "t0": 60.47,
+  "t1": 61.99,
+  "text": "WHO'S ALWAYS LATE...",
+  "hl": [
+   "LATE"
+  ],
+  "line": 12
+ },
+ {
+  "t0": 61.99,
+  "t1": 63.25,
+  "text": "OR SANTA'S PUTTING YOU",
+  "hl": [],
+  "line": 12
+ },
+ {
+  "t0": 63.25,
+  "t1": 64.9,
+  "text": "ON THE NAUGHTY LIST.",
+  "hl": [
+   "NAUGHTY"
+  ],
+  "line": 12
+ }
+]

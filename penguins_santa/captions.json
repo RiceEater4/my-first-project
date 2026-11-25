@@ -1,0 +1,462 @@
+[
+ {
+  "t0": -0.03,
+  "t1": 1.03,
+  "text": "PENGUINS HAVE NEVER",
+  "hl": [
+   "NEVER"
+  ],
+  "line": 0
+ },
+ {
+  "t0": 1.03,
+  "t1": 2.84,
+  "text": "SEEN A POLAR BEAR.",
+  "hl": [
+   "POLAR"
+  ],
+  "line": 0
+ },
+ {
+  "t0": 3.09,
+  "t1": 3.65,
+  "text": "WHAAAAT?!",
+  "hl": [
+   "WHAAAAT"
+  ],
+  "line": 1
+ },
+ {
+  "t0": 3.65,
+  "t1": 4.99,
+  "text": "BUT EVERY CHRISTMAS CARD",
+  "hl": [
+   "CHRISTMAS"
+  ],
+  "line": 2
+ },
+ {
+  "t0": 4.99,
+  "t1": 6.19,
+  "text": "PUTS THEM TOGETHER.",
+  "hl": [],
+  "line": 2
+ },
+ {
+  "t0": 6.19,
+  "t1": 7.86,
+  "text": "RIGHT NEXT TO SANTA.",
+  "hl": [
+   "SANTA"
+  ],
+  "line": 2
+ },
+ {
+  "t0": 7.99,
+  "t1": 9.21,
+  "text": "HERE'S THE THING.",
+  "hl": [],
+  "line": 3
+ },
+ {
+  "t0": 9.21,
+  "t1": 9.97,
+  "text": "POLAR BEARS LIVE",
+  "hl": [],
+  "line": 3
+ },
+ {
+  "t0": 9.97,
+  "t1": 11.37,
+  "text": "AT THE TOP OF THE WORLD...",
+  "hl": [
+   "TOP"
+  ],
+  "line": 3
+ },
+ {
+  "t0": 11.37,
+  "t1": 12.54,
+  "text": "IN THE ARCTIC.",
+  "hl": [
+   "ARCTIC"
+  ],
+  "line": 3
+ },
+ {
+  "t0": 12.67,
+  "t1": 13.37,
+  "text": "PENGUINS LIVE",
+  "hl": [],
+  "line": 4
+ },
+ {
+  "t0": 13.37,
+  "t1": 14.39,
+  "text": "AT THE BOTTOM.",
+  "hl": [
+   "BOTTOM"
+  ],
+  "line": 4
+ },
+ {
+  "t0": 14.39,
+  "t1": 15.31,
+  "text": "ALMOST ALL OF THEM,",
+  "hl": [],
+  "line": 4
+ },
+ {
+  "t0": 15.31,
+  "t1": 16.83,
+  "text": "SOUTH OF THE EQUATOR.",
+  "hl": [
+   "SOUTH"
+  ],
+  "line": 4
+ },
+ {
+  "t0": 16.83,
+  "t1": 17.93,
+  "text": "THE WHOLE PLANET",
+  "hl": [
+   "PLANET"
+  ],
+  "line": 5
+ },
+ {
+  "t0": 17.93,
+  "t1": 19.19,
+  "text": "IS BETWEEN THEM.",
+  "hl": [],
+  "line": 5
+ },
+ {
+  "t0": 19.19,
+  "t1": 19.85,
+  "text": "SO WHAT IF",
+  "hl": [],
+  "line": 6
+ },
+ {
+  "t0": 19.85,
+  "t1": 20.95,
+  "text": "A PENGUIN MOVED UP NORTH...",
+  "hl": [
+   "NORTH"
+  ],
+  "line": 6
+ },
+ {
+  "t0": 20.95,
+  "t1": 22.39,
+  "text": "TO MEET SANTA?",
+  "hl": [
+   "SANTA"
+  ],
+  "line": 6
+ },
+ {
+  "t0": 22.39,
+  "t1": 23.35,
+  "text": "PENGUINS GREW UP",
+  "hl": [],
+  "line": 7
+ },
+ {
+  "t0": 23.35,
+  "t1": 24.67,
+  "text": "WITH ALMOST NO PREDATORS",
+  "hl": [
+   "PREDATORS"
+  ],
+  "line": 7
+ },
+ {
+  "t0": 24.67,
+  "t1": 25.53,
+  "text": "ON LAND.",
+  "hl": [],
+  "line": 7
+ },
+ {
+  "t0": 25.53,
+  "t1": 26.63,
+  "text": "SO THEY'RE NOT SCARED",
+  "hl": [
+   "SCARED"
+  ],
+  "line": 7
+ },
+ {
+  "t0": 26.63,
+  "t1": 27.53,
+  "text": "OF THINGS WALKING UP",
+  "hl": [],
+  "line": 7
+ },
+ {
+  "t0": 27.53,
+  "t1": 27.87,
+  "text": "TO THEM.",
+  "hl": [],
+  "line": 7
+ },
+ {
+  "t0": 27.87,
+  "t1": 29.95,
+  "text": "EVEN A POLAR BEAR.",
+  "hl": [
+   "BEAR",
+   "POLAR"
+  ],
+  "line": 8
+ },
+ {
+  "t0": 29.95,
+  "t1": 30.81,
+  "text": "ON LAND,",
+  "hl": [],
+  "line": 9
+ },
+ {
+  "t0": 30.81,
+  "t1": 31.57,
+  "text": "A PENGUIN WADDLES",
+  "hl": [],
+  "line": 9
+ },
+ {
+  "t0": 31.57,
+  "t1": 32.57,
+  "text": "ABOUT TWO KILOMETERS",
+  "hl": [
+   "TWO"
+  ],
+  "line": 9
+ },
+ {
+  "t0": 32.57,
+  "t1": 33.51,
+  "text": "AN HOUR.",
+  "hl": [],
+  "line": 9
+ },
+ {
+  "t0": 33.51,
+  "t1": 34.29,
+  "text": "A POLAR BEAR",
+  "hl": [],
+  "line": 9
+ },
+ {
+  "t0": 34.29,
+  "t1": 35.47,
+  "text": "RUNS FORTY.",
+  "hl": [
+   "FORTY"
+  ],
+  "line": 9
+ },
+ {
+  "t0": 35.47,
+  "t1": 36.61,
+  "text": "RUN, BUDDY!",
+  "hl": [
+   "RUN"
+  ],
+  "line": 10
+ },
+ {
+  "t0": 36.61,
+  "t1": 37.51,
+  "text": "HIS ONLY CHANCE",
+  "hl": [],
+  "line": 11
+ },
+ {
+  "t0": 37.51,
+  "t1": 38.25,
+  "text": "IS THE WATER.",
+  "hl": [
+   "WATER"
+  ],
+  "line": 11
+ },
+ {
+  "t0": 38.25,
+  "t1": 39.57,
+  "text": "UNDERWATER,",
+  "hl": [],
+  "line": 11
+ },
+ {
+  "t0": 39.57,
+  "t1": 41.21,
+  "text": "PENGUINS ARE ROCKETS.",
+  "hl": [
+   "ROCKETS"
+  ],
+  "line": 11
+ },
+ {
+  "t0": 41.21,
+  "t1": 42.51,
+  "text": "BUT PLOT TWIST...",
+  "hl": [
+   "TWIST"
+  ],
+  "line": 12
+ },
+ {
+  "t0": 42.51,
+  "t1": 43.33,
+  "text": "THE NORTH DID",
+  "hl": [
+   "DID"
+  ],
+  "line": 12
+ },
+ {
+  "t0": 43.33,
+  "t1": 44.49,
+  "text": "HAVE A PENGUIN.",
+  "hl": [],
+  "line": 12
+ },
+ {
+  "t0": 44.49,
+  "t1": 45.87,
+  "text": "THE GREAT AUK.",
+  "hl": [
+   "AUK"
+  ],
+  "line": 13
+ },
+ {
+  "t0": 45.87,
+  "t1": 46.47,
+  "text": "BLACK AND WHITE,",
+  "hl": [],
+  "line": 13
+ },
+ {
+  "t0": 46.47,
+  "t1": 47.69,
+  "text": "COULDN'T FLY,",
+  "hl": [],
+  "line": 13
+ },
+ {
+  "t0": 47.69,
+  "t1": 49.37,
+  "text": "SWAM LIKE A ROCKET.",
+  "hl": [],
+  "line": 13
+ },
+ {
+  "t0": 49.37,
+  "t1": 50.31,
+  "text": "SAILORS CALLED IT",
+  "hl": [],
+  "line": 13
+ },
+ {
+  "t0": 50.31,
+  "t1": 51.47,
+  "text": "THE PENGUIN.",
+  "hl": [
+   "PENGUIN"
+  ],
+  "line": 13
+ },
+ {
+  "t0": 51.47,
+  "t1": 52.31,
+  "text": "THEN HUNTERS",
+  "hl": [],
+  "line": 14
+ },
+ {
+  "t0": 52.31,
+  "t1": 53.43,
+  "text": "WIPED IT OUT.",
+  "hl": [
+   "WIPED"
+  ],
+  "line": 14
+ },
+ {
+  "t0": 53.43,
+  "t1": 54.05,
+  "text": "THE LAST PAIR",
+  "hl": [],
+  "line": 14
+ },
+ {
+  "t0": 54.05,
+  "t1": 55.75,
+  "text": "WAS KILLED IN 1844.",
+  "hl": [
+   "1844"
+  ],
+  "line": 14
+ },
+ {
+  "t0": 55.75,
+  "t1": 57.61,
+  "text": "SO THE BIRDS DOWN SOUTH",
+  "hl": [],
+  "line": 15
+ },
+ {
+  "t0": 57.61,
+  "t1": 58.89,
+  "text": "GOT ITS NAME.",
+  "hl": [
+   "NAME"
+  ],
+  "line": 15
+ },
+ {
+  "t0": 58.89,
+  "t1": 59.61,
+  "text": "SANTA NEVER",
+  "hl": [
+   "NEVER"
+  ],
+  "line": 16
+ },
+ {
+  "t0": 59.61,
+  "t1": 60.77,
+  "text": "MET A PENGUIN...",
+  "hl": [],
+  "line": 16
+ },
+ {
+  "t0": 60.77,
+  "t1": 61.29,
+  "text": "BUT THE NORTH",
+  "hl": [],
+  "line": 16
+ },
+ {
+  "t0": 61.29,
+  "t1": 63.58,
+  "text": "USED TO HAVE ITS VERY OWN.",
+  "hl": [
+   "OWN"
+  ],
+  "line": 16
+ },
+ {
+  "t0": 63.61,
+  "t1": 64.82,
+  "text": "MERRY CHRISTMAS.",
+  "hl": [
+   "CHRISTMAS"
+  ],
+  "line": 16
+ }
+]

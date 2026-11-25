@@ -1,0 +1,424 @@
+[
+ {
+  "t0": -0.03,
+  "t1": 0.49,
+  "text": "PEOPLE WHO",
+  "hl": [],
+  "line": 0
+ },
+ {
+  "t0": 0.49,
+  "t1": 1.59,
+  "text": "ARE ALWAYS COLD...",
+  "hl": [
+   "COLD"
+  ],
+  "line": 0
+ },
+ {
+  "t0": 1.59,
+  "t1": 3.79,
+  "text": "ARE GENIUSES!",
+  "hl": [
+   "GENIUSES"
+  ],
+  "line": 1
+ },
+ {
+  "t0": 3.79,
+  "t1": 5.17,
+  "text": "LOOK AROUND THE ROOM.",
+  "hl": [],
+  "line": 2
+ },
+ {
+  "t0": 5.17,
+  "t1": 6.85,
+  "text": "EVERYONE'S IN T-SHIRTS.",
+  "hl": [],
+  "line": 2
+ },
+ {
+  "t0": 6.85,
+  "t1": 7.53,
+  "text": "YOU?",
+  "hl": [],
+  "line": 2
+ },
+ {
+  "t0": 7.53,
+  "t1": 8.49,
+  "text": "TWO HOODIES.",
+  "hl": [
+   "HOODIES"
+  ],
+  "line": 2
+ },
+ {
+  "t0": 8.49,
+  "t1": 9.45,
+  "text": "A BLANKET.",
+  "hl": [],
+  "line": 2
+ },
+ {
+  "t0": 9.45,
+  "t1": 10.93,
+  "text": "STILL SHAKING.",
+  "hl": [
+   "SHAKING"
+  ],
+  "line": 2
+ },
+ {
+  "t0": 10.93,
+  "t1": 11.73,
+  "text": "SOMEONE CALLS YOU",
+  "hl": [],
+  "line": 3
+ },
+ {
+  "t0": 11.73,
+  "t1": 12.69,
+  "text": "DRAMATIC.",
+  "hl": [
+   "DRAMATIC"
+  ],
+  "line": 3
+ },
+ {
+  "t0": 12.69,
+  "t1": 13.65,
+  "text": "IGNORE THEM.",
+  "hl": [
+   "IGNORE"
+  ],
+  "line": 3
+ },
+ {
+  "t0": 13.65,
+  "t1": 14.13,
+  "text": "YOUR BODY",
+  "hl": [],
+  "line": 3
+ },
+ {
+  "t0": 14.13,
+  "t1": 15.27,
+  "text": "ISN'T BROKEN.",
+  "hl": [],
+  "line": 3
+ },
+ {
+  "t0": 15.27,
+  "t1": 16.57,
+  "text": "THE ROOM IS.",
+  "hl": [
+   "ROOM"
+  ],
+  "line": 3
+ },
+ {
+  "t0": 16.57,
+  "t1": 17.65,
+  "text": "BLANKET THIEVES...",
+  "hl": [],
+  "line": 4
+ },
+ {
+  "t0": 17.65,
+  "t1": 18.66,
+  "text": "SUBSCRIBE!",
+  "hl": [
+   "SUBSCRIBE"
+  ],
+  "line": 4
+ },
+ {
+  "t0": 18.83,
+  "t1": 19.37,
+  "text": "WALK UP TO",
+  "hl": [],
+  "line": 5
+ },
+ {
+  "t0": 19.37,
+  "t1": 20.59,
+  "text": "THE THERMOSTAT.",
+  "hl": [
+   "THERMOSTAT"
+  ],
+  "line": 5
+ },
+ {
+  "t0": 20.59,
+  "t1": 21.39,
+  "text": "THOSE SETTINGS COME",
+  "hl": [],
+  "line": 5
+ },
+ {
+  "t0": 21.39,
+  "t1": 22.95,
+  "text": "FROM AN OLD FORMULA,",
+  "hl": [],
+  "line": 5
+ },
+ {
+  "t0": 22.95,
+  "t1": 23.39,
+  "text": "BUILT AROUND",
+  "hl": [],
+  "line": 5
+ },
+ {
+  "t0": 23.39,
+  "t1": 24.51,
+  "text": "A 40-YEAR-OLD MAN",
+  "hl": [],
+  "line": 5
+ },
+ {
+  "t0": 24.51,
+  "t1": 25.63,
+  "text": "IN A SUIT.",
+  "hl": [],
+  "line": 5
+ },
+ {
+  "t0": 25.63,
+  "t1": 26.65,
+  "text": "NOT YOU.",
+  "hl": [],
+  "line": 5
+ },
+ {
+  "t0": 26.65,
+  "t1": 27.44,
+  "text": "HIM.",
+  "hl": [
+   "HIM"
+  ],
+  "line": 5
+ },
+ {
+  "t0": 27.47,
+  "t1": 28.57,
+  "text": "WOMEN BURN LESS HEAT",
+  "hl": [
+   "LESS"
+  ],
+  "line": 6
+ },
+ {
+  "t0": 28.57,
+  "t1": 30.05,
+  "text": "JUST SITTING STILL.",
+  "hl": [],
+  "line": 6
+ },
+ {
+  "t0": 30.05,
+  "t1": 31.05,
+  "text": "SO THAT NORMAL ROOM",
+  "hl": [],
+  "line": 6
+ },
+ {
+  "t0": 31.05,
+  "t1": 31.93,
+  "text": "IS FREEZING",
+  "hl": [
+   "FREEZING"
+  ],
+  "line": 6
+ },
+ {
+  "t0": 31.93,
+  "t1": 33.51,
+  "text": "FOR A LOT OF PEOPLE.",
+  "hl": [],
+  "line": 6
+ },
+ {
+  "t0": 33.51,
+  "t1": 34.05,
+  "text": "NOW HERE'S",
+  "hl": [],
+  "line": 7
+ },
+ {
+  "t0": 34.05,
+  "t1": 34.81,
+  "text": "THE GENIUS PART",
+  "hl": [
+   "GENIUS"
+  ],
+  "line": 7
+ },
+ {
+  "t0": 34.81,
+  "t1": 36.33,
+  "text": "NOBODY TELLS YOU...",
+  "hl": [
+   "NOBODY"
+  ],
+  "line": 7
+ },
+ {
+  "t0": 36.33,
+  "t1": 37.95,
+  "text": "TURN THE HEAT UP.",
+  "hl": [
+   "HEAT"
+  ],
+  "line": 8
+ },
+ {
+  "t0": 37.95,
+  "t1": 39.01,
+  "text": "IN ONE STUDY,",
+  "hl": [],
+  "line": 8
+ },
+ {
+  "t0": 39.01,
+  "t1": 39.67,
+  "text": "WOMEN DID BETTER",
+  "hl": [
+   "BETTER"
+  ],
+  "line": 8
+ },
+ {
+  "t0": 39.67,
+  "t1": 41.05,
+  "text": "ON MATH AND WORD TESTS",
+  "hl": [],
+  "line": 8
+ },
+ {
+  "t0": 41.05,
+  "t1": 42.77,
+  "text": "IN WARMER ROOMS.",
+  "hl": [
+   "WARMER"
+  ],
+  "line": 8
+ },
+ {
+  "t0": 42.77,
+  "t1": 43.99,
+  "text": "SO CRANK IT.",
+  "hl": [
+   "CRANK"
+  ],
+  "line": 9
+ },
+ {
+  "t0": 43.99,
+  "t1": 45.07,
+  "text": "GRAB THE BLANKET.",
+  "hl": [
+   "BLANKET"
+  ],
+  "line": 9
+ },
+ {
+  "t0": 45.07,
+  "t1": 46.53,
+  "text": "OWN THE THERMOSTAT.",
+  "hl": [
+   "THERMOSTAT"
+  ],
+  "line": 9
+ },
+ {
+  "t0": 46.53,
+  "t1": 47.73,
+  "text": "YOU'RE NOT DRAMATIC,",
+  "hl": [],
+  "line": 9
+ },
+ {
+  "t0": 47.73,
+  "t1": 48.69,
+  "text": "YOU MIGHT LITERALLY",
+  "hl": [],
+  "line": 9
+ },
+ {
+  "t0": 48.69,
+  "t1": 50.25,
+  "text": "BE THINKING BETTER.",
+  "hl": [
+   "BETTER"
+  ],
+  "line": 9
+ },
+ {
+  "t0": 50.25,
+  "t1": 51.01,
+  "text": "THE CATCH?",
+  "hl": [
+   "CATCH"
+  ],
+  "line": 10
+ },
+ {
+  "t0": 51.01,
+  "t1": 51.63,
+  "text": "EVERYONE ELSE",
+  "hl": [],
+  "line": 10
+ },
+ {
+  "t0": 51.63,
+  "t1": 52.96,
+  "text": "STARTS SWEATING.",
+  "hl": [
+   "SWEATING"
+  ],
+  "line": 10
+ },
+ {
+  "t0": 53.23,
+  "t1": 54.39,
+  "text": "NOT YOUR PROBLEM.",
+  "hl": [],
+  "line": 10
+ },
+ {
+  "t0": 54.39,
+  "t1": 55.25,
+  "text": "TAG THE BLANKET THIEF",
+  "hl": [
+   "TAG",
+   "THIEF"
+  ],
+  "line": 11
+ },
+ {
+  "t0": 55.25,
+  "t1": 55.79,
+  "text": "YOU KNOW...",
+  "hl": [],
+  "line": 11
+ },
+ {
+  "t0": 55.79,
+  "t1": 57.39,
+  "text": "OR SANTA'S PUTTING YOU",
+  "hl": [],
+  "line": 11
+ },
+ {
+  "t0": 57.39,
+  "t1": 59.08,
+  "text": "ON THE NAUGHTY LIST.",
+  "hl": [
+   "NAUGHTY"
+  ],
+  "line": 11
+ }
+]

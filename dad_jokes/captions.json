@@ -1,0 +1,441 @@
+[
+ {
+  "t0": -0.03,
+  "t1": 0.71,
+  "text": "EVER WONDERED WHY",
+  "hl": [],
+  "line": 0
+ },
+ {
+  "t0": 0.71,
+  "t1": 1.65,
+  "text": "YOUR DAD TELLS THE...",
+  "hl": [
+   "DAD"
+  ],
+  "line": 0
+ },
+ {
+  "t0": 1.65,
+  "t1": 3.22,
+  "text": "WORST JOKES?!",
+  "hl": [
+   "WORST"
+  ],
+  "line": 1
+ },
+ {
+  "t0": 3.25,
+  "t1": 4.03,
+  "text": "IT'S NOT BECAUSE",
+  "hl": [],
+  "line": 2
+ },
+ {
+  "t0": 4.03,
+  "t1": 5.13,
+  "text": "HE'S UNFUNNY.",
+  "hl": [
+   "UNFUNNY"
+  ],
+  "line": 2
+ },
+ {
+  "t0": 5.13,
+  "t1": 5.73,
+  "text": "HE'S DOING IT",
+  "hl": [],
+  "line": 2
+ },
+ {
+  "t0": 5.73,
+  "t1": 6.65,
+  "text": "ON PURPOSE.",
+  "hl": [
+   "PURPOSE"
+  ],
+  "line": 2
+ },
+ {
+  "t0": 6.65,
+  "t1": 7.05,
+  "text": "IT'S CALLED...",
+  "hl": [],
+  "line": 2
+ },
+ {
+  "t0": 7.05,
+  "t1": 8.67,
+  "text": "ANTI-HUMOR.",
+  "hl": [],
+  "line": 2
+ },
+ {
+  "t0": 8.67,
+  "t1": 9.37,
+  "text": "A NORMAL JOKE",
+  "hl": [],
+  "line": 3
+ },
+ {
+  "t0": 9.37,
+  "t1": 10.55,
+  "text": "WANTS YOU TO LAUGH.",
+  "hl": [
+   "LAUGH"
+  ],
+  "line": 3
+ },
+ {
+  "t0": 10.55,
+  "t1": 11.29,
+  "text": "A DAD JOKE",
+  "hl": [],
+  "line": 3
+ },
+ {
+  "t0": 11.29,
+  "t1": 12.99,
+  "text": "WANTS YOU TO GROAN.",
+  "hl": [
+   "GROAN"
+  ],
+  "line": 3
+ },
+ {
+  "t0": 12.99,
+  "t1": 13.77,
+  "text": "YOU SAY,",
+  "hl": [],
+  "line": 4
+ },
+ {
+  "t0": 13.77,
+  "t1": 15.35,
+  "text": "DAD, I'M HUNGRY.",
+  "hl": [
+   "DAD",
+   "HUNGRY"
+  ],
+  "line": 4
+ },
+ {
+  "t0": 15.35,
+  "t1": 16.45,
+  "text": "AND HE GOES...",
+  "hl": [],
+  "line": 4
+ },
+ {
+  "t0": 16.45,
+  "t1": 17.25,
+  "text": "HI HUNGRY,",
+  "hl": [
+   "HUNGRY"
+  ],
+  "line": 4
+ },
+ {
+  "t0": 17.25,
+  "t1": 18.11,
+  "text": "I'M DAD.",
+  "hl": [
+   "DAD"
+  ],
+  "line": 4
+ },
+ {
+  "t0": 18.11,
+  "t1": 19.43,
+  "text": "YOU GROAN.",
+  "hl": [
+   "GROAN"
+  ],
+  "line": 4
+ },
+ {
+  "t0": 19.43,
+  "t1": 20.29,
+  "text": "THAT GROAN?",
+  "hl": [
+   "GROAN"
+  ],
+  "line": 5
+ },
+ {
+  "t0": 20.29,
+  "t1": 21.63,
+  "text": "THAT'S THE PUNCHLINE.",
+  "hl": [
+   "PUNCHLINE"
+  ],
+  "line": 5
+ },
+ {
+  "t0": 21.63,
+  "t1": 22.71,
+  "text": "THE WORSE THE JOKE...",
+  "hl": [
+   "WORSE"
+  ],
+  "line": 5
+ },
+ {
+  "t0": 22.71,
+  "t1": 24.15,
+  "text": "THE BETTER IT WORKED.",
+  "hl": [
+   "BETTER"
+  ],
+  "line": 5
+ },
+ {
+  "t0": 24.15,
+  "t1": 25.97,
+  "text": "YOUR DAD ISN'T FAILING.",
+  "hl": [
+   "FAILING"
+  ],
+  "line": 6
+ },
+ {
+  "t0": 25.97,
+  "t1": 27.27,
+  "text": "HE'S TROLLING YOU.",
+  "hl": [
+   "TROLLING"
+  ],
+  "line": 6
+ },
+ {
+  "t0": 27.27,
+  "t1": 27.73,
+  "text": "GOT A DAD",
+  "hl": [],
+  "line": 7
+ },
+ {
+  "t0": 27.73,
+  "t1": 28.17,
+  "text": "LIKE THIS?",
+  "hl": [],
+  "line": 7
+ },
+ {
+  "t0": 28.17,
+  "t1": 29.42,
+  "text": "SUBSCRIBE!",
+  "hl": [
+   "SUBSCRIBE"
+  ],
+  "line": 7
+ },
+ {
+  "t0": 29.57,
+  "t1": 30.97,
+  "text": "THE REASON'S SWEET.",
+  "hl": [
+   "SWEET"
+  ],
+  "line": 7
+ },
+ {
+  "t0": 30.97,
+  "t1": 32.07,
+  "text": "A RESEARCHER IN DENMARK",
+  "hl": [
+   "DENMARK"
+  ],
+  "line": 8
+ },
+ {
+  "t0": 32.07,
+  "t1": 33.09,
+  "text": "ACTUALLY STUDIED",
+  "hl": [],
+  "line": 8
+ },
+ {
+  "t0": 33.09,
+  "t1": 34.11,
+  "text": "DAD JOKES.",
+  "hl": [],
+  "line": 8
+ },
+ {
+  "t0": 34.11,
+  "t1": 34.91,
+  "text": "HIS IDEA?",
+  "hl": [],
+  "line": 8
+ },
+ {
+  "t0": 34.91,
+  "t1": 35.69,
+  "text": "DAD JOKES ARE",
+  "hl": [],
+  "line": 8
+ },
+ {
+  "t0": 35.69,
+  "t1": 36.97,
+  "text": "A WAY OF TEASING YOU...",
+  "hl": [
+   "TEASING"
+  ],
+  "line": 8
+ },
+ {
+  "t0": 36.97,
+  "t1": 37.37,
+  "text": "A LITTLE BIT",
+  "hl": [],
+  "line": 8
+ },
+ {
+  "t0": 37.37,
+  "t1": 38.25,
+  "text": "OF EMBARRASSMENT,",
+  "hl": [],
+  "line": 8
+ },
+ {
+  "t0": 38.25,
+  "t1": 39.85,
+  "text": "IN A TOTALLY SAFE WAY.",
+  "hl": [
+   "SAFE"
+  ],
+  "line": 8
+ },
+ {
+  "t0": 39.85,
+  "t1": 40.81,
+  "text": "THE IDEA IS,",
+  "hl": [],
+  "line": 8
+ },
+ {
+  "t0": 40.81,
+  "t1": 41.37,
+  "text": "IT TEACHES YOU",
+  "hl": [],
+  "line": 8
+ },
+ {
+  "t0": 41.37,
+  "t1": 42.15,
+  "text": "TO HANDLE CRINGE",
+  "hl": [
+   "CRINGE"
+  ],
+  "line": 8
+ },
+ {
+  "t0": 42.15,
+  "t1": 43.77,
+  "text": "WITHOUT FALLING APART.",
+  "hl": [],
+  "line": 8
+ },
+ {
+  "t0": 43.77,
+  "t1": 45.11,
+  "text": "SO EVERY EYE ROLL?",
+  "hl": [
+   "EYE"
+  ],
+  "line": 9
+ },
+ {
+  "t0": 45.11,
+  "t1": 46.23,
+  "text": "THAT'S TRAINING.",
+  "hl": [
+   "TRAINING"
+  ],
+  "line": 9
+ },
+ {
+  "t0": 46.23,
+  "t1": 46.97,
+  "text": "BUT HERE'S THE PART",
+  "hl": [],
+  "line": 10
+ },
+ {
+  "t0": 46.97,
+  "t1": 48.37,
+  "text": "NOBODY TELLS YOU...",
+  "hl": [
+   "NOBODY"
+  ],
+  "line": 10
+ },
+ {
+  "t0": 48.37,
+  "t1": 49.13,
+  "text": "ONE DAY...",
+  "hl": [],
+  "line": 11
+ },
+ {
+  "t0": 49.13,
+  "t1": 50.63,
+  "text": "YOU'LL START DOING IT TOO.",
+  "hl": [
+   "TOO"
+  ],
+  "line": 11
+ },
+ {
+  "t0": 50.63,
+  "t1": 52.15,
+  "text": "AND WHEN YOUR OWN KID GROANS...",
+  "hl": [],
+  "line": 11
+ },
+ {
+  "t0": 52.15,
+  "t1": 53.67,
+  "text": "YOU'LL FINALLY GET IT.",
+  "hl": [
+   "GET"
+  ],
+  "line": 11
+ },
+ {
+  "t0": 53.67,
+  "t1": 54.15,
+  "text": "SEND THIS TO",
+  "hl": [
+   "SEND"
+  ],
+  "line": 12
+ },
+ {
+  "t0": 54.15,
+  "t1": 54.79,
+  "text": "YOUR DAD...",
+  "hl": [
+   "DAD"
+  ],
+  "line": 12
+ },
+ {
+  "t0": 54.79,
+  "t1": 56.05,
+  "text": "OR SANTA'S PUTTING YOU",
+  "hl": [],
+  "line": 12
+ },
+ {
+  "t0": 56.05,
+  "t1": 57.56,
+  "text": "ON THE NAUGHTY LIST.",
+  "hl": [
+   "NAUGHTY"
+  ],
+  "line": 12
+ }
+]

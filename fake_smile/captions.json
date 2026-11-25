@@ -1,0 +1,438 @@
+[
+ {
+  "t0": -0.03,
+  "t1": 0.81,
+  "text": "EVER OPEN A GIFT",
+  "hl": [],
+  "line": 0
+ },
+ {
+  "t0": 0.81,
+  "t1": 2.11,
+  "text": "SO BAD YOU HAD TO",
+  "hl": [],
+  "line": 0
+ },
+ {
+  "t0": 2.11,
+  "t1": 3.33,
+  "text": "FAKE A SMILE...",
+  "hl": [
+   "FAKE",
+   "SMILE"
+  ],
+  "line": 0
+ },
+ {
+  "t0": 3.33,
+  "t1": 4.05,
+  "text": "AND IT MADE YOU",
+  "hl": [],
+  "line": 1
+ },
+ {
+  "t0": 4.05,
+  "t1": 5.23,
+  "text": "FURIOUS?",
+  "hl": [
+   "FURIOUS"
+  ],
+  "line": 1
+ },
+ {
+  "t0": 5.23,
+  "t1": 6.48,
+  "text": "PICTURE THIS.",
+  "hl": [],
+  "line": 2
+ },
+ {
+  "t0": 6.49,
+  "t1": 7.87,
+  "text": "CHRISTMAS MORNING.",
+  "hl": [],
+  "line": 2
+ },
+ {
+  "t0": 7.87,
+  "t1": 8.31,
+  "text": "YOUR AUNT",
+  "hl": [
+   "AUNT"
+  ],
+  "line": 2
+ },
+ {
+  "t0": 8.31,
+  "t1": 9.69,
+  "text": "HANDS YOU A GIFT...",
+  "hl": [],
+  "line": 2
+ },
+ {
+  "t0": 9.69,
+  "t1": 10.85,
+  "text": "AND SHE'S STARING",
+  "hl": [
+   "STARING"
+  ],
+  "line": 2
+ },
+ {
+  "t0": 10.85,
+  "t1": 12.37,
+  "text": "RIGHT AT YOU.",
+  "hl": [],
+  "line": 2
+ },
+ {
+  "t0": 12.37,
+  "t1": 13.97,
+  "text": "EVERYONE'S WATCHING.",
+  "hl": [],
+  "line": 2
+ },
+ {
+  "t0": 13.97,
+  "t1": 14.61,
+  "text": "AND IT'S...",
+  "hl": [],
+  "line": 2
+ },
+ {
+  "t0": 14.61,
+  "t1": 16.19,
+  "text": "A CANDLE",
+  "hl": [],
+  "line": 2
+ },
+ {
+  "t0": 16.19,
+  "t1": 18.06,
+  "text": "SHAPED LIKE A CAT.",
+  "hl": [
+   "CAT"
+  ],
+  "line": 2
+ },
+ {
+  "t0": 18.09,
+  "t1": 19.85,
+  "text": "SO YOU DO THE FACE.",
+  "hl": [
+   "FACE"
+  ],
+  "line": 3
+ },
+ {
+  "t0": 19.85,
+  "t1": 20.93,
+  "text": "BIG SMILE.",
+  "hl": [],
+  "line": 3
+ },
+ {
+  "t0": 20.93,
+  "t1": 21.91,
+  "text": "WOW,",
+  "hl": [],
+  "line": 3
+ },
+ {
+  "t0": 21.91,
+  "t1": 23.23,
+  "text": "I LOVE IT.",
+  "hl": [
+   "LOVE"
+  ],
+  "line": 3
+ },
+ {
+  "t0": 23.23,
+  "t1": 24.59,
+  "text": "BUT HERE'S THE PROBLEM.",
+  "hl": [],
+  "line": 4
+ },
+ {
+  "t0": 24.59,
+  "t1": 26.37,
+  "text": "EVERYONE CAN TELL.",
+  "hl": [
+   "EVERYONE",
+   "TELL"
+  ],
+  "line": 4
+ },
+ {
+  "t0": 26.37,
+  "t1": 27.51,
+  "text": "IF YOU'VE EVER FAKED IT",
+  "hl": [],
+  "line": 5
+ },
+ {
+  "t0": 27.51,
+  "t1": 28.45,
+  "text": "FOR A GIFT...",
+  "hl": [],
+  "line": 5
+ },
+ {
+  "t0": 28.45,
+  "t1": 29.51,
+  "text": "SUBSCRIBE!",
+  "hl": [
+   "SUBSCRIBE"
+  ],
+  "line": 5
+ },
+ {
+  "t0": 29.51,
+  "t1": 30.49,
+  "text": "A REAL SMILE",
+  "hl": [],
+  "line": 6
+ },
+ {
+  "t0": 30.49,
+  "t1": 31.95,
+  "text": "CRINKLES YOUR EYES.",
+  "hl": [
+   "EYES"
+  ],
+  "line": 6
+ },
+ {
+  "t0": 31.95,
+  "t1": 32.61,
+  "text": "A FAKE ONE",
+  "hl": [],
+  "line": 6
+ },
+ {
+  "t0": 32.61,
+  "t1": 34.15,
+  "text": "ONLY MOVES YOUR MOUTH.",
+  "hl": [
+   "MOUTH"
+  ],
+  "line": 6
+ },
+ {
+  "t0": 34.15,
+  "t1": 35.05,
+  "text": "AND PEOPLE SPOT",
+  "hl": [],
+  "line": 6
+ },
+ {
+  "t0": 35.05,
+  "t1": 36.19,
+  "text": "THE DIFFERENCE.",
+  "hl": [],
+  "line": 6
+ },
+ {
+  "t0": 36.19,
+  "t1": 36.75,
+  "text": "BUT HERE'S WHAT",
+  "hl": [],
+  "line": 7
+ },
+ {
+  "t0": 36.75,
+  "t1": 38.11,
+  "text": "NOBODY TELLS YOU.",
+  "hl": [
+   "NOBODY"
+  ],
+  "line": 7
+ },
+ {
+  "t0": 38.11,
+  "t1": 39.61,
+  "text": "IT'S NOT YOUR FAULT.",
+  "hl": [
+   "FAULT"
+  ],
+  "line": 7
+ },
+ {
+  "t0": 39.61,
+  "t1": 40.47,
+  "text": "SCIENTISTS FOUND",
+  "hl": [],
+  "line": 8
+ },
+ {
+  "t0": 40.47,
+  "t1": 41.97,
+  "text": "PEOPLE PICK SURPRISE GIFTS",
+  "hl": [
+   "SURPRISE"
+  ],
+  "line": 8
+ },
+ {
+  "t0": 41.97,
+  "t1": 42.69,
+  "text": "BECAUSE THEY THINK",
+  "hl": [],
+  "line": 8
+ },
+ {
+  "t0": 42.69,
+  "t1": 43.55,
+  "text": "SURPRISES LOOK",
+  "hl": [],
+  "line": 8
+ },
+ {
+  "t0": 43.55,
+  "t1": 44.43,
+  "text": "MORE THOUGHTFUL...",
+  "hl": [
+   "THOUGHTFUL"
+  ],
+  "line": 8
+ },
+ {
+  "t0": 44.43,
+  "t1": 45.79,
+  "text": "BUT PEOPLE ACTUALLY LOVE",
+  "hl": [],
+  "line": 9
+ },
+ {
+  "t0": 45.79,
+  "t1": 46.97,
+  "text": "THE GIFTS THEY ASKED FOR",
+  "hl": [
+   "ASKED"
+  ],
+  "line": 9
+ },
+ {
+  "t0": 46.97,
+  "t1": 48.03,
+  "text": "WAY MORE.",
+  "hl": [
+   "MORE"
+  ],
+  "line": 9
+ },
+ {
+  "t0": 48.03,
+  "t1": 49.85,
+  "text": "SO YOU'RE NOT UNGRATEFUL.",
+  "hl": [
+   "UNGRATEFUL"
+  ],
+  "line": 10
+ },
+ {
+  "t0": 49.85,
+  "t1": 50.45,
+  "text": "YOU JUST GOT",
+  "hl": [],
+  "line": 10
+ },
+ {
+  "t0": 50.45,
+  "t1": 51.67,
+  "text": "A CAT CANDLE.",
+  "hl": [
+   "CAT"
+  ],
+  "line": 10
+ },
+ {
+  "t0": 51.67,
+  "t1": 53.39,
+  "text": "HERE'S THE GENIUS MOVE.",
+  "hl": [
+   "GENIUS"
+  ],
+  "line": 11
+ },
+ {
+  "t0": 53.39,
+  "t1": 54.51,
+  "text": "MAKE A WISH LIST,",
+  "hl": [
+   "WISH"
+  ],
+  "line": 11
+ },
+ {
+  "t0": 54.51,
+  "t1": 55.11,
+  "text": "AND SEND IT",
+  "hl": [],
+  "line": 11
+ },
+ {
+  "t0": 55.11,
+  "t1": 55.89,
+  "text": "TO EVERYONE.",
+  "hl": [],
+  "line": 11
+ },
+ {
+  "t0": 55.89,
+  "t1": 57.25,
+  "text": "AND IF THE CAT CANDLE",
+  "hl": [],
+  "line": 12
+ },
+ {
+  "t0": 57.25,
+  "t1": 58.41,
+  "text": "STILL SHOWS UP?",
+  "hl": [],
+  "line": 12
+ },
+ {
+  "t0": 58.41,
+  "t1": 60.17,
+  "text": "SMILE WITH YOUR EYES.",
+  "hl": [
+   "EYES"
+  ],
+  "line": 12
+ },
+ {
+  "t0": 60.17,
+  "t1": 61.31,
+  "text": "COMMENT THE WORST GIFT",
+  "hl": [
+   "COMMENT",
+   "WORST"
+  ],
+  "line": 13
+ },
+ {
+  "t0": 61.31,
+  "t1": 62.41,
+  "text": "YOU EVER GOT...",
+  "hl": [],
+  "line": 13
+ },
+ {
+  "t0": 62.41,
+  "t1": 63.67,
+  "text": "OR SANTA'S PUTTING YOU",
+  "hl": [],
+  "line": 13
+ },
+ {
+  "t0": 63.67,
+  "t1": 65.3,
+  "text": "ON THE NAUGHTY LIST.",
+  "hl": [
+   "NAUGHTY"
+  ],
+  "line": 13
+ }
+]

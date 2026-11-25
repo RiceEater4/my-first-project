@@ -179,8 +179,10 @@ No joke setups, no "so are X actually Y?" question, no "scientists tested it... 
 6. Build video.py from the latest folder (late_school/ is the newest template), check stills of every scene for
    overlaps, alignment, readable text and detail, then mix.py (music ~13 dB under voice, SFX) -> loudnorm about -13 LUFS.
 7. Render, check a 0.5 fps contact sheet, commit + push, send the mp4 + post.txt (title/description).
-   Description hashtags (10-15 max, never 60+; the FIRST 3 show above the title), in this order:
-   #[trend tag] #shorts #fyp #foryou #viral #funny #relatable #facts #didyouknow #psychology #[topic tags] #christmas #pixelart
+   Description hashtags (UPDATED Nov 25: the big-tag meta did NOT work, back to the old short set, ~9 tags):
+   #shorts #whatif #christmas #[topic tag] #genius #funny #psychology #santa #pixelart
+   (no #fyp / #foryou / #viral piles). Description style = the gift-wrapping one: hook line + emoji, the science in 1-2
+   short lines, "Tag the worst X you know 👇 Subscribe or Santa's putting you on the naughty list 🎅", then the tags.
 - When the user says "don't make a video", only give the script / ideas / preview images.
 
 ## Accounts + credits
